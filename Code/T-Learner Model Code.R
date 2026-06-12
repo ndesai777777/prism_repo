@@ -25,11 +25,18 @@ library(xgboost)
 # FILE PATHS
 # ============================================================
 
-file_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/expanded_case_management_dataset_500_rows.xlsx"
+github_xlsx_url <- "https://raw.githubusercontent.com/ndesai777777/prism_repo/main/DataSets/PRP_1000_full_pretreatment.xlsx"
 
-output_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/t_learner_scored_output.csv"
+temp_xlsx <- tempfile(fileext = ".xlsx")
+download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
-summary_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/t_learner_decile_summary.csv"
+file_path <- temp_xlsx
+
+output_folder <- "Outputs/T-Learner"
+dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
+
+output_path <- file.path(output_folder, "t_learner_scored_output.csv")
+summary_path <- file.path(output_folder, "t_learner_decile_summary.csv")
 
 # ============================================================
 # HELPER FUNCTIONS
