@@ -5,17 +5,10 @@
 # Treatment: intervention_flag
 # ============================================================
 
-#### TODO: Some concerns: 
-#### Cross validation may work better than 70/30 split. 
-#### No performance check on individual XGboost models
-#### Compare performance of other ML algorithms, let's use RGLM (glmnet) as benchmark.
-#### If resource and data security allowed, we can also try automl which includes all major ML algorithms.
-
 # ----------------------------
 # 1. Install packages if needed
 # ----------------------------
-required_packages <- c("readxl", "readr", "dplyr", "stringr", "lubridate", "xgboost","ggplot2","tidyr",
-                       "glmnet","pROC")
+required_packages <- c("readxl", "readr", "dplyr", "stringr", "lubridate", "xgboost")
 
 installed <- rownames(installed.packages())
 
@@ -37,18 +30,25 @@ library(xgboost)
 
 # ============================================================
 # 3. FILE PATHS
-# ============================================================
 
-file_path <- "C:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/prism_simulated_1000_full_pretreatment.xlsx"
-output_path <- "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/uplift_scored_output.csv"
-summary_path <- "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/uplift_decile_summary.csv"
+# Raw GitHub URL to the Excel file
+github_xlsx_url <- "https://raw.githubusercontent.com/ndesai777777/prism_repo/main/DataSets/PRP_1000_full_pretreatment.xlsx"
 
-cat("Input file path:\n", file_path, "\n\n")
+# Download Excel file to a temporary local file
+temp_xlsx <- tempfile(fileext = ".xlsx")
+download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
-if (!file.exists(file_path)) {
-  stop("File not found. Check the file path.")
-}
+# Use this downloaded temp file as the input file
+file_path <- temp_xlsx
 
+# Output paths: save locally in your working directory
+dashboard_folder <- "Dashboard"
+dir.create(dashboard_folder, recursive = TRUE, showWarnings = FALSE)
+
+output_path <- file.path(dashboard_folder, "uplift_scored_output.csv")
+summary_path <- file.path(dashboard_folder, "uplift_decile_summary.csv")
+
+cat("Imported data from:\n", github_xlsx_url, "\n\n")
 # ============================================================
 # 4. HELPER FUNCTIONS
 # ============================================================
@@ -75,8 +75,7 @@ to_binary <- function(x) {
   )
   
   as.numeric(out)
-} ## TODO: The output of this function is numeric. Is it intentionally for xgboost? Techinically it should work for xgboost
-#### But if later we explore other algorithms it may be problematic.
+}
 
 safe_as_date <- function(x) {
   suppressWarnings(as.Date(x))
@@ -134,7 +133,7 @@ for (d in date_fields) {
 }
 
 df$intervention_flag <- to_binary(df$intervention_flag)
-df$outcome_ed_90d <- to_binary(df$outcome_ed_90d)  ### Still numeric here
+df$outcome_ed_90d <- to_binary(df$outcome_ed_90d)
 
 # ============================================================
 # 8. DERIVE DATE FEATURES
@@ -163,8 +162,6 @@ if (all(c("intervention_start_date", "intervention_end_date") %in% names(df))) {
 if (!("intervention_days_active" %in% names(df))) {
   df$intervention_days_active <- df$intervention_duration_calc
 }
-## reverse for now
-df = df_raw
 
 # ============================================================
 # 9. SELECT PREDICTORS
@@ -230,28 +227,10 @@ candidate_predictors <- c(
 )
 
 candidate_predictors <- candidate_predictors[candidate_predictors %in% names(df)]
-missing_predictors <- setdiff(candidate_predictors, names(df))
-
-### TODO: Added information about missing candidate_predictors 
-if (length(missing_predictors) > 0) {
-  cat("Predictors not found in dataset:\n")
-  print(missing_predictors)
-} else {
-  cat("All candidate predictors are present in dataset.\n")
-}
 
 model_df <- df[, c("outcome_ed_90d", "intervention_flag", candidate_predictors), drop = FALSE]
 model_df <- model_df[!is.na(model_df$outcome_ed_90d) & !is.na(model_df$intervention_flag), , drop = FALSE]
 
-### TODO: Added information about unselected columns
-missing_in_model_df <- setdiff(names(df), names(model_df))
-
-if (length(missing_in_model_df) > 0) {
-  cat("Columns in dataframe but not in model:\n")
-  print(missing_in_model_df)
-} else {
-  cat("All dataframe columns are present in model.\n")
-}
 cat("Modeling rows after dropping missing outcome/treatment:", nrow(model_df), "\n\n")
 
 # ============================================================
@@ -333,7 +312,6 @@ test_df <- model_df[-train_idx, , drop = FALSE]
 
 cat("Training rows:", nrow(train_df), "\n")
 cat("Testing rows:", nrow(test_df), "\n\n")
-### TODO: Might also consider cross validation rather than random split
 
 # ============================================================
 # 12. SEPARATE TREATED / CONTROL
@@ -411,7 +389,8 @@ set.seed(123)
 model_treated <- xgb.train(
   params = params,
   data = dtrain_treated,
-  nrounds = 150
+  nrounds = 150,
+  verbose = 0
 )
 
 set.seed(123)
@@ -423,316 +402,6 @@ model_control <- xgb.train(
 )
 
 cat("Models trained successfully.\n\n")
-
-##### TODO: No evaluation of the performance of these models
-
-#### Calculate AUC from the results
-library(pROC)
-
-ind_test_treated <- which(test_df$intervention_flag == 1)
-ind_test_control <- which(test_df$intervention_flag == 0)
-
-pred_treated <- predict(model_treated, dtest[ind_test_treated,])
-
-roc_treated <- roc(test_df$outcome_ed_90d[ind_test_treated], pred_treated)
-
-auc_treated <- auc(roc_treated)
-
-cat("XGBoost Treated model AUC:", round(as.numeric(auc_treated), 4), "\n")
-
-
-pred_control <- predict(model_control, dtest[ind_test_control,])
-
-roc_control <- roc(test_df$outcome_ed_90d[ind_test_control], pred_control)
-
-auc_control <- auc(roc_control)
-
-cat("XGBoost Control model AUC:", round(as.numeric(auc_control), 4), "\n")
-
-
-#### Actually we should do crossvalidation xgboost to search for hyperparameter first, instead of using preset hyperparameters
-
-
-# ============================================================
-# XGBOOST CV GRID SEARCH FUNCTION
-# ============================================================
-
-fit_xgb_cv_grid <- function(dtrain, grid, nrounds_max = 500, nfold = 5) {
-  
-  results <- data.frame()
-  best_model_info <- NULL
-  best_auc <- -Inf
-  
-  for (i in seq_len(nrow(grid))) {
-    
-    params_i <- list(
-      objective = "binary:logistic",
-      eval_metric = "auc",
-      max_depth = grid$max_depth[i],
-      eta = grid$eta[i],
-      min_child_weight = grid$min_child_weight[i],
-      subsample = 0.8,
-      colsample_bytree = 0.8
-    )
-    
-    set.seed(123)
-    cv_i <- xgb.cv(
-      params = params_i,
-      data = dtrain,
-      nrounds = nrounds_max,
-      nfold = nfold,
-      early_stopping_rounds = 20,
-      verbose = 0
-    )
-    
-    best_iter_i <- which.max(cv_i$evaluation_log$test_auc_mean)
-    best_auc_i <- cv_i$evaluation_log$test_auc_mean[best_iter_i]
-    
-    results <- rbind(
-      results,
-      data.frame(
-        max_depth = grid$max_depth[i],
-        eta = grid$eta[i],
-        min_child_weight = grid$min_child_weight[i],
-        best_nrounds = best_iter_i,
-        cv_auc = best_auc_i
-      )
-    )
-    
-    if (best_auc_i > best_auc) {
-      best_auc <- best_auc_i
-      best_model_info <- list(
-        params = params_i,
-        best_nrounds = best_iter_i,
-        cv_auc = best_auc_i,
-        cv_object = cv_i
-      )
-    }
-  }
-  
-  results <- results[order(-results$cv_auc), ]
-  
-  final_model <- xgb.train(
-    params = best_model_info$params,
-    data = dtrain,
-    nrounds = best_model_info$best_nrounds,
-    verbose = 0
-  )
-  
-  list(
-    model = final_model,
-    best_params = best_model_info$params,
-    best_nrounds = best_model_info$best_nrounds,
-    best_cv_auc = best_model_info$cv_auc,
-    search_results = results
-  )
-}
-
-
-# ============================================================
-# CREATE DMATRICES
-# ============================================================
-
-dtrain_treated <- xgb.DMatrix(data = x_treated, label = y_treated)
-dtrain_control <- xgb.DMatrix(data = x_control, label = y_control)
-dtest <- xgb.DMatrix(data = x_test)
-
-# ============================================================
-# SMALL XGBOOST GRID
-# ============================================================
-
-xgb_grid <- expand.grid(
-  max_depth = c(3, 4, 5),
-  eta = c(0.03, 0.05, 0.10),
-  min_child_weight = c(1, 5)
-)
-
-# ============================================================
-# TRAIN TREATED MODEL WITH CV GRID SEARCH
-# ============================================================
-
-xgb_treated_cv <- fit_xgb_cv_grid(
-  dtrain = dtrain_treated,
-  grid = xgb_grid,
-  nrounds_max = 500,
-  nfold = 5
-)
-
-model_treated <- xgb_treated_cv$model
-
-cat("XGBoost Treated best CV AUC:",
-    round(xgb_treated_cv$best_cv_auc, 4), "\n")
-cat("XGBoost Treated best nrounds:",
-    xgb_treated_cv$best_nrounds, "\n")
-cat("XGBoost Treated best params:\n")
-print(xgb_treated_cv$best_params)
-
-# ============================================================
-# TRAIN CONTROL MODEL WITH CV GRID SEARCH
-# ============================================================
-
-xgb_control_cv <- fit_xgb_cv_grid(
-  dtrain = dtrain_control,
-  grid = xgb_grid,
-  nrounds_max = 500,
-  nfold = 5
-)
-
-model_control <- xgb_control_cv$model
-
-cat("XGBoost Control best CV AUC:",
-    round(xgb_control_cv$best_cv_auc, 4), "\n")
-cat("XGBoost Control best nrounds:",
-    xgb_control_cv$best_nrounds, "\n")
-cat("XGBoost Control best params:\n")
-print(xgb_control_cv$best_params)
-
-# ============================================================
-# TEST AUC FOR CV-TUNED XGBOOST MODELS
-# ============================================================
-
-ind_test_treated <- which(test_df$intervention_flag == 1)
-ind_test_control <- which(test_df$intervention_flag == 0)
-
-pred_treated_cv_xgb <- predict(model_treated, dtest[ind_test_treated, ])
-roc_treated_cv_xgb <- roc(test_df$outcome_ed_90d[ind_test_treated], pred_treated_cv_xgb)
-auc_treated_cv_xgb <- auc(roc_treated_cv_xgb)
-
-cat("XGBoost Treated CV-tuned test AUC:",
-    round(as.numeric(auc_treated_cv_xgb), 4), "\n")
-
-pred_control_cv_xgb <- predict(model_control, dtest[ind_test_control, ])
-roc_control_cv_xgb <- roc(test_df$outcome_ed_90d[ind_test_control], pred_control_cv_xgb)
-auc_control_cv_xgb <- auc(roc_control_cv_xgb)
-
-cat("XGBoost Control CV-tuned test AUC:",
-    round(as.numeric(auc_control_cv_xgb), 4), "\n")
-
-cat("CV-tuned XGBoost models trained successfully.\n\n")
-
-
-
-
-#### Now Add GLMNET
-
-
-library(glmnet)
-
-# ============================================================
-# TRAIN GLMNET MODELS
-# ============================================================
-
-
-# ============================================================
-# ELASTIC NET HYPERPARAMETER SEARCH
-# ============================================================
-
-fit_elastic_net <- function(x, y,
-                            alpha_grid = seq(0, 1, by = 0.1),
-                            nfolds = 5) {
-  
-  results <- data.frame()
-  
-  best_model <- NULL
-  best_auc <- -Inf
-  best_alpha <- NA
-  
-  for (a in alpha_grid) {
-    
-    set.seed(123)
-    
-    cv_fit <- cv.glmnet(
-      x = x,
-      y = y,
-      family = "binomial",
-      alpha = a,
-      nfolds = nfolds,
-      type.measure = "auc"
-    )
-    
-    auc_cv <- max(cv_fit$cvm)
-    
-    results <- rbind(
-      results,
-      data.frame(
-        alpha = a,
-        lambda = cv_fit$lambda.min,
-        cv_auc = auc_cv
-      )
-    )
-    
-    if (auc_cv > best_auc) {
-      best_auc <- auc_cv
-      best_alpha <- a
-      best_model <- cv_fit
-    }
-  }
-  
-  list(
-    best_model = best_model,
-    best_alpha = best_alpha,
-    best_lambda = best_model$lambda.min,
-    best_auc = best_auc,
-    search_results = results[order(-results$cv_auc), ]
-  )
-}
-
-# ============================================================
-# TREATED MODEL
-# ============================================================
-
-enet_treated <- fit_elastic_net(
-  x = x_treated,
-  y = y_treated
-)
-
-cat("Best treated alpha:", enet_treated$best_alpha, "\n")
-cat("Best treated lambda:", enet_treated$best_lambda, "\n")
-cat("Best treated CV AUC:", round(enet_treated$best_auc, 4), "\n\n")
-
-# ============================================================
-# CONTROL MODEL
-# ============================================================
-
-enet_control <- fit_elastic_net(
-  x = x_control,
-  y = y_control
-)
-
-cat("Best control alpha:", enet_control$best_alpha, "\n")
-cat("Best control lambda:", enet_control$best_lambda, "\n")
-cat("Best control CV AUC:", round(enet_control$best_auc, 4), "\n\n")
-
-
-# ============================================================
-# TEST AUC FOR CV-TUNED GLMNET MODELS
-# ============================================================
-
-pred_treated_cv_glmnet <- as.numeric(
-  predict(enet_treated$best_model,
-          newx = x_test[ind_test_treated, , drop = FALSE],
-          s = "lambda.min",
-          type = "response")
-)
-roc_treated_cv_glmnet <- roc(test_df$outcome_ed_90d[ind_test_treated], pred_treated_cv_glmnet)
-auc_treated_cv_glmnet <- auc(roc_treated_cv_glmnet)
-
-cat("GLMNET Treated CV-tuned test AUC:",
-    round(as.numeric(auc_treated_cv_glmnet), 4), "\n")
-
-pred_control_cv_glmnet <- as.numeric(
-  predict(enet_control$best_model,
-          newx = x_test[ind_test_control, , drop = FALSE],
-          s = "lambda.min",
-          type = "response")
-)
-roc_control_cv_glmnet <- roc(test_df$outcome_ed_90d[ind_test_control], pred_control_cv_glmnet)
-auc_control_cv_glmnet <- auc(roc_control_cv_glmnet)
-
-cat("GLMNET Control CV-tuned test AUC:",
-    round(as.numeric(auc_control_cv_glmnet), 4), "\n\n")
-
-
 
 # ============================================================
 # 15. SCORE TEST SET
@@ -862,7 +531,9 @@ library(ggplot2)
 library(readr)
 library(dplyr)
 
-dashboard_folder <- "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM"
+dashboard_folder <- "Dashboard"
+
+dir.create(dashboard_folder, recursive = TRUE, showWarnings = FALSE)
 
 # Chart 1: Average benefit by decile
 p1 <- ggplot(decile_summary, aes(x = factor(uplift_decile), y = avg_benefit_score)) +
@@ -1080,3 +751,5 @@ ggsave(
 )
 
 cat("SHAP outputs saved.\n")
+
+getwd()
