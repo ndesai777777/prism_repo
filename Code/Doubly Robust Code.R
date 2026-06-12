@@ -21,13 +21,18 @@ library(xgboost)
 # ============================================================
 # FILE PATHS
 # ============================================================
+github_xlsx_url <- "https://raw.githubusercontent.com/ndesai777777/prism_repo/main/DataSets/PRP_1000_full_pretreatment.xlsx"
 
-file_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/expanded_case_management_dataset_500_rows.xlsx"
+temp_xlsx <- tempfile(fileext = ".xlsx")
+download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
-output_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/doubly_robust_policy_evaluation.csv"
+file_path <- temp_xlsx
 
-scored_output_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/doubly_robust_scored_members.csv"
+output_folder <- "Outputs/Doubly-Robust"
+dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
+output_path <- file.path(output_folder, "doubly_robust_policy_evaluation.csv")
+scored_output_path <- file.path(output_folder, "doubly_robust_scored_members.csv")
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
