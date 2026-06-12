@@ -25,17 +25,19 @@ library(grf)
 # FILE PATHS
 # ============================================================
 
-file_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/expanded_case_management_dataset_500_rows.xlsx"
+github_xlsx_url <- "https://raw.githubusercontent.com/ndesai777777/prism_repo/main/DataSets/PRP_1000_full_pretreatment.xlsx"
 
-output_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/causal_forest_scored_output.csv"
+temp_xlsx <- tempfile(fileext = ".xlsx")
+download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
-summary_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/causal_forest_decile_summary.csv"
+file_path <- temp_xlsx
 
-importance_path <- "D:/Users/ben.novinger/OneDrive - Acentra/Analytics Opportunities Workgroup/AI Innovation Challenge/causal_forest_variable_importance.csv"
+output_folder <- "Outputs/Causal-Forests"
+dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
-if (!file.exists(file_path)) {
-  stop("File not found. Check the file path.")
-}
+output_path <- file.path(output_folder, "causal_forest_scored_output.csv")
+summary_path <- file.path(output_folder, "causal_forest_decile_summary.csv")
+importance_path <- file.path(output_folder, "causal_forest_variable_importance.csv")
 
 # ============================================================
 # HELPER FUNCTIONS
