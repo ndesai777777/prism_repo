@@ -41,12 +41,12 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 # Use this downloaded temp file as the input file
 file_path <- temp_xlsx
 
-# Output paths: save locally in your working directory
-dashboard_folder <- "Dashboard"
-dir.create(dashboard_folder, recursive = TRUE, showWarnings = FALSE)
+# Output paths: save inside Outputs/Uplift
+output_folder <- "Outputs/Uplift"
+dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
-output_path <- file.path(dashboard_folder, "uplift_scored_output.csv")
-summary_path <- file.path(dashboard_folder, "uplift_decile_summary.csv")
+output_path <- file.path(output_folder, "uplift_scored_output.csv")
+summary_path <- file.path(output_folder, "uplift_decile_summary.csv")
 
 cat("Imported data from:\n", github_xlsx_url, "\n\n")
 # ============================================================
@@ -531,8 +531,7 @@ library(ggplot2)
 library(readr)
 library(dplyr)
 
-dashboard_folder <- "Dashboard"
-
+dashboard_folder <- "Outputs/Uplift"
 dir.create(dashboard_folder, recursive = TRUE, showWarnings = FALSE)
 
 # Chart 1: Average benefit by decile
