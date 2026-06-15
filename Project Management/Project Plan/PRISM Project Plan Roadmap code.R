@@ -129,8 +129,12 @@ roadmap_table <- roadmap %>%
   tab_source_note(
     source_note = md("**Legend:** █ = Active Work &nbsp;&nbsp; ▓ = Major Milestone / Go-Live &nbsp;&nbsp; ▒ = Stabilization / Optimization")
   )
+
+output_folder <- "Outputs/Project-Plan/R"
+dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
+
 gtsave(
   roadmap_table,
-  filename = "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/PRISM_Roadmap.pdf"
+  filename = file.path(output_folder, "PRISM_Roadmap.pdf")
 )
 roadmap_table

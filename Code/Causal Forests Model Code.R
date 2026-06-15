@@ -32,7 +32,7 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
 file_path <- temp_xlsx
 
-output_folder <- "Outputs/Causal-Forests"
+output_folder <- "Outputs/Causal-Forests/R"
 dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
 output_path <- file.path(output_folder, "causal_forest_scored_output.csv")

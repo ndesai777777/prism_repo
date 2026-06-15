@@ -28,7 +28,7 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
 file_path <- temp_xlsx
 
-output_folder <- "Outputs/Doubly-Robust"
+output_folder <- "Outputs/Doubly-Robust/R"
 dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
 output_path <- file.path(output_folder, "doubly_robust_policy_evaluation.csv")

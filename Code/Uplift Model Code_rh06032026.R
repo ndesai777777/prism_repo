@@ -39,15 +39,24 @@ library(xgboost)
 # 3. FILE PATHS
 # ============================================================
 
-file_path <- "C:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/prism_simulated_1000_full_pretreatment.xlsx"
-output_path <- "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/uplift_scored_output.csv"
-summary_path <- "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM/uplift_decile_summary.csv"
+# Raw GitHub URL to the Excel file
+github_xlsx_url <- "https://raw.githubusercontent.com/ndesai777777/prism_repo/main/DataSets/PRP_1000_full_pretreatment.xlsx"
 
-cat("Input file path:\n", file_path, "\n\n")
+# Download Excel file to a temporary local file
+temp_xlsx <- tempfile(fileext = ".xlsx")
+download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
-if (!file.exists(file_path)) {
-  stop("File not found. Check the file path.")
-}
+# Use this downloaded temp file as the input file
+file_path <- temp_xlsx
+
+# Output paths: save inside Outputs/Uplift/R
+output_folder <- "Outputs/Uplift/R"
+dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
+
+output_path <- file.path(output_folder, "uplift_scored_output.csv")
+summary_path <- file.path(output_folder, "uplift_decile_summary.csv")
+
+cat("Imported data from:\n", github_xlsx_url, "\n\n")
 
 # ============================================================
 # 4. HELPER FUNCTIONS
@@ -862,7 +871,7 @@ library(ggplot2)
 library(readr)
 library(dplyr)
 
-dashboard_folder <- "D:/Users/Rui.Huang/OneDrive - Acentra/Documents/PRISM"
+dashboard_folder <- output_folder
 
 # Chart 1: Average benefit by decile
 p1 <- ggplot(decile_summary, aes(x = factor(uplift_decile), y = avg_benefit_score)) +

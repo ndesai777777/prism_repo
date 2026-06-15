@@ -32,7 +32,7 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
 file_path <- temp_xlsx
 
-output_folder <- "Outputs/T-Learner"
+output_folder <- "Outputs/T-Learner/R"
 dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
 output_path <- file.path(output_folder, "t_learner_scored_output.csv")
