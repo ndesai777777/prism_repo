@@ -28,11 +28,69 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 
 file_path <- temp_xlsx
 
-output_folder <- "Outputs/Doubly-Robust/R"
+get_script_dir <- function() {
+  command_args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", command_args, value = TRUE)
+  if (length(file_arg) > 0) {
+    script_path <- sub("^--file=", "", file_arg[1])
+    return(dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE)))
+  }
+
+  frame_files <- lapply(sys.frames(), function(frame) frame$ofile)
+  frame_files <- Filter(Negate(is.null), frame_files)
+  if (length(frame_files) > 0) {
+    script_path <- frame_files[[length(frame_files)]]
+    return(dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE)))
+  }
+
+  if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+    script_path <- rstudioapi::getActiveDocumentContext()$path
+    if (!is.null(script_path) && nzchar(script_path)) {
+      return(dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE)))
+    }
+  }
+
+  normalizePath(getwd(), winslash = "/", mustWork = TRUE)
+}
+
+find_project_root <- function(start_dir = get_script_dir()) {
+  current_dir <- normalizePath(start_dir, winslash = "/", mustWork = TRUE)
+
+  repeat {
+    if (
+      dir.exists(file.path(current_dir, ".git")) ||
+      (
+        dir.exists(file.path(current_dir, "Code")) &&
+        dir.exists(file.path(current_dir, "DataSets"))
+      )
+    ) {
+      return(current_dir)
+    }
+
+    parent_dir <- dirname(current_dir)
+    if (identical(parent_dir, current_dir)) {
+      return(normalizePath(getwd(), winslash = "/", mustWork = TRUE))
+    }
+    current_dir <- parent_dir
+  }
+}
+
+project_root <- find_project_root()
+
+output_folder <- file.path(project_root, "Outputs", "Doubly-Robust", "R")
 dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
+
+if (!dir.exists(output_folder)) {
+  stop("Output folder could not be created: ", output_folder)
+}
 
 output_path <- file.path(output_folder, "doubly_robust_policy_evaluation.csv")
 scored_output_path <- file.path(output_folder, "doubly_robust_scored_members.csv")
+
+cat("Imported data from:\n", github_xlsx_url, "\n\n")
+cat("Current working directory:\n", normalizePath(getwd(), winslash = "/", mustWork = TRUE), "\n\n")
+cat("Project root resolved to:\n", project_root, "\n\n")
+cat("Outputs will be saved to:\n", output_folder, "\n\n")
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
@@ -471,6 +529,10 @@ write_csv(scored_test, scored_output_path)
 
 cat("Policy evaluation output saved to:\n", output_path, "\n\n")
 cat("Scored member output saved to:\n", scored_output_path, "\n\n")
+
+cat("Files currently in output folder:\n")
+print(list.files(output_folder, full.names = TRUE))
+cat("\n")
 
 cat("INTERPRETATION:\n")
 cat("- estimated_ed_rate = doubly robust estimated ED rate under that policy\n")
