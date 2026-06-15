@@ -49,14 +49,39 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 # Use this downloaded temp file as the input file
 file_path <- temp_xlsx
 
+find_project_root <- function(start_dir = getwd()) {
+  current_dir <- normalizePath(start_dir, winslash = "/", mustWork = TRUE)
+
+  repeat {
+    if (
+      dir.exists(file.path(current_dir, ".git")) ||
+      (
+        dir.exists(file.path(current_dir, "Code")) &&
+        dir.exists(file.path(current_dir, "DataSets"))
+      )
+    ) {
+      return(current_dir)
+    }
+
+    parent_dir <- dirname(current_dir)
+    if (identical(parent_dir, current_dir)) {
+      return(normalizePath(getwd(), winslash = "/", mustWork = TRUE))
+    }
+    current_dir <- parent_dir
+  }
+}
+
+project_root <- find_project_root()
+
 # Output paths: save inside Outputs/Uplift/R
-output_folder <- "Outputs/Uplift/R"
+output_folder <- file.path(project_root, "Outputs", "Uplift", "R")
 dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
 output_path <- file.path(output_folder, "uplift_scored_output.csv")
 summary_path <- file.path(output_folder, "uplift_decile_summary.csv")
 
 cat("Imported data from:\n", github_xlsx_url, "\n\n")
+cat("Outputs will be saved to:\n", output_folder, "\n\n")
 
 # ============================================================
 # 4. HELPER FUNCTIONS
