@@ -49,7 +49,32 @@ download.file(github_xlsx_url, destfile = temp_xlsx, mode = "wb")
 # Use this downloaded temp file as the input file
 file_path <- temp_xlsx
 
-find_project_root <- function(start_dir = getwd()) {
+get_script_dir <- function() {
+  command_args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", command_args, value = TRUE)
+  if (length(file_arg) > 0) {
+    script_path <- sub("^--file=", "", file_arg[1])
+    return(dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE)))
+  }
+
+  frame_files <- lapply(sys.frames(), function(frame) frame$ofile)
+  frame_files <- Filter(Negate(is.null), frame_files)
+  if (length(frame_files) > 0) {
+    script_path <- frame_files[[length(frame_files)]]
+    return(dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE)))
+  }
+
+  if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+    script_path <- rstudioapi::getActiveDocumentContext()$path
+    if (!is.null(script_path) && nzchar(script_path)) {
+      return(dirname(normalizePath(script_path, winslash = "/", mustWork = TRUE)))
+    }
+  }
+
+  normalizePath(getwd(), winslash = "/", mustWork = TRUE)
+}
+
+find_project_root <- function(start_dir = get_script_dir()) {
   current_dir <- normalizePath(start_dir, winslash = "/", mustWork = TRUE)
 
   repeat {
@@ -77,10 +102,16 @@ project_root <- find_project_root()
 output_folder <- file.path(project_root, "Outputs", "Uplift", "R")
 dir.create(output_folder, recursive = TRUE, showWarnings = FALSE)
 
+if (!dir.exists(output_folder)) {
+  stop("Output folder could not be created: ", output_folder)
+}
+
 output_path <- file.path(output_folder, "uplift_scored_output.csv")
 summary_path <- file.path(output_folder, "uplift_decile_summary.csv")
 
 cat("Imported data from:\n", github_xlsx_url, "\n\n")
+cat("Current working directory:\n", normalizePath(getwd(), winslash = "/", mustWork = TRUE), "\n\n")
+cat("Project root resolved to:\n", project_root, "\n\n")
 cat("Outputs will be saved to:\n", output_folder, "\n\n")
 
 # ============================================================
@@ -1114,3 +1145,6 @@ ggsave(
 )
 
 cat("SHAP outputs saved.\n")
+
+cat("Files currently in output folder:\n")
+print(list.files(output_folder, full.names = TRUE))
