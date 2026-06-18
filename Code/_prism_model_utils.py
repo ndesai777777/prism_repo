@@ -243,6 +243,10 @@ def _nvidia_smi_command() -> str:
     candidates = [
         os.environ.get("NVIDIA_SMI_PATH"),
         shutil.which("nvidia-smi"),
+        "/usr/bin/nvidia-smi",
+        "/usr/local/bin/nvidia-smi",
+        "/usr/local/nvidia/bin/nvidia-smi",
+        "/usr/local/cuda/bin/nvidia-smi",
         r"C:\Windows\System32\nvidia-smi.exe",
         r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe",
     ]
@@ -263,7 +267,7 @@ def nvidia_smi_gpu_names() -> list[str]:
         completed = subprocess.run(query, check=True, capture_output=True, text=True)
     except FileNotFoundError as exc:
         raise RuntimeError(
-            "nvidia-smi was not found on PATH or in the standard Windows NVIDIA "
+            "nvidia-smi was not found on PATH or in the standard Linux/Windows NVIDIA "
             "locations. Install NVIDIA drivers, set NVIDIA_SMI_PATH if nvidia-smi "
             "lives elsewhere, and run this notebook in a GPU-enabled Jupyter "
             "environment."
