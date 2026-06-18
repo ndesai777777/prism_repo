@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import math
+import os
 import re
+import shutil
+import subprocess
 import tempfile
 import urllib.request
+import warnings
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -235,11 +239,170 @@ def align_to_columns(matrix: pd.DataFrame, columns: Sequence[str]) -> pd.DataFra
     return aligned.loc[:, list(columns)].astype(float)
 
 
+def _nvidia_smi_command() -> str:
+    candidates = [
+        os.environ.get("NVIDIA_SMI_PATH"),
+        shutil.which("nvidia-smi"),
+        r"C:\Windows\System32\nvidia-smi.exe",
+        r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return str(candidate)
+    return "nvidia-smi"
+
+
+def nvidia_smi_gpu_names() -> list[str]:
+    nvidia_smi = _nvidia_smi_command()
+    query = [
+        nvidia_smi,
+        "--query-gpu=index,name,driver_version,memory.total",
+        "--format=csv,noheader",
+    ]
+    try:
+        completed = subprocess.run(query, check=True, capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "nvidia-smi was not found on PATH or in the standard Windows NVIDIA "
+            "locations. Install NVIDIA drivers, set NVIDIA_SMI_PATH if nvidia-smi "
+            "lives elsewhere, and run this notebook in a GPU-enabled Jupyter "
+            "environment."
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or exc.stdout or str(exc)).strip()
+        raise RuntimeError(f"nvidia-smi could not see an NVIDIA GPU: {detail}") from exc
+
+    gpu_lines = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+    if not gpu_lines:
+        raise RuntimeError("nvidia-smi returned no NVIDIA GPUs.")
+
+    print("NVIDIA GPU(s) detected by nvidia-smi:")
+    for line in gpu_lines:
+        print(f"  - {line}")
+    return gpu_lines
+
+
+def _xgb_gpu_param_candidates(cuda_device: int = 0) -> list[dict[str, object]]:
+    try:
+        version_parts = []
+        for part in xgb.__version__.split(".")[:2]:
+            digits = "".join(character for character in part if character.isdigit())
+            version_parts.append(int(digits) if digits else 0)
+        major_minor = tuple(version_parts)
+    except Exception:
+        major_minor = (0, 0)
+
+    modern_candidates = [
+        {"tree_method": "hist", "device": f"cuda:{cuda_device}"},
+        {"tree_method": "hist", "device": "cuda"},
+        {"tree_method": "gpu_hist", "predictor": "gpu_predictor", "gpu_id": cuda_device},
+    ]
+    legacy_candidates = [
+        {"tree_method": "gpu_hist", "predictor": "gpu_predictor", "gpu_id": cuda_device},
+        {"tree_method": "gpu_hist", "predictor": "gpu_predictor"},
+        {"tree_method": "hist", "device": f"cuda:{cuda_device}"},
+        {"tree_method": "hist", "device": "cuda"},
+    ]
+    return modern_candidates if major_minor >= (2, 0) else legacy_candidates
+
+
+def _warning_indicates_cpu_fallback(warning_text: str) -> bool:
+    text = warning_text.lower()
+    fallback_indicators = [
+        "no visible gpu",
+        "not compiled with gpu",
+        "not compiled with cuda",
+        "setting device to cpu",
+        "device is changed to cpu",
+        'parameters: { "device" } are not used',
+        "parameters: { 'device' } are not used",
+    ]
+    return any(indicator in text for indicator in fallback_indicators)
+
+
+def resolve_xgb_gpu_params(cuda_device: int = 0) -> dict[str, object]:
+    nvidia_smi_gpu_names()
+    probe_x = pd.DataFrame(
+        {"feature_a": [0.0, 1.0, 2.0, 3.0], "feature_b": [1.0, 0.0, 1.0, 0.0]}
+    )
+    probe_y = np.array([0.0, 1.0, 0.0, 1.0])
+    probe_dmatrix = xgb.DMatrix(
+        probe_x,
+        label=probe_y,
+        feature_names=list(probe_x.columns),
+    )
+    failures = []
+
+    for gpu_params in _xgb_gpu_param_candidates(cuda_device):
+        probe_params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "max_depth": 1,
+            "eta": 1,
+            "seed": 123,
+            "verbosity": 1,
+        }
+        probe_params.update(gpu_params)
+        try:
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                probe_model = xgb.train(
+                    params=probe_params,
+                    dtrain=probe_dmatrix,
+                    num_boost_round=1,
+                    verbose_eval=False,
+                )
+            warning_text = " ".join(str(item.message) for item in caught)
+            model_config = probe_model.save_config().lower()
+            device_param = str(gpu_params.get("device", ""))
+            if (
+                _warning_indicates_cpu_fallback(warning_text)
+                or '"device":"cpu"' in model_config
+                or (device_param.startswith("cuda") and '"device":"cuda' not in model_config)
+            ):
+                failures.append(
+                    f"{gpu_params} -> CPU fallback warning/config: {warning_text or model_config}"
+                )
+                continue
+
+            print("XGBoost GPU training enabled with params:", gpu_params)
+            return gpu_params
+        except xgb.core.XGBoostError as exc:
+            failures.append(f"{gpu_params} -> {exc}")
+
+    failure_text = "\n".join(f"- {message}" for message in failures)
+    raise RuntimeError(
+        "nvidia-smi detected an NVIDIA GPU, but XGBoost could not start a CUDA "
+        "training job. Install an XGBoost build with CUDA support in this Jupyter "
+        f"kernel.\nTried:\n{failure_text}"
+    )
+
+
+def xgb_training_params(
+    gpu_params: dict[str, object] | None,
+    extra_params: dict[str, object] | None = None,
+    eval_metric: str = "auc",
+    seed: int = 123,
+) -> dict[str, object]:
+    params: dict[str, object] = {
+        "objective": "binary:logistic",
+        "eval_metric": eval_metric,
+        "seed": seed,
+        "verbosity": 0,
+    }
+    if extra_params:
+        params.update(extra_params)
+    if gpu_params:
+        params.update(gpu_params)
+    return params
+
+
 def fit_xgb_binary(
     x_matrix: pd.DataFrame,
     y: Sequence[float],
     nrounds: int = 150,
     seed: int = 123,
+    gpu_params: dict[str, object] | None = None,
 ) -> xgb.Booster:
     y_array = np.asarray(y, dtype=float)
     observed = set(pd.Series(y_array).dropna().unique())
@@ -261,6 +424,8 @@ def fit_xgb_binary(
         "seed": seed,
         "verbosity": 0,
     }
+    if gpu_params:
+        params.update(gpu_params)
     return xgb.train(params=params, dtrain=dtrain, num_boost_round=nrounds, verbose_eval=False)
 
 
