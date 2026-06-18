@@ -397,6 +397,26 @@ def xgb_training_params(
     return params
 
 
+def assert_xgb_booster_uses_cuda(model: xgb.Booster, label: str) -> bool:
+    config = model.save_config()
+    config_lower = config.lower()
+    cuda_markers = [
+        '"device":"cuda',
+        '"tree_method":"gpu_hist"',
+        "grow_gpu_hist",
+        '"gpu_id":',
+    ]
+    if not any(marker in config_lower for marker in cuda_markers):
+        raise RuntimeError(
+            f"{label} does not show CUDA/GPU settings in its XGBoost booster config. "
+            "The notebook is configured for GPU-only training, so check the CUDA "
+            "XGBoost install before using these model results."
+        )
+
+    print(f"{label} booster config confirms CUDA/GPU training.")
+    return True
+
+
 def fit_xgb_binary(
     x_matrix: pd.DataFrame,
     y: Sequence[float],
