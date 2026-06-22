@@ -46,14 +46,14 @@ Include the following objectives:
 - Identify data, modeling, and operational considerations before live deployment.
 - Demonstrate a reproducible workflow that can be reused with a future client dataset.
 
-## Analytical Task 1: Understand And Explain The Modeling Framework
+## Analytical Task 1: Understanding And Explaining The Modeling Framework
 
 ### Outcome Variable
 
 Include:
 
 - Outcome: `outcome_ed_90d`
-- Interpretation: binary indicator for whether a member had ED utilization within 90 days.
+- Interpretation: binary indicator for whether a member had Emergency Department utilization within 90 days.
 - Modeling goal: estimate the probability of this outcome under treated and untreated scenarios.
 
 ### Treatment Variable
@@ -61,22 +61,21 @@ Include:
 Include:
 
 - Treatment: `intervention_flag`
-- Interpretation: whether the member received the care management intervention.
+- Interpretation: whether the member received the care management intervention, 0 indicating no intervention and 1 indicating intervention.
 
 ### Predictor Variables
 
-Summarize predictor categories:
+Predictors were grouped into broad categories: demographics, clinical conditions, social needs, prior utilization/cost, medication/risk indicators, and program/operational fields. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
 
-- Demographics, such as age, gender, language, county, plan type.
-- Clinical conditions, such as diabetes, CHF, COPD, asthma, depression, anxiety, CKD.
-- Social needs, such as food insecurity, housing instability, transportation barriers, utilities insecurity.
-- Prior utilization and cost, such as ED visits, admits, PCP visits, specialist visits, total cost.
-- Medication and risk fields, such as medication adherence, high-cost drug flag, opioid flag, polypharmacy flag, percolator scores, current risk score, risk tier.
+The final model uses 41 predictors before one-hot encoding: 32 numeric predictors and 9 categorical predictors. The categorical predictors are `client_contract`, `service_region`, `program`, `case_manager_name`, `gender`, `county`, `plan_type`, `language`, and `risk_tier`.
 
-Source:
+A detailed predictor data dictionary and summary tables are available here after rerunning the notebook:
 
-- Feature setup in `Code/Uplift Model Code_rh06032026.ipynb`
-- Output: `Outputs/Uplift/Python/data_review_summary.csv` after rerunning the notebook.
+- [`predictor_data_dictionary.csv`](Outputs/Uplift/Python/predictor_data_dictionary.csv)
+- [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/numeric_predictor_summary.csv)
+- [`categorical_predictor_summary.csv`](Outputs/Uplift/Python/categorical_predictor_summary.csv)
+
+The data dictionary provides each predictor's description, category, data type, missingness, number of unique values, example values, and value range where applicable. The numeric and categorical summary tables provide supporting descriptive statistics for the write-up.
 
 ### Train/Test Methodology
 
