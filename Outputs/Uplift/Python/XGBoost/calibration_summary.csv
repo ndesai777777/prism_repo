@@ -1,0 +1,3 @@
+model,group,n,mean_abs_calibration_error,weighted_mean_abs_calibration_error,max_abs_calibration_error
+XGBoost,Control,178,0.0637085466554352,0.06330203725380844,0.12507487833499908
+XGBoost,Treated,122,0.053281151092587374,0.053419130197802527,0.11644082516431808
