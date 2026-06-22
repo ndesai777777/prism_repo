@@ -1,0 +1,2 @@
+total_members,treated_members,control_members,treatment_rate,outcome_events,outcome_prevalence,treated_outcome_rate,control_outcome_rate,number_of_predictors,number_of_model_matrix_columns
+1000,394,606,0.394,60,0.06,0.04060913705583756,0.07260726072607261,41,77

@@ -1,0 +1,10 @@
+variable,category,n,missing_count,missing_pct,unique_values,mode,mode_count,mode_pct,top_values
+county,Demographics,1000,0,0.0,6,County_E,180,0.18,County_E (180); County_C (171); County_A (170); County_D (167); County_B (161)
+gender,Demographics,1000,0,0.0,2,Female,550,0.55,Female (550); Male (450)
+language,Demographics,1000,0,0.0,3,English,750,0.75,English (750); Spanish (194); Other (56)
+plan_type,Demographics,1000,0,0.0,4,Medicaid,482,0.482,Medicaid (482); Medicare (233); Dual (201); Commercial (84)
+risk_tier,Medication and risk,1000,0,0.0,4,Medium,720,0.72,Medium (720); Low (161); High (117); Very High (2)
+case_manager_name,Program / operations,1000,0,0.0,15,CM_04,79,0.079,CM_04 (79); CM_12 (76); CM_01 (73); CM_08 (73); CM_03 (70)
+client_contract,Program / operations,1000,0,0.0,3,Contract_A,436,0.436,Contract_A (436); Contract_B (360); Contract_C (204)
+program,Program / operations,1000,0,0.0,3,CM,543,0.543,CM (543); BH_CM (254); Complex_CM (203)
+service_region,Program / operations,1000,0,0.0,5,East,208,0.208,East (208); North (206); South (205); West (196); Central (185)
