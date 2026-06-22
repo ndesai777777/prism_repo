@@ -46,14 +46,14 @@ Include the following objectives:
 - Identify data, modeling, and operational considerations before live deployment.
 - Demonstrate a reproducible workflow that can be reused with a future client dataset.
 
-## Analytical Task 1: Understand And Explain The Modeling Framework
+## Analytical Task 1: Understanding And Explaining The Modeling Framework
 
 ### Outcome Variable
 
 Include:
 
 - Outcome: `outcome_ed_90d`
-- Interpretation: binary indicator for whether a member had ED utilization within 90 days.
+- Interpretation: binary indicator for whether a member had Emergency Department utilization within 90 days.
 - Modeling goal: estimate the probability of this outcome under treated and untreated scenarios.
 
 ### Treatment Variable
@@ -61,7 +61,7 @@ Include:
 Include:
 
 - Treatment: `intervention_flag`
-- Interpretation: whether the member received the care management intervention.
+- Interpretation: whether the member received the care management intervention, 0 indicating no intervention and 1 indicating intervention.
 
 ### Predictor Variables
 
