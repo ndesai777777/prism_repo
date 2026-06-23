@@ -161,12 +161,12 @@ A positive observed gap means the control members in that decile had a higher ob
 The final column checks whether the model's average predicted benefit falls within the observed gap's 95% confidence interval:
 
 ```text
-gap_ci_lower_95 <= avg_predicted_benefit <= gap_ci_upper_95
+observed_gap_ci_lower_95 <= avg_predicted_benefit <= observed_gap_ci_upper_95
 ```
 
 This is a model plausibility check. If the predicted benefit falls within the observed gap CI, the model's estimated benefit is consistent with the observed treated-control difference for that decile. This does not strongly confirm the model, especially when the CI is wide, but it means the prediction is not contradicted by the observed data.
 
-| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | 95% CI lower | 95% CI upper | Predicted benefit within 95% CI |
+| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | Observed gap 95% CI lower | Observed gap 95% CI upper | Predicted benefit within observed gap 95% CI |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.5010 | 0.1794 | Yes |
 | XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.3539 | 0.1610 | Yes |
