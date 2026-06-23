@@ -235,7 +235,7 @@ This section applies the T-learner outputs at the member level. Each member rece
 benefit_score = pred_ed_if_control - pred_ed_if_treated
 ```
 
-A higher benefit score means the model predicts a larger reduction in ED risk under intervention. A near-zero benefit score means the model predicts little difference between treatment and no treatment. A negative benefit score means the model predicts a higher ED probability under treatment than under no treatment; this should be interpreted cautiously, but operationally it means the member would not be prioritized based on predicted benefit.
+A higher benefit score means the model predicts a larger reduction in ED risk under intervention. A near-zero benefit score means the model predicts little difference between treatment and no treatment. A negative benefit score means the model predicts a higher ED probability under treatment than under no treatment; this should be interpreted cautiously, but operationally it means the member would not be prioritized based on predicted benefit. In uplift modeling, these negative-benefit cases are sometimes called **sleeping dogs**: cases where outreach may be unnecessary or potentially counterproductive. In this project, a sleeping-dog score should not be interpreted as proof that intervention causes harm, but it is useful as a prioritization warning.
 
 The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
@@ -257,7 +257,7 @@ The table above shows the highest-benefit members, but benefit scores are most u
 | High benefit | 0.04 | 0.38 | 0.34 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
 | High risk, low benefit | 0.30 | 0.32 | 0.02 | Clinically high risk, but the model does not predict a large intervention effect. |
 | Low risk, low benefit | 0.02 | 0.03 | 0.01 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
-| Possible negative benefit | 0.08 | 0.05 | -0.03 | Not prioritized by uplift score because predicted risk is not lower under treatment. |
+| Possible negative benefit, or sleeping dog | 0.08 | 0.05 | -0.03 | Not prioritized by uplift score because predicted risk is not lower under treatment. |
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
