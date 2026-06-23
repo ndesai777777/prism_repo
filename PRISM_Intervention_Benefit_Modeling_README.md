@@ -156,7 +156,7 @@ The observed control-treated gap is calculated as:
 control observed ED rate - treated observed ED rate
 ```
 
-A positive observed gap means the control members in that decile had a higher observed ED rate than treated members, which directionally supports the model's benefit ranking. A negative gap means treated members had a higher observed ED rate than controls in that decile. The 95% confidence interval describes uncertainty around the observed gap. Because each decile has only 30 members and the treated/control split within each decile is smaller, these intervals are wide.
+A positive observed gap means the control members in that decile had a higher observed ED rate than treated members, which directionally supports the model's benefit ranking. A negative gap means treated members had a higher observed ED rate than controls in that decile. The 95% confidence interval describes uncertainty around the observed gap. Because each decile has only 30 members and the treated/control split within each decile is smaller, these intervals are wide. The notebook uses a Newcombe/Wilson confidence interval for the difference in proportions so that deciles with zero observed events still retain appropriate uncertainty instead of collapsing to a zero-width interval.
 
 The final column checks whether the model's average predicted benefit falls within the observed gap's 95% confidence interval:
 
@@ -168,32 +168,32 @@ This is a model plausibility check. If the predicted benefit falls within the ob
 
 | Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | 95% CI lower | 95% CI upper | Predicted benefit within 95% CI |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.4157 | 0.1157 | Yes |
-| XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.2397 | 0.0730 | Yes |
-| XGBoost | 3 | 30 | 13 | 17 | 0.0697 | 0.0588 | -0.0530 | 0.1707 | Yes |
-| XGBoost | 4 | 30 | 8 | 22 | 0.0674 | 0.0455 | -0.0416 | 0.1325 | Yes |
-| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | 0.0000 | 0.0000 | No |
-| XGBoost | 6 | 30 | 11 | 19 | 0.0614 | 0.0144 | -0.2045 | 0.2332 | Yes |
-| XGBoost | 7 | 30 | 10 | 20 | 0.0564 | 0.1500 | -0.0065 | 0.3065 | Yes |
-| XGBoost | 8 | 30 | 16 | 14 | 0.0505 | 0.0804 | -0.1380 | 0.2987 | Yes |
-| XGBoost | 9 | 30 | 12 | 18 | 0.0429 | 0.1111 | -0.0341 | 0.2563 | Yes |
-| XGBoost | 10 | 30 | 16 | 14 | 0.0269 | 0.0089 | -0.1707 | 0.1886 | Yes |
-| GLMNet | 1 | 30 | 11 | 19 | 0.1291 | 0.0813 | -0.2206 | 0.3833 | Yes |
-| GLMNet | 2 | 30 | 13 | 17 | 0.0794 | 0.0407 | -0.1701 | 0.2515 | Yes |
-| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | 0.0000 | 0.0000 | No |
-| GLMNet | 4 | 30 | 11 | 19 | 0.0441 | -0.0909 | -0.2608 | 0.0790 | Yes |
-| GLMNet | 5 | 30 | 9 | 21 | 0.0340 | -0.0635 | -0.2881 | 0.1611 | Yes |
-| GLMNet | 6 | 30 | 13 | 17 | 0.0260 | 0.0588 | -0.0530 | 0.1707 | Yes |
-| GLMNet | 7 | 30 | 17 | 13 | 0.0209 | -0.0588 | -0.1707 | 0.0530 | Yes |
-| GLMNet | 8 | 30 | 13 | 17 | 0.0153 | 0.1176 | -0.0355 | 0.2708 | Yes |
-| GLMNet | 9 | 30 | 10 | 20 | 0.0068 | 0.1000 | -0.0315 | 0.2315 | Yes |
-| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | 0.0000 | 0.0000 | No |
+| XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.5010 | 0.1794 | Yes |
+| XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.3539 | 0.1610 | Yes |
+| XGBoost | 3 | 30 | 13 | 17 | 0.0697 | 0.0588 | -0.2176 | 0.2698 | Yes |
+| XGBoost | 4 | 30 | 8 | 22 | 0.0674 | 0.0455 | -0.3163 | 0.2180 | Yes |
+| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | -0.2153 | 0.1936 | Yes |
+| XGBoost | 6 | 30 | 11 | 19 | 0.0614 | 0.0144 | -0.3480 | 0.2977 | Yes |
+| XGBoost | 7 | 30 | 10 | 20 | 0.0564 | 0.1500 | -0.2252 | 0.3604 | Yes |
+| XGBoost | 8 | 30 | 16 | 14 | 0.0505 | 0.0804 | -0.2432 | 0.3883 | Yes |
+| XGBoost | 9 | 30 | 12 | 18 | 0.0429 | 0.1111 | -0.2115 | 0.3280 | Yes |
+| XGBoost | 10 | 30 | 16 | 14 | 0.0269 | 0.0089 | -0.2706 | 0.3036 | Yes |
+| GLMNet | 1 | 30 | 11 | 19 | 0.1291 | 0.0813 | -0.3589 | 0.4365 | Yes |
+| GLMNet | 2 | 30 | 13 | 17 | 0.0794 | 0.0407 | -0.3003 | 0.3297 | Yes |
+| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | -0.1759 | 0.2425 | Yes |
+| GLMNet | 4 | 30 | 11 | 19 | 0.0441 | -0.0909 | -0.3774 | 0.1519 | Yes |
+| GLMNet | 5 | 30 | 9 | 21 | 0.0340 | -0.0635 | -0.4265 | 0.2068 | Yes |
+| GLMNet | 6 | 30 | 13 | 17 | 0.0260 | 0.0588 | -0.2176 | 0.2698 | Yes |
+| GLMNet | 7 | 30 | 17 | 13 | 0.0209 | -0.0588 | -0.2698 | 0.2176 | Yes |
+| GLMNet | 8 | 30 | 13 | 17 | 0.0153 | 0.1176 | -0.1952 | 0.3434 | Yes |
+| GLMNet | 9 | 30 | 10 | 20 | 0.0068 | 0.1000 | -0.2497 | 0.3010 | Yes |
+| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | -0.3543 | 0.1431 | Yes |
 
-The GLMNet top decile has an average predicted benefit of 0.1291 and a positive observed control-treated gap of 0.0813. The predicted benefit falls within the observed gap 95% CI of -0.2206 to 0.3833, which means the model's estimate is plausible relative to the observed data. However, the interval is wide, so this is directional support rather than definitive confirmation.
+The GLMNet top decile has an average predicted benefit of 0.1291 and a positive observed control-treated gap of 0.0813. The predicted benefit falls within the observed gap 95% CI of -0.3589 to 0.4365, which means the model's estimate is plausible relative to the observed data. However, the interval is wide, so this is directional support rather than definitive confirmation.
 
-XGBoost's top decile has an average predicted benefit of 0.0828, but its observed gap is -0.1500. The predicted benefit still falls within the 95% CI of -0.4157 to 0.1157, but the observed point estimate goes in the wrong direction. This makes the XGBoost top-decile result weaker than the GLMNet top-decile result.
+XGBoost's top decile has an average predicted benefit of 0.0828, but its observed gap is -0.1500. The predicted benefit still falls within the 95% CI of -0.5010 to 0.1794, but the observed point estimate goes in the wrong direction. This makes the XGBoost top-decile result weaker than the GLMNet top-decile result.
 
-Across all deciles, the predicted benefit falls within the observed gap 95% CI for 9 of 10 XGBoost deciles and 8 of 10 GLMNet deciles. This indicates that most decile-level predictions are plausible relative to the noisy observed gaps, but it should be interpreted cautiously because wide confidence intervals make it easier for predicted values to fall inside the interval.
+Across all deciles, the predicted benefit falls within the observed gap 95% CI for all XGBoost and GLMNet deciles. This indicates that the decile-level predictions are plausible relative to the noisy observed gaps, but it should be interpreted cautiously because wide confidence intervals make it easier for predicted values to fall inside the interval.
 
 ### Model Evaluation Takeaway
 
