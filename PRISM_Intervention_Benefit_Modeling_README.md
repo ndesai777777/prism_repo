@@ -38,7 +38,11 @@ The treatment variable is `intervention_flag`. It indicates whether the member r
 
 ### Predictor Variables
 
-Predictors were grouped into broad categories: demographics, clinical conditions, social needs, prior utilization/cost, medication/risk indicators, and program/operational fields. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
+Predictors were grouped into six defined categories: demographics, clinical conditions, SDOH, utilization, pharmacy, and risk scores. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
+
+The demographics category includes `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Clinical conditions include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, `pregnancy_flag`, and `behavioral_health_risk_flag`. SDOH variables include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
+
+Utilization variables include `pcp_visits_last_6m`, `specialist_visits_last_6m`, `ed_visits_last_30d`, `ed_visits_last_6m`, `admits_last_6m`, and `observation_stays_last_6m`. Pharmacy variables include `total_cost_last_6m`, `rx_count_last_6m`, `med_adherence_pdc`, `high_cost_drug_flag`, `opioid_flag`, and `polypharmacy_flag`. Risk score variables include the utilization, clinical, and SDOH score fields, plus `current_risk_score` and `risk_tier`.
 
 The final model uses 41 predictors before one-hot encoding: 32 numeric predictors and 9 categorical predictors. The categorical predictors are `client_contract`, `service_region`, `program`, `case_manager_name`, `gender`, `county`, `plan_type`, `language`, and `risk_tier`. After one-hot encoding, the modeling matrix contains 77 columns.
 
