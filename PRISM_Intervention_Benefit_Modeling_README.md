@@ -199,8 +199,6 @@ Across all deciles, the predicted benefit falls within the observed gap 95% CI f
 
 Overall, GLMNet is the stronger model in this run. It generalizes better on held-out treated and control test AUC, has lower Brier scores, has lower calibration error, and shows a positive observed control-treated gap in the highest predicted-benefit decile. The predicted benefit for GLMNet's top decile also falls within the observed gap's 95% confidence interval. The uncertainty around the observed gaps remains large, so the result should be interpreted as directionally supportive rather than definitive.
 
-ROI is intentionally not used as a primary model performance metric in this section. ROI depends on external business assumptions such as ED visit cost, intervention cost, and targeting capacity. Model evaluation focuses on discrimination, probability accuracy, calibration, predicted benefit ranking, and observed treated-control gaps. ROI is reported separately as a business value assessment after model evaluation.
-
 Supporting files:
 
 - [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
