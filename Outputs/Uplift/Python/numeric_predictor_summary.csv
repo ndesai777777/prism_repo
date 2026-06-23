@@ -1,34 +1,34 @@
 variable,category,n,missing_count,missing_pct,mean,median,std,min,p25,p75,max
-anxiety_flag,Clinical conditions,1000,0,0.0,0.273,0.0,0.4457237593730782,0.0,0.0,1.0,1.0
-asthma_flag,Clinical conditions,1000,0,0.0,0.168,0.0,0.3740533597174552,0.0,0.0,0.0,1.0
-behavioral_health_risk_flag,Clinical conditions,1000,0,0.0,0.407,0.0,0.4915206939617015,0.0,0.0,1.0,1.0
-chf_flag,Clinical conditions,1000,0,0.0,0.149,0.0,0.35626665003326635,0.0,0.0,0.0,1.0
-ckd_flag,Clinical conditions,1000,0,0.0,0.153,0.0,0.3601676286407771,0.0,0.0,0.0,1.0
-copd_flag,Clinical conditions,1000,0,0.0,0.174,0.0,0.37929917989348183,0.0,0.0,0.0,1.0
-depression_flag,Clinical conditions,1000,0,0.0,0.287,0.0,0.4525879316064844,0.0,0.0,1.0,1.0
-diabetes_flag,Clinical conditions,1000,0,0.0,0.314,0.0,0.4643485970901814,0.0,0.0,1.0,1.0
-pregnancy_flag,Clinical conditions,1000,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
-substance_use_flag,Clinical conditions,1000,0,0.0,0.16,0.0,0.366789496216201,0.0,0.0,0.0,1.0
+anxiety_flag,Clinical Conditions,1000,0,0.0,0.273,0.0,0.4457237593730782,0.0,0.0,1.0,1.0
+asthma_flag,Clinical Conditions,1000,0,0.0,0.168,0.0,0.3740533597174552,0.0,0.0,0.0,1.0
+behavioral_health_risk_flag,Clinical Conditions,1000,0,0.0,0.407,0.0,0.4915206939617015,0.0,0.0,1.0,1.0
+chf_flag,Clinical Conditions,1000,0,0.0,0.149,0.0,0.35626665003326635,0.0,0.0,0.0,1.0
+ckd_flag,Clinical Conditions,1000,0,0.0,0.153,0.0,0.3601676286407771,0.0,0.0,0.0,1.0
+copd_flag,Clinical Conditions,1000,0,0.0,0.174,0.0,0.37929917989348183,0.0,0.0,0.0,1.0
+depression_flag,Clinical Conditions,1000,0,0.0,0.287,0.0,0.4525879316064844,0.0,0.0,1.0,1.0
+diabetes_flag,Clinical Conditions,1000,0,0.0,0.314,0.0,0.4643485970901814,0.0,0.0,1.0,1.0
+pregnancy_flag,Clinical Conditions,1000,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+substance_use_flag,Clinical Conditions,1000,0,0.0,0.16,0.0,0.366789496216201,0.0,0.0,0.0,1.0
 age,Demographics,1000,0,0.0,57.354,57.0,14.77921205981933,18.0,48.0,68.0,90.0
 dual_eligible,Demographics,1000,0,0.0,0.283,0.0,0.45068183246511523,0.0,0.0,1.0,1.0
-current_risk_score,Medication and risk,1000,0,0.0,43.6183,42.8,9.458609856126344,14.5,37.1,49.4,79.8
-high_cost_drug_flag,Medication and risk,1000,0,0.0,0.149,0.0,0.3562666500332664,0.0,0.0,0.0,1.0
-med_adherence_pdc,Medication and risk,1000,0,0.0,0.757421,0.7775000000000001,0.1377611261818329,0.238,0.68,0.85725,0.997
-opioid_flag,Medication and risk,1000,0,0.0,0.135,0.0,0.3418945625363058,0.0,0.0,0.0,1.0
-percolator_clinical_score,Medication and risk,1000,0,0.0,46.24,44.7,13.783830889632751,12.7,36.6,54.125,96.5
-percolator_sdoh_score,Medication and risk,1000,0,0.0,35.523199999999996,33.9,13.644978094053036,2.9,25.5,43.824999999999996,85.0
-percolator_utilization_score,Medication and risk,1000,0,0.0,45.172799999999995,44.0,12.878598466388276,13.9,36.4,52.4,100.0
-polypharmacy_flag,Medication and risk,1000,0,0.0,0.086,0.0,0.28050433629924987,0.0,0.0,0.0,1.0
-rx_count_last_6m,Medication and risk,1000,0,0.0,6.2,6.0,3.5217044740299266,0.0,4.0,8.0,20.0
-admits_last_6m,Prior utilization and cost,1000,0,0.0,0.339,0.0,0.613559659247131,0.0,0.0,1.0,4.0
-ed_visits_last_30d,Prior utilization and cost,1000,0,0.0,0.222,0.0,0.4742793912251944,0.0,0.0,0.0,2.0
-ed_visits_last_6m,Prior utilization and cost,1000,0,0.0,0.85,1.0,0.9604282494920807,0.0,0.0,1.0,5.0
-observation_stays_last_6m,Prior utilization and cost,1000,0,0.0,0.278,0.0,0.5468226540799266,0.0,0.0,0.0,4.0
-pcp_visits_last_6m,Prior utilization and cost,1000,0,0.0,3.269,3.0,1.8363036271300592,0.0,2.0,4.0,9.0
-specialist_visits_last_6m,Prior utilization and cost,1000,0,0.0,1.369,1.0,1.2026160173909566,0.0,0.0,2.0,7.0
-total_cost_last_6m,Prior utilization and cost,1000,0,0.0,4102.29899,3658.5699999999997,1898.5964925118392,1092.95,2690.125,5134.615,12520.11
-food_insecurity_flag,Social needs,1000,0,0.0,0.223,0.0,0.41646661864361284,0.0,0.0,0.0,1.0
-housing_instability_flag,Social needs,1000,0,0.0,0.181,0.0,0.3852108349818153,0.0,0.0,0.0,1.0
-living_alone_flag,Social needs,1000,0,0.0,0.249,0.0,0.43265018916693676,0.0,0.0,0.0,1.0
-transportation_barrier_flag,Social needs,1000,0,0.0,0.246,0.0,0.430894035314565,0.0,0.0,0.0,1.0
-utilities_insecurity_flag,Social needs,1000,0,0.0,0.168,0.0,0.3740533597174551,0.0,0.0,0.0,1.0
+living_alone_flag,Demographics,1000,0,0.0,0.249,0.0,0.43265018916693676,0.0,0.0,0.0,1.0
+high_cost_drug_flag,Pharmacy,1000,0,0.0,0.149,0.0,0.3562666500332664,0.0,0.0,0.0,1.0
+med_adherence_pdc,Pharmacy,1000,0,0.0,0.757421,0.7775000000000001,0.1377611261818329,0.238,0.68,0.85725,0.997
+opioid_flag,Pharmacy,1000,0,0.0,0.135,0.0,0.3418945625363058,0.0,0.0,0.0,1.0
+polypharmacy_flag,Pharmacy,1000,0,0.0,0.086,0.0,0.28050433629924987,0.0,0.0,0.0,1.0
+rx_count_last_6m,Pharmacy,1000,0,0.0,6.2,6.0,3.5217044740299266,0.0,4.0,8.0,20.0
+total_cost_last_6m,Pharmacy,1000,0,0.0,4102.29899,3658.5699999999997,1898.5964925118392,1092.95,2690.125,5134.615,12520.11
+current_risk_score,Risk Scores,1000,0,0.0,43.6183,42.8,9.458609856126344,14.5,37.1,49.4,79.8
+percolator_clinical_score,Risk Scores,1000,0,0.0,46.24,44.7,13.783830889632751,12.7,36.6,54.125,96.5
+percolator_sdoh_score,Risk Scores,1000,0,0.0,35.523199999999996,33.9,13.644978094053036,2.9,25.5,43.824999999999996,85.0
+percolator_utilization_score,Risk Scores,1000,0,0.0,45.172799999999995,44.0,12.878598466388276,13.9,36.4,52.4,100.0
+food_insecurity_flag,SDOH,1000,0,0.0,0.223,0.0,0.41646661864361284,0.0,0.0,0.0,1.0
+housing_instability_flag,SDOH,1000,0,0.0,0.181,0.0,0.3852108349818153,0.0,0.0,0.0,1.0
+transportation_barrier_flag,SDOH,1000,0,0.0,0.246,0.0,0.430894035314565,0.0,0.0,0.0,1.0
+utilities_insecurity_flag,SDOH,1000,0,0.0,0.168,0.0,0.3740533597174551,0.0,0.0,0.0,1.0
+admits_last_6m,Utilization,1000,0,0.0,0.339,0.0,0.613559659247131,0.0,0.0,1.0,4.0
+ed_visits_last_30d,Utilization,1000,0,0.0,0.222,0.0,0.4742793912251944,0.0,0.0,0.0,2.0
+ed_visits_last_6m,Utilization,1000,0,0.0,0.85,1.0,0.9604282494920807,0.0,0.0,1.0,5.0
+observation_stays_last_6m,Utilization,1000,0,0.0,0.278,0.0,0.5468226540799266,0.0,0.0,0.0,4.0
+pcp_visits_last_6m,Utilization,1000,0,0.0,3.269,3.0,1.8363036271300592,0.0,2.0,4.0,9.0
+specialist_visits_last_6m,Utilization,1000,0,0.0,1.369,1.0,1.2026160173909566,0.0,0.0,2.0,7.0

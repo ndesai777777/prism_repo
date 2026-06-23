@@ -1,4 +1,4 @@
-model,through_uplift_decile,population_fraction_targeted,n,treated_n,control_n,treated_events,control_events,avg_predicted_benefit,observed_control_minus_treated_gap,gap_ci_lower_95,gap_ci_upper_95,gap_ci_includes_zero_95
+model,through_uplift_decile,population_fraction_targeted,n,treated_n,control_n,treated_events,control_events,avg_predicted_benefit,observed_control_minus_treated_gap,gap_ci_lower_95,gap_ci_upper_95,predicted_benefit_within_gap_ci_95
 GLMNET,1,0.1,30,11,19,2,5,0.12914067705772447,0.08133971291866027,-0.22057895723012383,0.38325838306744436,True
 GLMNET,2,0.2,60,24,36,3,7,0.10426713016433062,0.06944444444444445,-0.11554424456687895,0.25443313345576785,True
 GLMNET,3,0.3,90,42,48,3,7,0.08882663224531037,0.07440476190476192,-0.05222662270358572,0.20103614651310955,True
