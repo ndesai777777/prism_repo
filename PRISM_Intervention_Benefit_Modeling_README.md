@@ -38,7 +38,7 @@ The treatment variable is `intervention_flag`. It indicates whether the member r
 
 ### Predictor Variables
 
-Predictors were grouped into six defined categories: demographics, clinical conditions, SDOH, utilization, pharmacy, and risk scores. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
+Predictors were grouped into six defined categories: demographics, clinical conditions, social determinants of health (SDOH), utilization, pharmacy, and risk scores. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
 
 The demographics category includes `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Clinical conditions include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, `pregnancy_flag`, and `behavioral_health_risk_flag`. SDOH variables include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
 
