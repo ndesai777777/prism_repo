@@ -144,6 +144,22 @@ Based on the held-out test AUC values, GLMNet generalizes better than XGBoost in
 
 AUC alone is not enough for this project. AUC only tells us whether the model ranks risk well; it does not tell us whether predicted probabilities are accurate in magnitude. Brier score adds that information by measuring individual-level probability error, where lower values are better. Calibration error adds another probability-quality check by comparing average predicted ED rates with observed ED rates within predicted-risk groups. These metrics matter because the uplift score is a difference between two predicted probabilities. If the treated or control probabilities are poorly calibrated, the estimated benefit magnitude can be misleading even when AUC is acceptable.
 
+The Brier score is calculated as the average squared difference between the observed outcome and the predicted probability:
+
+```text
+Brier score = (1 / n) * sum((outcome_i - predicted_probability_i)^2)
+```
+
+In this project, a lower Brier score means the model's predicted ED probabilities are closer to the observed 0/1 ED outcomes.
+
+Calibration error is calculated by grouping members into predicted-risk bins, comparing each bin's average predicted ED rate with its observed ED rate, and then taking a weighted average of the absolute differences:
+
+```text
+Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
+```
+
+In this project, lower calibration error means the predicted ED probabilities better match observed ED rates across risk groups.
+
 In the current results, GLMNet also performs slightly better on probability quality. Its treated and control Brier scores are lower than XGBoost's, and its calibration errors are lower, especially for the control model. This supports using GLMNet as the stronger candidate model for the model evaluation discussion.
 
 ### Uplift Ranking And Decile Evaluation
