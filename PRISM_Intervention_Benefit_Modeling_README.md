@@ -229,9 +229,15 @@ Supporting files:
 
 ## Analytical Task 4: Treatment Effect Analysis
 
-The treatment effect analysis compares each member's predicted ED probability if treated with the same member's predicted ED probability if untreated. The difference between these two probabilities is the predicted benefit score.
+This section applies the T-learner outputs at the member level. Each member receives two predicted ED probabilities: one assuming the member receives intervention and one assuming the member does not receive intervention. The benefit score is the difference between those two predicted probabilities:
 
-For example, a member with high predicted ED risk under control and much lower predicted ED risk under treatment receives a high benefit score. A member with high predicted ED risk in both scenarios may still be clinically high risk, but the model may not consider that member highly impactable by intervention.
+```text
+benefit_score = pred_ed_if_control - pred_ed_if_treated
+```
+
+A higher benefit score means the model predicts a larger reduction in ED risk under intervention. A near-zero benefit score means the model predicts little difference between treatment and no treatment. A negative benefit score means the model predicts a higher ED probability under treatment than under no treatment; this should be interpreted cautiously, but operationally it means the member would not be prioritized based on predicted benefit.
+
+The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
 Current high-benefit examples from the scored outputs:
 
@@ -243,6 +249,17 @@ Current high-benefit examples from the scored outputs:
 | GLMNet | Second highest benefit | 0 | 1 | 0.0375 | 0.3242 | 0.2867 | 1 |
 
 The GLMNet examples show larger predicted benefit scores than the XGBoost examples. In the highest GLMNet example, the predicted untreated ED probability is 0.3806 and the predicted treated ED probability is 0.0380, giving a predicted benefit of 0.3426. This means the model estimates a 34.26 percentage point reduction in ED probability under treatment for that member.
+
+The table above shows the highest-benefit members, but benefit scores are most useful when comparing different member profiles. The examples below show how the same output fields can support outreach prioritization:
+
+| Member comparison type | Predicted ED if treated | Predicted ED if control | Benefit score | Outreach interpretation |
+|---|---:|---:|---:|---|
+| High benefit | 0.04 | 0.38 | 0.34 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
+| High risk, low benefit | 0.30 | 0.32 | 0.02 | Clinically high risk, but the model does not predict a large intervention effect. |
+| Low risk, low benefit | 0.02 | 0.03 | 0.01 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
+| Possible negative benefit | 0.08 | 0.05 | -0.03 | Not prioritized by uplift score because predicted risk is not lower under treatment. |
+
+This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
 Supporting files:
 
