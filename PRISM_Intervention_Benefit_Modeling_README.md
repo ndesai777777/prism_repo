@@ -138,7 +138,7 @@ AUC, or area under the ROC curve, measures discrimination: how well a model rank
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | XGBoost | 0.8038 | 0.6290 | 0.5216 | 0.6503 | 0.0479 | 0.0707 | 0.0534 | 0.0633 |
-| GLMNET | 0.8033 | 0.6305 | 0.7126 | 0.6695 | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
+| GLMNet | 0.8033 | 0.6305 | 0.7126 | 0.6695 | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
 
 Based on the held-out test AUC values, GLMNet generalizes better than XGBoost in the current run. GLMNet has a treated test AUC of 0.7126 and a control test AUC of 0.6695, compared with XGBoost's treated test AUC of 0.5216 and control test AUC of 0.6503. Averaging treated and control test AUC, GLMNet is about 0.691, while XGBoost is about 0.586. This suggests that GLMNet is the more reliable outcome-risk model in this version of the analysis.
 
@@ -156,15 +156,23 @@ The observed control-treated gap is calculated as:
 control observed ED rate - treated observed ED rate
 ```
 
-A positive observed gap means the control members in that decile had a higher observed ED rate than treated members, which directionally supports the model's benefit ranking. A negative gap means treated members had a higher observed ED rate than controls in that decile. The 95% confidence interval is included because each decile has only 30 members, and the treated/control split within each decile is smaller. With rare ED outcomes, these observed gaps are noisy.
+A positive observed gap means the control members in that decile had a higher observed ED rate than treated members, which directionally supports the model's benefit ranking. A negative gap means treated members had a higher observed ED rate than controls in that decile. The 95% confidence interval describes uncertainty around the observed gap. Because each decile has only 30 members and the treated/control split within each decile is smaller, these intervals are wide.
 
-| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | 95% CI lower | 95% CI upper | CI includes 0 |
+The final column checks whether the model's average predicted benefit falls within the observed gap's 95% confidence interval:
+
+```text
+gap_ci_lower_95 <= avg_predicted_benefit <= gap_ci_upper_95
+```
+
+This is a model plausibility check. If the predicted benefit falls within the observed gap CI, the model's estimated benefit is consistent with the observed treated-control difference for that decile. This does not strongly confirm the model, especially when the CI is wide, but it means the prediction is not contradicted by the observed data.
+
+| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | 95% CI lower | 95% CI upper | Predicted benefit within 95% CI |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.4157 | 0.1157 | Yes |
 | XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.2397 | 0.0730 | Yes |
 | XGBoost | 3 | 30 | 13 | 17 | 0.0697 | 0.0588 | -0.0530 | 0.1707 | Yes |
 | XGBoost | 4 | 30 | 8 | 22 | 0.0674 | 0.0455 | -0.0416 | 0.1325 | Yes |
-| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | 0.0000 | 0.0000 | Yes |
+| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | 0.0000 | 0.0000 | No |
 | XGBoost | 6 | 30 | 11 | 19 | 0.0614 | 0.0144 | -0.2045 | 0.2332 | Yes |
 | XGBoost | 7 | 30 | 10 | 20 | 0.0564 | 0.1500 | -0.0065 | 0.3065 | Yes |
 | XGBoost | 8 | 30 | 16 | 14 | 0.0505 | 0.0804 | -0.1380 | 0.2987 | Yes |
@@ -172,22 +180,24 @@ A positive observed gap means the control members in that decile had a higher ob
 | XGBoost | 10 | 30 | 16 | 14 | 0.0269 | 0.0089 | -0.1707 | 0.1886 | Yes |
 | GLMNet | 1 | 30 | 11 | 19 | 0.1291 | 0.0813 | -0.2206 | 0.3833 | Yes |
 | GLMNet | 2 | 30 | 13 | 17 | 0.0794 | 0.0407 | -0.1701 | 0.2515 | Yes |
-| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | 0.0000 | 0.0000 | Yes |
+| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | 0.0000 | 0.0000 | No |
 | GLMNet | 4 | 30 | 11 | 19 | 0.0441 | -0.0909 | -0.2608 | 0.0790 | Yes |
 | GLMNet | 5 | 30 | 9 | 21 | 0.0340 | -0.0635 | -0.2881 | 0.1611 | Yes |
 | GLMNet | 6 | 30 | 13 | 17 | 0.0260 | 0.0588 | -0.0530 | 0.1707 | Yes |
 | GLMNet | 7 | 30 | 17 | 13 | 0.0209 | -0.0588 | -0.1707 | 0.0530 | Yes |
 | GLMNet | 8 | 30 | 13 | 17 | 0.0153 | 0.1176 | -0.0355 | 0.2708 | Yes |
 | GLMNet | 9 | 30 | 10 | 20 | 0.0068 | 0.1000 | -0.0315 | 0.2315 | Yes |
-| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | 0.0000 | 0.0000 | Yes |
+| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | 0.0000 | 0.0000 | No |
 
-The GLMNet top decile has an average predicted benefit of 0.1291 and a positive observed control-treated gap of 0.0813. This is directionally consistent with the model identifying a high-benefit group. However, the 95% confidence interval ranges from -0.2206 to 0.3833, so the observed gap is uncertain and includes zero. XGBoost's top decile has an average predicted benefit of 0.0828, but its observed gap is -0.1500, which does not support the top-decile ranking directionally.
+The GLMNet top decile has an average predicted benefit of 0.1291 and a positive observed control-treated gap of 0.0813. The predicted benefit falls within the observed gap 95% CI of -0.2206 to 0.3833, which means the model's estimate is plausible relative to the observed data. However, the interval is wide, so this is directional support rather than definitive confirmation.
 
-Across all deciles, the confidence intervals are wide and all include zero. This does not mean the model has no value; it means the decile-level observed gaps are not precise enough to be treated as definitive causal estimates. The decile table is best interpreted as a practical ranking sanity check: higher predicted benefit deciles should ideally show positive observed gaps, but the current sample size limits how strongly those observed gaps can validate the model.
+XGBoost's top decile has an average predicted benefit of 0.0828, but its observed gap is -0.1500. The predicted benefit still falls within the 95% CI of -0.4157 to 0.1157, but the observed point estimate goes in the wrong direction. This makes the XGBoost top-decile result weaker than the GLMNet top-decile result.
+
+Across all deciles, the predicted benefit falls within the observed gap 95% CI for 9 of 10 XGBoost deciles and 8 of 10 GLMNet deciles. This indicates that most decile-level predictions are plausible relative to the noisy observed gaps, but it should be interpreted cautiously because wide confidence intervals make it easier for predicted values to fall inside the interval.
 
 ### Model Evaluation Takeaway
 
-Overall, GLMNet is the stronger model in this run. It generalizes better on held-out treated and control test AUC, has lower Brier scores, has lower calibration error, and shows a positive observed control-treated gap in the highest predicted-benefit decile. The uncertainty around the observed gap remains large, so the result should be interpreted as directionally supportive rather than definitive.
+Overall, GLMNet is the stronger model in this run. It generalizes better on held-out treated and control test AUC, has lower Brier scores, has lower calibration error, and shows a positive observed control-treated gap in the highest predicted-benefit decile. The predicted benefit for GLMNet's top decile also falls within the observed gap's 95% confidence interval. The uncertainty around the observed gaps remains large, so the result should be interpreted as directionally supportive rather than definitive.
 
 ROI is intentionally not used as a primary model performance metric in this section. ROI depends on external business assumptions such as ED visit cost, intervention cost, and targeting capacity. Model evaluation focuses on discrimination, probability accuracy, calibration, predicted benefit ranking, and observed treated-control gaps. ROI is reported separately as a business value assessment after model evaluation.
 
