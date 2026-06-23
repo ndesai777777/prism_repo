@@ -84,6 +84,16 @@ A higher benefit score means the model predicts a larger reduction in ED risk if
 
 Separate treated and control models are useful because the relationship between member features and ED risk may differ depending on whether a member receives the intervention. A single risk model can identify members who are likely to have an ED visit, but it does not directly estimate whether the intervention changes that risk.
 
+### Modeling Techniques Used
+
+Two modeling techniques were used inside the T-learner framework: XGBoost and GLMNet. Both techniques were used to estimate the same two quantities for each member: predicted ED risk if treated and predicted ED risk if untreated. The difference is how each technique learns the relationship between member features and ED risk.
+
+XGBoost is a tree-based machine learning method. It builds many small decision trees sequentially, where each new tree attempts to correct errors made by the previous trees. Each tree splits members into groups based on predictor values, such as risk scores, utilization history, diagnosis flags, or demographic variables. The final XGBoost prediction is the combined output of all trees. In this project, one XGBoost model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
+
+GLMNet is a regularized logistic regression approach. Logistic regression estimates the probability of a binary outcome by assigning weights, or coefficients, to predictor variables. GLMNet adds regularization, which shrinks coefficients and can reduce overfitting when there are many related predictors. In this project, GLMNet uses an elastic-net penalty, which combines ridge-style shrinkage and lasso-style feature selection. As with XGBoost, one GLMNet model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
+
+The two approaches provide different strengths. XGBoost can capture nonlinear relationships and interactions between features, while GLMNet is more linear and easier to interpret through coefficients and model contributions. Comparing both methods helps evaluate whether the uplift findings are stable across a flexible tree-based model and a more interpretable regularized regression model.
+
 ## Analytical Task 2: Data Review
 
 The current dataset contains 1,000 members. Of these, 394 received intervention and 606 were untreated/control members, giving an overall treatment rate of 39.4%. The ED outcome is relatively rare: 60 members had a 90-day ED event, for an overall outcome prevalence of 6.0%.
