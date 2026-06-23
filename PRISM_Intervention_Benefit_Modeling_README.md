@@ -123,7 +123,7 @@ The cross-validation AUC values are useful for model selection during training, 
 
 ### Overall Outcome Model Performance
 
-AUC, or area under the ROC curve, measures discrimination: how well a model ranks members who had an ED outcome above members who did not. In this context, treated AUC evaluates ED risk ranking among treated members using `pred_ed_if_treated`, and control AUC evaluates ED risk ranking among untreated/control members using `pred_ed_if_control`. An AUC of 0.50 is no better than random ranking, while higher values indicate better discrimination.
+AUC, or area under the ROC curve, measures discrimination: how well a model ranks members who had an ED outcome above members who did not. In this context, treated AUC evaluates ED risk ranking among treated members using `pred_ed_if_treated`, and control AUC evaluates ED risk ranking among untreated/control members using `pred_ed_if_control`. An AUC of 0.50 is no better than random ranking, while higher values indicate better discrimination. For example, an AUC of 0.70 means that if one member with an ED outcome and one member without an ED outcome are randomly selected, the model has about a 70% chance of assigning the higher predicted ED risk to the member who actually had the ED outcome.
 
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
