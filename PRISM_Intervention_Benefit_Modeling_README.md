@@ -270,6 +270,29 @@ Supporting files:
 
 Members are ranked by predicted benefit score and split into 10 uplift deciles. Decile 1 is the highest predicted benefit group. This section evaluates whether the highest-ranked members show stronger predicted benefit and whether observed outcomes directionally support the ranking.
 
+Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and top-decile observed direction, the full decile review below focuses on GLMNet. Each decile contains 30 held-out test members.
+
+| Uplift decile | N | Avg benefit score | Observed ED rate | Avg predicted ED if treated | Avg predicted ED if control | Treatment pct |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 30 | 0.1291 | 0.2333 | 0.0375 | 0.1666 | 0.3667 |
+| 2 | 30 | 0.0794 | 0.1000 | 0.0372 | 0.1166 | 0.4333 |
+| 3 | 30 | 0.0579 | 0.0000 | 0.0371 | 0.0950 | 0.6000 |
+| 4 | 30 | 0.0441 | 0.0333 | 0.0369 | 0.0810 | 0.3667 |
+| 5 | 30 | 0.0340 | 0.0667 | 0.0369 | 0.0709 | 0.3000 |
+| 6 | 30 | 0.0260 | 0.0333 | 0.0368 | 0.0628 | 0.4333 |
+| 7 | 30 | 0.0209 | 0.0333 | 0.0369 | 0.0578 | 0.5667 |
+| 8 | 30 | 0.0153 | 0.0667 | 0.0368 | 0.0521 | 0.4333 |
+| 9 | 30 | 0.0068 | 0.0667 | 0.0369 | 0.0436 | 0.3333 |
+| 10 | 30 | -0.0038 | 0.0000 | 0.0368 | 0.0330 | 0.2333 |
+
+The average benefit score declines steadily from decile 1 to decile 10. This is the expected pattern because members are ranked by predicted benefit. The strongest predicted intervention benefit is concentrated in decile 1, followed by deciles 2 and 3. GLMNet decile 1 has an average predicted benefit of 0.1291, meaning the model estimates an average 12.91 percentage point ED risk reduction under intervention for that group.
+
+The predicted ED risk columns show why the benefit score is highest in the top deciles. The average predicted ED risk if treated is fairly stable at about 3.7% across deciles, while the average predicted ED risk if control falls from 16.66% in decile 1 to 3.30% in decile 10. This means GLMNet is mostly distinguishing benefit by identifying members whose untreated risk is high relative to their treated-risk prediction.
+
+Observed ED rates are noisy because each decile contains only 30 members and the overall ED outcome prevalence is 6.0%. Decile 1 has the highest observed ED rate at 23.33%, which suggests the model is identifying a high-risk/high-benefit segment. However, observed ED rate alone does not prove treatment benefit; the more relevant validation check is whether control members have higher observed ED rates than treated members within the same high-benefit decile.
+
+Treatment penetration varies across deciles rather than increasing smoothly with predicted benefit. For example, GLMNet decile 1 has a treatment rate of 36.67%, while decile 3 has a treatment rate of 60.00% and decile 10 has a treatment rate of 23.33%. This indicates that historical intervention assignment was not perfectly aligned with predicted benefit. Operationally, this is useful because the model may identify high-benefit members who were not consistently reached by past intervention patterns.
+
 | Model | Top decile n | Treated n | Control n | Avg predicted benefit | Observed ED rate | Treated observed ED rate | Control observed ED rate | Observed control-treated gap | Treatment pct |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | XGBoost | 30 | 10 | 20 | 0.0828 | 0.1000 | 0.2000 | 0.0500 | -0.1500 | 0.3333 |
