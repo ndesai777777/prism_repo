@@ -1,4 +1,4 @@
-model,through_uplift_decile,population_fraction_targeted,n,treated_n,control_n,treated_events,control_events,avg_predicted_benefit,observed_control_minus_treated_gap,gap_ci_lower_95,gap_ci_upper_95,predicted_benefit_within_gap_ci_95
+model,through_uplift_decile,population_fraction_targeted,n,treated_n,control_n,treated_events,control_events,avg_predicted_benefit,observed_control_minus_treated_gap,observed_gap_ci_lower_95,observed_gap_ci_upper_95,predicted_benefit_within_observed_gap_ci_95
 XGBoost,1,0.1,30,10,20,2,1,0.082797505,-0.15000000000000002,-0.5009560821755322,0.17944904452651433,True
 XGBoost,2,0.2,60,22,38,3,1,0.077712536,-0.11004784688995214,-0.32868928585463253,0.08745872568779811,True
 XGBoost,3,0.3,90,35,55,3,2,0.07504796,-0.04935064935064935,-0.21376319985550146,0.09365227269316555,True
