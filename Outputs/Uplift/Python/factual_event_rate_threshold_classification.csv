@@ -1,0 +1,5 @@
+model,group,prediction_column,threshold_rule,threshold,n,actual_positive_n,actual_negative_n,predicted_positive_n,predicted_negative_n,true_positive,false_positive,true_negative,false_negative,precision,recall
+XGBoost,Treated,pred_ed_if_treated,factual_group_test_event_rate,0.04918032786885246,122,6,116,122,0,6,116,0,0,0.04918032786885246,1.0
+XGBoost,Control,pred_ed_if_control,factual_group_test_event_rate,0.07303370786516854,178,13,165,178,0,13,165,0,0,0.07303370786516854,1.0
+GLMNET,Treated,pred_ed_if_treated,factual_group_test_event_rate,0.04918032786885246,122,6,116,0,122,0,0,116,6,,0.0
+GLMNET,Control,pred_ed_if_control,factual_group_test_event_rate,0.07303370786516854,178,13,165,70,108,7,63,102,6,0.1,0.5384615384615384
