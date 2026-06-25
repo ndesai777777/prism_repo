@@ -59,6 +59,13 @@ def yes_no(value: object) -> str:
     return "Yes" if str(value).strip().lower() in {"true", "1", "yes"} else "No"
 
 
+def first_present(row: dict[str, str], keys: list[str]) -> str:
+    for key in keys:
+        if key in row:
+            return row[key]
+    raise KeyError(f"None of these columns were found: {keys}")
+
+
 def markdown_table(headers: list[str], rows: list[list[object]], align_right: bool = True) -> str:
     align = "---:" if align_right else "---"
     lines = [
@@ -97,10 +104,6 @@ def model_performance_table() -> str:
                 fnum(row["control_cv_auc"]),
                 fnum(row["treated_test_auc"]),
                 fnum(row["control_test_auc"]),
-                fnum(row["treated_brier_score"]),
-                fnum(row["control_brier_score"]),
-                fnum(row["treated_calibration_error"]),
-                fnum(row["control_calibration_error"]),
             ]
         )
     return markdown_table(
@@ -110,6 +113,26 @@ def model_performance_table() -> str:
             "Control CV AUC",
             "Treated test AUC",
             "Control test AUC",
+        ],
+        rows,
+    )
+
+
+def brier_calibration_table() -> str:
+    rows = []
+    for row in read_csv(OUTPUT_ROOT / "model_evaluation_summary.csv"):
+        rows.append(
+            [
+                row["model"].replace("GLMNET", "GLMNet"),
+                fnum(row["treated_brier_score"]),
+                fnum(row["control_brier_score"]),
+                fnum(row["treated_calibration_error"]),
+                fnum(row["control_calibration_error"]),
+            ]
+        )
+    return markdown_table(
+        [
+            "Model",
             "Treated Brier",
             "Control Brier",
             "Treated calibration error",
@@ -237,9 +260,17 @@ def observed_gap_table() -> str:
                     int(float(row["control_n"])),
                     fnum(row["avg_predicted_benefit"]),
                     fnum(row["observed_control_minus_treated_gap"]),
-                    fnum(row["gap_ci_lower_95"]),
-                    fnum(row["gap_ci_upper_95"]),
-                    yes_no(row["predicted_benefit_within_gap_ci_95"]),
+                    fnum(first_present(row, ["gap_ci_lower_95", "observed_gap_ci_lower_95"])),
+                    fnum(first_present(row, ["gap_ci_upper_95", "observed_gap_ci_upper_95"])),
+                    yes_no(
+                        first_present(
+                            row,
+                            [
+                                "predicted_benefit_within_gap_ci_95",
+                                "predicted_benefit_within_observed_gap_ci_95",
+                            ],
+                        )
+                    ),
                 ]
             )
     return markdown_table(
@@ -390,6 +421,7 @@ def roi_table() -> str:
 GENERATORS: dict[str, Callable[[], str]] = {
     "data_review_summary": data_review_table,
     "model_performance_summary": model_performance_table,
+    "brier_calibration_summary": brier_calibration_table,
     "factual_event_counts": factual_event_counts_table,
     "factual_prediction_separation": factual_prediction_separation_table,
     "factual_top_risk_capture": factual_top_risk_capture_table,

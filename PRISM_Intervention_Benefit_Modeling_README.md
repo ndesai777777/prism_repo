@@ -157,10 +157,10 @@ This event-count table is important context for all performance metrics. With on
 Discrimination asks whether the model ranks actual ED-positive members above actual ED-negative members. In this project, treated AUC evaluates actual treated members using `pred_ed_if_treated`, and control AUC evaluates actual control members using `pred_ed_if_control`. This is the most direct test of whether each factual outcome model is learning useful risk ranking within the group it was trained to represent.
 
 <!-- AUTO_TABLE:model_performance_summary START -->
-| Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 0.8038 | 0.6290 | 0.5216 | 0.6503 | 0.0479 | 0.0707 | 0.0534 | 0.0633 |
-| GLMNet | 0.8033 | 0.6305 | 0.7126 | 0.6695 | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
+| Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC |
+| ---: | ---: | ---: | ---: | ---: |
+| XGBoost | 0.8038 | 0.6290 | 0.5216 | 0.6503 |
+| GLMNet | 0.8033 | 0.6305 | 0.7126 | 0.6695 |
 <!-- AUTO_TABLE:model_performance_summary END -->
 
 GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also slightly better. XGBoost's treated test AUC is close to random ranking, which makes the XGBoost treated outcome model weak in the held-out sample. GLMNet is therefore the stronger candidate for outcome-risk ranking.
@@ -172,7 +172,10 @@ AUC is useful, but it can feel abstract. A more direct diagnostic is whether act
 <!-- AUTO_TABLE:factual_prediction_separation START -->
 | Model | Group | Positive events | Negative events | AUC | Avg pred for ED=1 | Avg pred for ED=0 | Avg difference | Median pred for ED=1 | Median pred for ED=0 |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Pending notebook output | Pending | 0 | 0 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| XGBoost | Treated | 6 | 116 | 0.5216 | 0.0812 | 0.0792 | 0.0020 | 0.0751 | 0.0721 |
+| XGBoost | Control | 13 | 165 | 0.6503 | 0.1434 | 0.1352 | 0.0082 | 0.1389 | 0.1320 |
+| GLMNet | Treated | 6 | 116 | 0.7126 | 0.0372 | 0.0370 | 0.0002 | 0.0373 | 0.0369 |
+| GLMNet | Control | 13 | 165 | 0.6695 | 0.1092 | 0.0735 | 0.0357 | 0.1149 | 0.0643 |
 <!-- AUTO_TABLE:factual_prediction_separation END -->
 
 This table is one of the most important diagnostics for the project. A useful risk model should assign higher average and median predicted risk to actual ED-positive members than to actual ED-negative members. If this separation is weak, then the model may have acceptable-looking calibration or Brier scores but still be poor at identifying which members are most likely to experience ED utilization.
@@ -186,7 +189,10 @@ The table below ranks each factual group by the relevant predicted ED risk and a
 <!-- AUTO_TABLE:factual_top_risk_capture START -->
 | Model | Group | Top-risk N | Top-risk events | Total events | Top-risk event rate | Event capture rate | Lift vs overall |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Pending notebook output | Pending | 0 | 0 | 0 | 0.0% | 0.0% | 0.00 |
+| XGBoost | Treated | 13 | 0 | 6 | 0.0% | 0.0% | 0.00 |
+| XGBoost | Control | 18 | 3 | 13 | 16.7% | 23.1% | 2.28 |
+| GLMNet | Treated | 13 | 2 | 6 | 15.4% | 33.3% | 3.13 |
+| GLMNet | Control | 18 | 5 | 13 | 27.8% | 38.5% | 3.80 |
 <!-- AUTO_TABLE:factual_top_risk_capture END -->
 
 This event-capture view is especially useful for care management prioritization. If the top-risk group captures a meaningful share of actual ED events and has a higher event rate than the overall factual group, then the model is doing more than predicting low probabilities for everyone. It is concentrating risk in a way that could support prioritization.
@@ -205,6 +211,13 @@ Calibration error groups members into predicted-risk bins, compares each bin's a
 Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
 ```
 
+<!-- AUTO_TABLE:brier_calibration_summary START -->
+| Model | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
+| ---: | ---: | ---: | ---: | ---: |
+| XGBoost | 0.0479 | 0.0707 | 0.0534 | 0.0633 |
+| GLMNet | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
+<!-- AUTO_TABLE:brier_calibration_summary END -->
+
 GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, and top-risk event capture.
 
 ### Prediction Range And Rare-Outcome Interpretation
@@ -214,7 +227,10 @@ The model is not expected to produce many probabilities above 0.50 because the E
 <!-- AUTO_TABLE:factual_prediction_ranges START -->
 | Model | Group | Min | P10 | Median | Mean | P90 | Max |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Pending notebook output | Pending | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| XGBoost | Treated | 0.0576 | 0.0591 | 0.0721 | 0.0793 | 0.1089 | 0.1210 |
+| XGBoost | Control | 0.1245 | 0.1250 | 0.1321 | 0.1358 | 0.1522 | 0.1748 |
+| GLMNet | Treated | 0.0366 | 0.0367 | 0.0370 | 0.0370 | 0.0374 | 0.0378 |
+| GLMNet | Control | 0.0235 | 0.0381 | 0.0653 | 0.0761 | 0.1313 | 0.2559 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
 This prediction-range table should be read together with the event rate. If the observed ED rate is around 6%, then predicted probabilities that mostly remain below 0.50 can still be reasonable. The stronger test is whether predicted risk is meaningfully higher among actual positives, whether high-risk bins have higher observed ED rates, and whether top-risk members capture a disproportionate share of ED events.
