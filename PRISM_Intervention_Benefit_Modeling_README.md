@@ -180,23 +180,6 @@ AUC is useful, but it can feel abstract. A more direct diagnostic is whether act
 
 This table is one of the most important diagnostics for the project. A useful risk model should assign higher average and median predicted risk to actual ED-positive members than to actual ED-negative members. If this separation is weak, then the model may have acceptable-looking calibration or Brier scores but still be poor at identifying which members are most likely to experience ED utilization.
 
-### Top-Risk Event Capture
-
-Accuracy is not a good primary metric for this project because the outcome is rare. A model that predicts every member as no ED event would have high raw accuracy but no practical value. A better operational question is whether the model concentrates actual ED events among the highest predicted-risk members.
-
-The table below ranks each factual group by the relevant predicted ED risk and asks how many observed ED events fall into the top 10% highest-risk members.
-
-<!-- AUTO_TABLE:factual_top_risk_capture START -->
-| Model | Group | Top-risk N | Top-risk events | Total events | Top-risk event rate | Event capture rate | Lift vs overall |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Treated | 13 | 0 | 6 | 0.0% | 0.0% | 0.00 |
-| XGBoost | Control | 18 | 3 | 13 | 16.7% | 23.1% | 2.28 |
-| GLMNet | Treated | 13 | 2 | 6 | 15.4% | 33.3% | 3.13 |
-| GLMNet | Control | 18 | 5 | 13 | 27.8% | 38.5% | 3.80 |
-<!-- AUTO_TABLE:factual_top_risk_capture END -->
-
-This event-capture view is especially useful for care management prioritization. If the top-risk group captures a meaningful share of actual ED events and has a higher event rate than the overall factual group, then the model is doing more than predicting low probabilities for everyone. It is concentrating risk in a way that could support prioritization.
-
 ### Brier Score And Calibration
 
 Brier score and calibration evaluate probability quality rather than ranking alone. Brier score measures the average squared difference between the observed outcome and predicted probability:
@@ -218,7 +201,7 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 | GLMNet | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
 <!-- AUTO_TABLE:brier_calibration_summary END -->
 
-GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, and top-risk event capture.
+GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, prediction range, and threshold-based classification behavior.
 
 ### Prediction Range And Rare-Outcome Interpretation
 
@@ -233,7 +216,29 @@ The model is not expected to produce many probabilities above 0.50 because the E
 | GLMNet | Control | 0.0235 | 0.0381 | 0.0653 | 0.0761 | 0.1313 | 0.2559 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-This prediction-range table should be read together with the event rate. If the observed ED rate is around 6%, then predicted probabilities that mostly remain below 0.50 can still be reasonable. The stronger test is whether predicted risk is meaningfully higher among actual positives, whether high-risk bins have higher observed ED rates, and whether top-risk members capture a disproportionate share of ED events.
+This table helps explain why threshold-based classification can behave differently from AUC. GLMNet's treated predictions are tightly compressed around 3.7%, so even small rank-order differences can produce a reasonable AUC while still producing almost no probability spread. The GLMNet control model has a wider prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
+
+### Event-Rate Threshold Classification Evaluation
+
+As a sensitivity check, each factual outcome model was converted into a binary classifier using the observed ED event rate in that factual test group as the threshold. This asks whether the model assigns above-average predicted risk to members who experienced ED utilization.
+
+```text
+Treated threshold = treated test ED event rate
+Control threshold = control test ED event rate
+```
+
+For actual treated members, `pred_ed_if_treated` is compared with the treated threshold. For actual control members, `pred_ed_if_control` is compared with the control threshold. A prediction above or equal to the threshold is counted as predicted ED positive.
+
+<!-- AUTO_TABLE:factual_event_rate_threshold_classification START -->
+| Model | Group | Threshold | Predicted positive N | True positives | False positives | True negatives | False negatives | Precision | Recall |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| XGBoost | Treated | 4.9% | 122 | 6 | 116 | 0 | 0 | 0.0492 | 1.0000 |
+| XGBoost | Control | 7.3% | 178 | 13 | 165 | 0 | 0 | 0.0730 | 1.0000 |
+| GLMNet | Treated | 4.9% | 0 | 0 | 0 | 116 | 6 | N/A | 0.0000 |
+| GLMNet | Control | 7.3% | 70 | 7 | 63 | 102 | 6 | 0.1000 | 0.5385 |
+<!-- AUTO_TABLE:factual_event_rate_threshold_classification END -->
+
+This threshold-based table should be interpreted as a diagnostic rather than the main measure of model quality. It is stricter than AUC because it depends on probability magnitude and calibration, not just ranking. It also shows why overall accuracy is not emphasized: with a rare ED outcome, predicting nearly everyone as negative could look accurate while missing the members who actually had ED events. Precision and recall are more useful because they show how many flagged members were true ED events and how many actual ED events were captured.
 
 ### Model Performance Takeaway
 
@@ -246,7 +251,7 @@ Supporting files:
 - [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
 - [`factual_event_count_summary.csv`](Outputs/Uplift/Python/factual_event_count_summary.csv)
 - [`factual_prediction_separation.csv`](Outputs/Uplift/Python/factual_prediction_separation.csv)
-- [`factual_top_risk_capture.csv`](Outputs/Uplift/Python/factual_top_risk_capture.csv)
+- [`factual_event_rate_threshold_classification.csv`](Outputs/Uplift/Python/factual_event_rate_threshold_classification.csv)
 - [`factual_prediction_ranges.csv`](Outputs/Uplift/Python/factual_prediction_ranges.csv)
 - [`XGBoost/model_brier_scores.csv`](Outputs/Uplift/Python/XGBoost/model_brier_scores.csv)
 - [`GLMNet/model_brier_scores.csv`](Outputs/Uplift/Python/GLMNet/model_brier_scores.csv)

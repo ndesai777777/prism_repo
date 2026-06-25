@@ -31,10 +31,14 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def fnum(value: object, digits: int = 4) -> str:
+    if value is None or str(value).strip() == "":
+        return "N/A"
     try:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
+    if number != number:
+        return "N/A"
     return f"{number:.{digits}f}"
 
 
@@ -195,31 +199,35 @@ def factual_prediction_separation_table() -> str:
     )
 
 
-def factual_top_risk_capture_table() -> str:
+def factual_event_rate_threshold_classification_table() -> str:
     rows = []
-    for row in read_csv(OUTPUT_ROOT / "factual_top_risk_capture.csv"):
+    for row in read_csv(OUTPUT_ROOT / "factual_event_rate_threshold_classification.csv"):
         rows.append(
             [
                 row["model"].replace("GLMNET", "GLMNet"),
                 row["group"],
-                int(float(row["top_risk_n"])),
-                int(float(row["top_risk_events"])),
-                int(float(row["total_events"])),
-                pct(row["top_risk_event_rate"]),
-                pct(row["event_capture_rate"]),
-                fnum(row["top_risk_lift_vs_overall"], 2),
+                pct(row["threshold"]),
+                int(float(row["predicted_positive_n"])),
+                int(float(row["true_positive"])),
+                int(float(row["false_positive"])),
+                int(float(row["true_negative"])),
+                int(float(row["false_negative"])),
+                fnum(row["precision"]),
+                fnum(row["recall"]),
             ]
         )
     return markdown_table(
         [
             "Model",
             "Group",
-            "Top-risk N",
-            "Top-risk events",
-            "Total events",
-            "Top-risk event rate",
-            "Event capture rate",
-            "Lift vs overall",
+            "Threshold",
+            "Predicted positive N",
+            "True positives",
+            "False positives",
+            "True negatives",
+            "False negatives",
+            "Precision",
+            "Recall",
         ],
         rows,
     )
@@ -424,7 +432,7 @@ GENERATORS: dict[str, Callable[[], str]] = {
     "brier_calibration_summary": brier_calibration_table,
     "factual_event_counts": factual_event_counts_table,
     "factual_prediction_separation": factual_prediction_separation_table,
-    "factual_top_risk_capture": factual_top_risk_capture_table,
+    "factual_event_rate_threshold_classification": factual_event_rate_threshold_classification_table,
     "factual_prediction_ranges": factual_prediction_ranges_table,
     "observed_gap_by_decile": observed_gap_table,
     "top_benefit_examples": top_benefit_examples_table,
