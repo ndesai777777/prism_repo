@@ -202,12 +202,48 @@ def prepare_model_frame(
 
 
 def split_train_test(
-    df: pd.DataFrame, train_fraction: float = 0.70, seed: int = 123
+    df: pd.DataFrame,
+    train_fraction: float = 0.70,
+    seed: int = 123,
+    stratify_columns: Sequence[str] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     rng = np.random.default_rng(seed)
     n_rows = len(df)
     train_size = math.floor(train_fraction * n_rows)
-    train_positions = rng.choice(n_rows, size=train_size, replace=False)
+
+    if stratify_columns:
+        missing = [column for column in stratify_columns if column not in df.columns]
+        if missing:
+            raise KeyError(f"Missing stratification columns: {missing}")
+
+        grouped_positions = [
+            np.array(positions, dtype=int)
+            for positions in df.reset_index(drop=True).groupby(
+                list(stratify_columns), sort=False
+            ).indices.values()
+        ]
+        train_counts = [
+            math.floor(train_fraction * len(positions)) for positions in grouped_positions
+        ]
+        remainders = [
+            (train_fraction * len(positions)) - count
+            for positions, count in zip(grouped_positions, train_counts)
+        ]
+        remaining = train_size - sum(train_counts)
+        remainder_order = sorted(
+            range(len(grouped_positions)),
+            key=lambda index: (-remainders[index], index),
+        )
+        for index in remainder_order[:remaining]:
+            train_counts[index] += 1
+
+        selected_positions = []
+        for positions, count in zip(grouped_positions, train_counts):
+            selected_positions.extend(rng.choice(positions, size=count, replace=False))
+        train_positions = np.array(selected_positions, dtype=int)
+    else:
+        train_positions = rng.choice(n_rows, size=train_size, replace=False)
+
     train_mask = np.zeros(n_rows, dtype=bool)
     train_mask[train_positions] = True
     return df.iloc[train_mask].copy(), df.iloc[~train_mask].copy()
