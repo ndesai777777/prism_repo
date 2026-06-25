@@ -119,6 +119,110 @@ def model_performance_table() -> str:
     )
 
 
+def factual_event_counts_table() -> str:
+    rows = []
+    for row in read_csv(OUTPUT_ROOT / "factual_event_count_summary.csv"):
+        rows.append(
+            [
+                row["split"],
+                row["group"],
+                int(float(row["n"])),
+                int(float(row["positive_ed_events"])),
+                int(float(row["negative_ed_events"])),
+                pct(row["event_rate"]),
+            ]
+        )
+    return markdown_table(
+        ["Split", "Group", "N", "Positive ED events", "Negative ED events", "Event rate"],
+        rows,
+    )
+
+
+def factual_prediction_separation_table() -> str:
+    rows = []
+    for row in read_csv(OUTPUT_ROOT / "factual_prediction_separation.csv"):
+        rows.append(
+            [
+                row["model"].replace("GLMNET", "GLMNet"),
+                row["group"],
+                int(float(row["positive_ed_events"])),
+                int(float(row["negative_ed_events"])),
+                fnum(row["auc"]),
+                fnum(row["avg_pred_actual_positive"]),
+                fnum(row["avg_pred_actual_negative"]),
+                fnum(row["avg_pred_positive_minus_negative"]),
+                fnum(row["median_pred_actual_positive"]),
+                fnum(row["median_pred_actual_negative"]),
+            ]
+        )
+    return markdown_table(
+        [
+            "Model",
+            "Group",
+            "Positive events",
+            "Negative events",
+            "AUC",
+            "Avg pred for ED=1",
+            "Avg pred for ED=0",
+            "Avg difference",
+            "Median pred for ED=1",
+            "Median pred for ED=0",
+        ],
+        rows,
+    )
+
+
+def factual_top_risk_capture_table() -> str:
+    rows = []
+    for row in read_csv(OUTPUT_ROOT / "factual_top_risk_capture.csv"):
+        rows.append(
+            [
+                row["model"].replace("GLMNET", "GLMNet"),
+                row["group"],
+                int(float(row["top_risk_n"])),
+                int(float(row["top_risk_events"])),
+                int(float(row["total_events"])),
+                pct(row["top_risk_event_rate"]),
+                pct(row["event_capture_rate"]),
+                fnum(row["top_risk_lift_vs_overall"], 2),
+            ]
+        )
+    return markdown_table(
+        [
+            "Model",
+            "Group",
+            "Top-risk N",
+            "Top-risk events",
+            "Total events",
+            "Top-risk event rate",
+            "Event capture rate",
+            "Lift vs overall",
+        ],
+        rows,
+    )
+
+
+def factual_prediction_ranges_table() -> str:
+    rows = []
+    for row in read_csv(OUTPUT_ROOT / "factual_prediction_ranges.csv"):
+        rows.append(
+            [
+                row["model"].replace("GLMNET", "GLMNet"),
+                row["group"],
+                fnum(row["min_pred"]),
+                fnum(row["p10_pred"]),
+                fnum(row["median_pred"]),
+                fnum(row["mean_pred"]),
+                fnum(row["p90_pred"]),
+                fnum(row["max_pred"]),
+            ]
+        )
+    return markdown_table(
+        ["Model", "Group", "Min", "P10", "Median", "Mean", "P90", "Max"],
+        rows,
+    )
+
+
 def observed_gap_table() -> str:
     rows = []
     for model_folder, model_label in [("XGBoost", "XGBoost"), ("GLMNet", "GLMNet")]:
@@ -286,6 +390,10 @@ def roi_table() -> str:
 GENERATORS: dict[str, Callable[[], str]] = {
     "data_review_summary": data_review_table,
     "model_performance_summary": model_performance_table,
+    "factual_event_counts": factual_event_counts_table,
+    "factual_prediction_separation": factual_prediction_separation_table,
+    "factual_top_risk_capture": factual_top_risk_capture_table,
+    "factual_prediction_ranges": factual_prediction_ranges_table,
     "observed_gap_by_decile": observed_gap_table,
     "top_benefit_examples": top_benefit_examples_table,
     "glmnet_uplift_decile_summary": glmnet_decile_table,

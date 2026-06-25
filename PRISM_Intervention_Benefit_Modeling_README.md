@@ -123,19 +123,38 @@ Supporting file:
 
 ## Analytical Task 3: Model Performance
 
-The model evaluation has two parts. First, the treated and control outcome models are evaluated as risk-prediction models. This asks whether each model can reasonably predict the 90-day ED outcome within the group it was trained to represent. Second, the uplift ranking is evaluated by decile. This asks whether the members ranked as higher predicted benefit also show more favorable observed treated-control outcome differences.
+This section evaluates whether the outcome models behind the T-learner are credible enough to support benefit scoring. The T-learner estimates treatment benefit by subtracting two predicted probabilities:
 
-This distinction matters for the study design. The T-learner does not train one model to directly predict treatment benefit. It trains two separate outcome models, then calculates predicted benefit as `pred_ed_if_control - pred_ed_if_treated`. Therefore, model evaluation needs to check both the credibility of the two outcome models and the usefulness of the resulting benefit ranking.
+```text
+benefit_score = pred_ed_if_control - pred_ed_if_treated
+```
+
+Because the benefit score depends on both outcome models, model performance is evaluated first at the factual outcome-model level. The treated model is evaluated among actual treated members using `pred_ed_if_treated`, and the control model is evaluated among actual control members using `pred_ed_if_control`. Detailed uplift decile behavior is evaluated separately in Analytical Task 5.
 
 ### Hyperparameter Tuning
 
-Both model families were tuned using cross-validation. For XGBoost, the notebook used 5-fold cross-validation over a small grid of tree depth, learning rate, and minimum child weight, with early stopping up to 500 boosting rounds. The selected XGBoost treated and control models were the parameter combinations with the best cross-validated AUC. For GLMNet, the notebook used `LogisticRegressionCV` with standardized predictors, a grid of elastic-net mixing values from 0.0 to 1.0, and a regularization-strength grid. The selected GLMNet treated and control models were also chosen by cross-validated AUC.
+Both model families were tuned using cross-validation. For XGBoost, the notebook used 5-fold cross-validation over tree depth, learning rate, and minimum child weight, with early stopping up to 500 boosting rounds. For GLMNet, the notebook used `LogisticRegressionCV` with standardized predictors, elastic-net mixing values from 0.0 to 1.0, and a regularization-strength grid. The selected treated and control models were chosen using cross-validated AUC within the training data.
 
-The cross-validation AUC values are useful for model selection during training, while the test AUC values are more important for understanding how well the fitted models generalize to held-out members.
+Cross-validation AUC is useful for model selection, but held-out test performance is more important for judging generalization. Because the ED outcome is rare and each T-learner arm is trained separately, performance should be interpreted with attention to the number of positive ED events available in each group.
 
-### Overall Outcome Model Performance
+### Event Counts And Modeling Constraints
 
-AUC, or area under the ROC curve, measures discrimination: how well a model ranks members who had an ED outcome above members who did not. In this context, treated AUC evaluates ED risk ranking among treated members using `pred_ed_if_treated`, and control AUC evaluates ED risk ranking among untreated/control members using `pred_ed_if_control`. An AUC of 0.50 is no better than random ranking, while higher values indicate better discrimination. For example, an AUC of 0.70 means that if one member with an ED outcome and one member without an ED outcome are randomly selected, the model has about a 70% chance of assigning the higher predicted ED risk to the member who actually had the ED outcome.
+The main modeling constraint is not only the 6.0% overall ED outcome rate. It is the small number of positive ED events after splitting the data into treated and control groups. The treated model is especially data-limited because it has relatively few positive examples available for learning and evaluation.
+
+<!-- AUTO_TABLE:factual_event_counts START -->
+| Split | Group | N | Positive ED events | Negative ED events | Event rate |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| Train | Treated | 272 | 10 | 262 | 3.7% |
+| Train | Control | 428 | 31 | 397 | 7.2% |
+| Test | Treated | 122 | 6 | 116 | 4.9% |
+| Test | Control | 178 | 13 | 165 | 7.3% |
+<!-- AUTO_TABLE:factual_event_counts END -->
+
+This event-count table is important context for all performance metrics. With only a small number of ED-positive cases, especially in the treated group, AUC, calibration, and decile-level observed rates can move noticeably with small changes in the train/test split. The results should therefore be interpreted as directional evidence rather than definitive proof of individual-level prediction accuracy.
+
+### Discrimination Performance
+
+Discrimination asks whether the model ranks actual ED-positive members above actual ED-negative members. In this project, treated AUC evaluates actual treated members using `pred_ed_if_treated`, and control AUC evaluates actual control members using `pred_ed_if_control`. This is the most direct test of whether each factual outcome model is learning useful risk ranking within the group it was trained to represent.
 
 <!-- AUTO_TABLE:model_performance_summary START -->
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
@@ -144,94 +163,79 @@ AUC, or area under the ROC curve, measures discrimination: how well a model rank
 | GLMNet | 0.8033 | 0.6305 | 0.7126 | 0.6695 | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
 <!-- AUTO_TABLE:model_performance_summary END -->
 
-Based on the held-out test AUC values, GLMNet generalizes better than XGBoost in the current run. GLMNet has a treated test AUC of 0.7126 and a control test AUC of 0.6695, compared with XGBoost's treated test AUC of 0.5216 and control test AUC of 0.6503. Averaging treated and control test AUC, GLMNet is about 0.691, while XGBoost is about 0.586. This suggests that GLMNet is the more reliable outcome-risk model in this version of the analysis.
+GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also slightly better. XGBoost's treated test AUC is close to random ranking, which makes the XGBoost treated outcome model weak in the held-out sample. GLMNet is therefore the stronger candidate for outcome-risk ranking.
 
-AUC alone is not enough for this project. AUC only tells us whether the model ranks risk well; it does not tell us whether predicted probabilities are accurate in magnitude. Brier score adds that information by measuring individual-level probability error, where lower values are better. Calibration error adds another probability-quality check by comparing average predicted ED rates with observed ED rates within predicted-risk groups. These metrics matter because the uplift score is a difference between two predicted probabilities. If the treated or control probabilities are poorly calibrated, the estimated benefit magnitude can be misleading even when AUC is acceptable.
+### Positive-Vs-Negative Prediction Separation
 
-The Brier score is calculated as the average squared difference between the observed outcome and the predicted probability:
+AUC is useful, but it can feel abstract. A more direct diagnostic is whether actual ED-positive members receive higher predicted risk than actual ED-negative members within the same factual group. For actual treated members, the comparison uses `pred_ed_if_treated`. For actual control members, the comparison uses `pred_ed_if_control`.
+
+<!-- AUTO_TABLE:factual_prediction_separation START -->
+| Model | Group | Positive events | Negative events | AUC | Avg pred for ED=1 | Avg pred for ED=0 | Avg difference | Median pred for ED=1 | Median pred for ED=0 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pending notebook output | Pending | 0 | 0 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+<!-- AUTO_TABLE:factual_prediction_separation END -->
+
+This table is one of the most important diagnostics for the project. A useful risk model should assign higher average and median predicted risk to actual ED-positive members than to actual ED-negative members. If this separation is weak, then the model may have acceptable-looking calibration or Brier scores but still be poor at identifying which members are most likely to experience ED utilization.
+
+### Top-Risk Event Capture
+
+Accuracy is not a good primary metric for this project because the outcome is rare. A model that predicts every member as no ED event would have high raw accuracy but no practical value. A better operational question is whether the model concentrates actual ED events among the highest predicted-risk members.
+
+The table below ranks each factual group by the relevant predicted ED risk and asks how many observed ED events fall into the top 10% highest-risk members.
+
+<!-- AUTO_TABLE:factual_top_risk_capture START -->
+| Model | Group | Top-risk N | Top-risk events | Total events | Top-risk event rate | Event capture rate | Lift vs overall |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pending notebook output | Pending | 0 | 0 | 0 | 0.0% | 0.0% | 0.00 |
+<!-- AUTO_TABLE:factual_top_risk_capture END -->
+
+This event-capture view is especially useful for care management prioritization. If the top-risk group captures a meaningful share of actual ED events and has a higher event rate than the overall factual group, then the model is doing more than predicting low probabilities for everyone. It is concentrating risk in a way that could support prioritization.
+
+### Brier Score And Calibration
+
+Brier score and calibration evaluate probability quality rather than ranking alone. Brier score measures the average squared difference between the observed outcome and predicted probability:
 
 ```text
 Brier score = (1 / n) * sum((outcome_i - predicted_probability_i)^2)
 ```
 
-In this project, a lower Brier score means the model's predicted ED probabilities are closer to the observed 0/1 ED outcomes.
-
-Calibration error is calculated by grouping members into predicted-risk bins, comparing each bin's average predicted ED rate with its observed ED rate, and then taking a weighted average of the absolute differences:
+Calibration error groups members into predicted-risk bins, compares each bin's average predicted ED rate with its observed ED rate, and then takes a weighted average of the absolute differences:
 
 ```text
 Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
 ```
 
-In this project, lower calibration error means the predicted ED probabilities better match observed ED rates across risk groups.
+GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, and top-risk event capture.
 
-In the current results, GLMNet also performs slightly better on probability quality. Its treated and control Brier scores are lower than XGBoost's, and its calibration errors are lower, especially for the control model. This supports using GLMNet as the stronger candidate model for the model evaluation discussion.
+### Prediction Range And Rare-Outcome Interpretation
 
-### Uplift Ranking And Decile Evaluation
+The model is not expected to produce many probabilities above 0.50 because the ED outcome rate is low. A maximum predicted probability below 0.50 does not imply model failure. The more important question is whether higher predicted probabilities correspond to higher observed ED risk and whether the model ranks members usefully within each factual group.
 
-After the treated and control models generate predicted probabilities, members are ranked by predicted benefit and assigned to uplift deciles. Decile 1 contains the members with the highest predicted benefit. The table below compares, for each model and decile, the average predicted benefit with the observed control-treated ED gap.
+<!-- AUTO_TABLE:factual_prediction_ranges START -->
+| Model | Group | Min | P10 | Median | Mean | P90 | Max |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pending notebook output | Pending | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+<!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-The observed control-treated gap is calculated as:
+This prediction-range table should be read together with the event rate. If the observed ED rate is around 6%, then predicted probabilities that mostly remain below 0.50 can still be reasonable. The stronger test is whether predicted risk is meaningfully higher among actual positives, whether high-risk bins have higher observed ED rates, and whether top-risk members capture a disproportionate share of ED events.
 
-```text
-control observed ED rate - treated observed ED rate
-```
+### Model Performance Takeaway
 
-A positive observed gap means the control members in that decile had a higher observed ED rate than treated members, which directionally supports the model's benefit ranking. A negative gap means treated members had a higher observed ED rate than controls in that decile. The 95% confidence interval describes uncertainty around the observed gap. Because each decile has only 30 members and the treated/control split within each decile is smaller, these intervals are wide. The notebook uses a Newcombe/Wilson confidence interval for the difference in proportions so that deciles with zero observed events still retain appropriate uncertainty instead of collapsing to a zero-width interval.
+Overall, GLMNet is the stronger outcome-risk model in this run. It has better held-out discrimination than XGBoost, lower Brier scores, and lower calibration error. The strongest conclusion is that GLMNet appears more useful for relative risk ranking than XGBoost, especially because the XGBoost treated model performs near random on the held-out treated test group.
 
-The final column checks whether the model's average predicted benefit falls within the observed gap's 95% confidence interval:
-
-```text
-observed_gap_ci_lower_95 <= avg_predicted_benefit <= observed_gap_ci_upper_95
-```
-
-This is a model plausibility check. If the predicted benefit falls within the observed gap CI, the model's estimated benefit is consistent with the observed treated-control difference for that decile. This does not strongly confirm the model, especially when the CI is wide, but it means the prediction is not contradicted by the observed data.
-
-<!-- AUTO_TABLE:observed_gap_by_decile START -->
-| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | Observed gap 95% CI lower | Observed gap 95% CI upper | Predicted benefit within observed gap 95% CI |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.5010 | 0.1794 | Yes |
-| XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.3539 | 0.1610 | Yes |
-| XGBoost | 3 | 30 | 13 | 17 | 0.0697 | 0.0588 | -0.2176 | 0.2698 | Yes |
-| XGBoost | 4 | 30 | 8 | 22 | 0.0674 | 0.0455 | -0.3163 | 0.2180 | Yes |
-| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | -0.2153 | 0.1936 | Yes |
-| XGBoost | 6 | 30 | 11 | 19 | 0.0614 | 0.0144 | -0.3480 | 0.2977 | Yes |
-| XGBoost | 7 | 30 | 10 | 20 | 0.0564 | 0.1500 | -0.2252 | 0.3604 | Yes |
-| XGBoost | 8 | 30 | 16 | 14 | 0.0505 | 0.0804 | -0.2432 | 0.3883 | Yes |
-| XGBoost | 9 | 30 | 12 | 18 | 0.0429 | 0.1111 | -0.2115 | 0.3280 | Yes |
-| XGBoost | 10 | 30 | 16 | 14 | 0.0269 | 0.0089 | -0.2706 | 0.3036 | Yes |
-| GLMNet | 1 | 30 | 11 | 19 | 0.1291 | 0.0813 | -0.3589 | 0.4365 | Yes |
-| GLMNet | 2 | 30 | 13 | 17 | 0.0794 | 0.0407 | -0.3003 | 0.3297 | Yes |
-| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | -0.1759 | 0.2425 | Yes |
-| GLMNet | 4 | 30 | 11 | 19 | 0.0441 | -0.0909 | -0.3774 | 0.1519 | Yes |
-| GLMNet | 5 | 30 | 9 | 21 | 0.0340 | -0.0635 | -0.4265 | 0.2068 | Yes |
-| GLMNet | 6 | 30 | 13 | 17 | 0.0260 | 0.0588 | -0.2176 | 0.2698 | Yes |
-| GLMNet | 7 | 30 | 17 | 13 | 0.0209 | -0.0588 | -0.2698 | 0.2176 | Yes |
-| GLMNet | 8 | 30 | 13 | 17 | 0.0153 | 0.1176 | -0.1952 | 0.3434 | Yes |
-| GLMNet | 9 | 30 | 10 | 20 | 0.0068 | 0.1000 | -0.2497 | 0.3010 | Yes |
-| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | -0.3543 | 0.1431 | Yes |
-<!-- AUTO_TABLE:observed_gap_by_decile END -->
-
-The GLMNet top decile has an average predicted benefit of 0.1291 and a positive observed control-treated gap of 0.0813. The predicted benefit falls within the observed gap 95% CI of -0.3589 to 0.4365, which means the model's estimate is plausible relative to the observed data. However, the interval is wide, so this is directional support rather than definitive confirmation.
-
-XGBoost's top decile has an average predicted benefit of 0.0828, but its observed gap is -0.1500. The predicted benefit still falls within the 95% CI of -0.5010 to 0.1794, but the observed point estimate goes in the wrong direction. This makes the XGBoost top-decile result weaker than the GLMNet top-decile result.
-
-Across all deciles, the predicted benefit falls within the observed gap 95% CI for all XGBoost and GLMNet deciles. This indicates that the decile-level predictions are plausible relative to the noisy observed gaps, but it should be interpreted cautiously because wide confidence intervals make it easier for predicted values to fall inside the interval.
-
-### Model Evaluation Takeaway
-
-Overall, GLMNet is the stronger model in this run. It generalizes better on held-out treated and control test AUC, has lower Brier scores, has lower calibration error, and shows a positive observed control-treated gap in the highest predicted-benefit decile. The predicted benefit for GLMNet's top decile also falls within the observed gap's 95% confidence interval. The uncertainty around the observed gaps remains large, so the result should be interpreted as directionally supportive rather than definitive.
+The main limitation is event scarcity. The treated model is trained and evaluated with very few positive ED events, which makes individual-level probability estimates and decile-level validation unstable. The current results support GLMNet as the preferred candidate model for the rest of the analysis, but the evidence should be described as directionally supportive rather than definitive. Uplift decile behavior and operational prioritization are evaluated in Analytical Task 5.
 
 Supporting files:
 
 - [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
+- [`factual_event_count_summary.csv`](Outputs/Uplift/Python/factual_event_count_summary.csv)
+- [`factual_prediction_separation.csv`](Outputs/Uplift/Python/factual_prediction_separation.csv)
+- [`factual_top_risk_capture.csv`](Outputs/Uplift/Python/factual_top_risk_capture.csv)
+- [`factual_prediction_ranges.csv`](Outputs/Uplift/Python/factual_prediction_ranges.csv)
 - [`XGBoost/model_brier_scores.csv`](Outputs/Uplift/Python/XGBoost/model_brier_scores.csv)
 - [`GLMNet/model_brier_scores.csv`](Outputs/Uplift/Python/GLMNet/model_brier_scores.csv)
 - [`XGBoost/calibration_summary.csv`](Outputs/Uplift/Python/XGBoost/calibration_summary.csv)
 - [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/GLMNet/calibration_summary.csv)
-- [`XGBoost/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/XGBoost/uplift_observed_gap_by_decile.csv)
-- [`GLMNet/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/GLMNet/uplift_observed_gap_by_decile.csv)
-- [`XGBoost/uplift_curve_by_decile.csv`](Outputs/Uplift/Python/XGBoost/uplift_curve_by_decile.csv)
-- [`GLMNet/uplift_curve_by_decile.csv`](Outputs/Uplift/Python/GLMNet/uplift_curve_by_decile.csv)
 
 ## Analytical Task 4: Treatment Effect Analysis
 
@@ -302,6 +306,33 @@ The predicted ED risk columns show why the benefit score is highest in the top d
 Observed ED rates are noisy because each decile contains only 30 members and the overall ED outcome prevalence is 6.0%. Decile 1 has the highest observed ED rate at 23.33%, which suggests the model is identifying a high-risk/high-benefit segment. However, observed ED rate alone does not prove treatment benefit; the more relevant validation check is whether control members have higher observed ED rates than treated members within the same high-benefit decile.
 
 Treatment penetration varies across deciles rather than increasing smoothly with predicted benefit. For example, GLMNet decile 1 has a treatment rate of 36.67%, while decile 3 has a treatment rate of 60.00% and decile 10 has a treatment rate of 23.33%. This indicates that historical intervention assignment was not perfectly aligned with predicted benefit. Operationally, this is useful because the model may identify high-benefit members who were not consistently reached by past intervention patterns.
+
+The table below compares predicted benefit with the observed control-minus-treated ED gap by uplift decile. This decile-level validation is intentionally shown here rather than in the model-performance section because it evaluates the usefulness of the uplift ranking after the underlying outcome models have been assessed.
+
+<!-- AUTO_TABLE:observed_gap_by_decile START -->
+| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | Observed gap 95% CI lower | Observed gap 95% CI upper | Predicted benefit within observed gap 95% CI |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.5010 | 0.1794 | Yes |
+| XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.3539 | 0.1610 | Yes |
+| XGBoost | 3 | 30 | 13 | 17 | 0.0697 | 0.0588 | -0.2176 | 0.2698 | Yes |
+| XGBoost | 4 | 30 | 8 | 22 | 0.0674 | 0.0455 | -0.3163 | 0.2180 | Yes |
+| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | -0.2153 | 0.1936 | Yes |
+| XGBoost | 6 | 30 | 11 | 19 | 0.0614 | 0.0144 | -0.3480 | 0.2977 | Yes |
+| XGBoost | 7 | 30 | 10 | 20 | 0.0564 | 0.1500 | -0.2252 | 0.3604 | Yes |
+| XGBoost | 8 | 30 | 16 | 14 | 0.0505 | 0.0804 | -0.2432 | 0.3883 | Yes |
+| XGBoost | 9 | 30 | 12 | 18 | 0.0429 | 0.1111 | -0.2115 | 0.3280 | Yes |
+| XGBoost | 10 | 30 | 16 | 14 | 0.0269 | 0.0089 | -0.2706 | 0.3036 | Yes |
+| GLMNet | 1 | 30 | 11 | 19 | 0.1291 | 0.0813 | -0.3589 | 0.4365 | Yes |
+| GLMNet | 2 | 30 | 13 | 17 | 0.0794 | 0.0407 | -0.3003 | 0.3297 | Yes |
+| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | -0.1759 | 0.2425 | Yes |
+| GLMNet | 4 | 30 | 11 | 19 | 0.0441 | -0.0909 | -0.3774 | 0.1519 | Yes |
+| GLMNet | 5 | 30 | 9 | 21 | 0.0340 | -0.0635 | -0.4265 | 0.2068 | Yes |
+| GLMNet | 6 | 30 | 13 | 17 | 0.0260 | 0.0588 | -0.2176 | 0.2698 | Yes |
+| GLMNet | 7 | 30 | 17 | 13 | 0.0209 | -0.0588 | -0.2698 | 0.2176 | Yes |
+| GLMNet | 8 | 30 | 13 | 17 | 0.0153 | 0.1176 | -0.1952 | 0.3434 | Yes |
+| GLMNet | 9 | 30 | 10 | 20 | 0.0068 | 0.1000 | -0.2497 | 0.3010 | Yes |
+| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | -0.3543 | 0.1431 | Yes |
+<!-- AUTO_TABLE:observed_gap_by_decile END -->
 
 <!-- AUTO_TABLE:top_decile_comparison START -->
 | Model | Top decile n | Treated n | Control n | Avg predicted benefit | Observed ED rate | Treated observed ED rate | Control observed ED rate | Observed control-treated gap | Treatment pct |
