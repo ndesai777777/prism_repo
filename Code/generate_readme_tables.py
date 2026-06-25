@@ -432,7 +432,6 @@ GENERATORS: dict[str, Callable[[], str]] = {
     "brier_calibration_summary": brier_calibration_table,
     "factual_event_counts": factual_event_counts_table,
     "factual_prediction_separation": factual_prediction_separation_table,
-    "factual_event_rate_threshold_classification": factual_event_rate_threshold_classification_table,
     "factual_prediction_ranges": factual_prediction_ranges_table,
     "observed_gap_by_decile": observed_gap_table,
     "top_benefit_examples": top_benefit_examples_table,

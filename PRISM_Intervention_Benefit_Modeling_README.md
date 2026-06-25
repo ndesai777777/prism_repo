@@ -167,9 +167,9 @@ Discrimination asks whether the model ranks actual ED-positive members above act
 
 GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also higher. XGBoost now ranks treated members well, but its control test AUC is weaker than GLMNet's control test AUC. Because both treated and control outcome models feed into the benefit score, GLMNet remains the stronger candidate for outcome-risk ranking.
 
-### Positive-Vs-Negative Prediction Separation
+### Factual Discrimination And Prediction Separation
 
-AUC is useful, but it can feel abstract. A more direct diagnostic is whether actual ED-positive members receive higher predicted risk than actual ED-negative members within the same factual group. For actual treated members, the comparison uses `pred_ed_if_treated`. For actual control members, the comparison uses `pred_ed_if_control`.
+AUC is useful, but it can feel abstract. The table below combines factual-group AUC with a more direct diagnostic: whether actual ED-positive members receive higher predicted risk than actual ED-negative members within the same factual group. For actual treated members, the comparison uses `pred_ed_if_treated`. For actual control members, the comparison uses `pred_ed_if_control`.
 
 <!-- AUTO_TABLE:factual_prediction_separation START -->
 | Model | Group | Positive events | Negative events | AUC | Avg pred for ED=1 | Avg pred for ED=0 | Avg difference | Median pred for ED=1 | Median pred for ED=0 |
@@ -180,7 +180,7 @@ AUC is useful, but it can feel abstract. A more direct diagnostic is whether act
 | GLMNet | Control | 13 | 169 | 0.6582 | 0.0864 | 0.0734 | 0.0130 | 0.0758 | 0.0689 |
 <!-- AUTO_TABLE:factual_prediction_separation END -->
 
-This table is one of the most important diagnostics for the project. A useful risk model should assign higher average and median predicted risk to actual ED-positive members than to actual ED-negative members. If this separation is weak, then the model may have acceptable-looking calibration or Brier scores but still be poor at identifying which members are most likely to experience ED utilization.
+This table is one of the most important diagnostics for the project. The AUC column measures whether the model ranks actual ED-positive members above ED-negative members. The average and median prediction columns show whether ED-positive members receive higher predicted probabilities in magnitude. A useful risk model should show both stronger ranking and higher predicted risk among actual ED-positive members.
 
 ### Brier Score And Calibration
 
@@ -203,7 +203,7 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 | GLMNet | 0.0405 | 0.0651 | 0.0660 | 0.0298 |
 <!-- AUTO_TABLE:brier_calibration_summary END -->
 
-GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, prediction range, and threshold-based classification behavior.
+GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside factual AUC, positive-vs-negative prediction separation, and prediction range.
 
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
@@ -220,29 +220,7 @@ The prediction ranges below are **factual evaluation ranges**. For treated membe
 | GLMNet | Control | 0.0453 | 0.0525 | 0.0698 | 0.0744 | 0.1023 | 0.2067 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-This table helps explain why threshold-based classification can behave differently from AUC. GLMNet's treated predictions are tightly compressed around 4.0%, so even small rank-order differences can produce a strong AUC while still producing very little probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
-
-### Event-Rate Threshold Classification Evaluation
-
-As a sensitivity check, each factual outcome model was converted into a binary classifier using the observed ED event rate in that factual test group as the threshold. This asks whether the model assigns above-average predicted risk to members who experienced ED utilization.
-
-```text
-Treated threshold = treated test ED event rate
-Control threshold = control test ED event rate
-```
-
-For actual treated members, `pred_ed_if_treated` is compared with the treated threshold. For actual control members, `pred_ed_if_control` is compared with the control threshold. A prediction above or equal to the threshold is counted as predicted ED positive.
-
-<!-- AUTO_TABLE:factual_event_rate_threshold_classification START -->
-| Model | Group | Threshold | Predicted positive N | True positives | False positives | True negatives | False negatives | Precision | Recall |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Treated | 4.2% | 118 | 5 | 113 | 0 | 0 | 0.0424 | 1.0000 |
-| XGBoost | Control | 7.1% | 182 | 13 | 169 | 0 | 0 | 0.0714 | 1.0000 |
-| GLMNet | Treated | 4.2% | 0 | 0 | 0 | 113 | 5 | N/A | 0.0000 |
-| GLMNet | Control | 7.1% | 85 | 10 | 75 | 94 | 3 | 0.1176 | 0.7692 |
-<!-- AUTO_TABLE:factual_event_rate_threshold_classification END -->
-
-This threshold-based table should be interpreted as a diagnostic rather than the main measure of model quality. It is stricter than AUC because it depends on probability magnitude and calibration, not just ranking. It also shows why overall accuracy is not emphasized: with a rare ED outcome, predicting nearly everyone as negative could look accurate while missing the members who actually had ED events. Precision and recall are more useful because they show how many flagged members were true ED events and how many actual ED events were captured.
+This table helps explain probability magnitude in a rare-outcome setting. GLMNet's treated predictions are tightly compressed around 4.0%, so even small rank-order differences can produce a strong AUC while still producing very little probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
 
 ### Model Performance Takeaway
 
@@ -255,7 +233,6 @@ Supporting files:
 - [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
 - [`factual_event_count_summary.csv`](Outputs/Uplift/Python/factual_event_count_summary.csv)
 - [`factual_prediction_separation.csv`](Outputs/Uplift/Python/factual_prediction_separation.csv)
-- [`factual_event_rate_threshold_classification.csv`](Outputs/Uplift/Python/factual_event_rate_threshold_classification.csv)
 - [`factual_prediction_ranges.csv`](Outputs/Uplift/Python/factual_prediction_ranges.csv)
 - [`XGBoost/model_brier_scores.csv`](Outputs/Uplift/Python/XGBoost/model_brier_scores.csv)
 - [`GLMNet/model_brier_scores.csv`](Outputs/Uplift/Python/GLMNet/model_brier_scores.csv)
