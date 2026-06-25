@@ -203,9 +203,11 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 
 GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, prediction range, and threshold-based classification behavior.
 
-### Prediction Range And Rare-Outcome Interpretation
+### Factual Prediction Range And Rare-Outcome Interpretation
 
 The model is not expected to produce many probabilities above 0.50 because the ED outcome rate is low. A maximum predicted probability below 0.50 does not imply model failure. The more important question is whether higher predicted probabilities correspond to higher observed ED risk and whether the model ranks members usefully within each factual group.
+
+The prediction ranges below are **factual evaluation ranges**. For treated members, the table summarizes `pred_ed_if_treated` among members who were actually treated. For control members, it summarizes `pred_ed_if_control` among members who were actually untreated. These ranges are used to evaluate the outcome models on the groups where the observed treatment condition is known.
 
 <!-- AUTO_TABLE:factual_prediction_ranges START -->
 | Model | Group | Min | P10 | Median | Mean | P90 | Max |
@@ -216,7 +218,7 @@ The model is not expected to produce many probabilities above 0.50 because the E
 | GLMNet | Control | 0.0235 | 0.0381 | 0.0653 | 0.0761 | 0.1313 | 0.2559 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-This table helps explain why threshold-based classification can behave differently from AUC. GLMNet's treated predictions are tightly compressed around 3.7%, so even small rank-order differences can produce a reasonable AUC while still producing almost no probability spread. The GLMNet control model has a wider prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
+This table helps explain why threshold-based classification can behave differently from AUC. GLMNet's treated predictions are tightly compressed around 3.7%, so even small rank-order differences can produce a reasonable AUC while still producing almost no probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
 
 ### Event-Rate Threshold Classification Evaluation
 
@@ -282,6 +284,8 @@ Current high-benefit examples from the scored outputs:
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
 The GLMNet examples show larger predicted benefit scores than the XGBoost examples. In the highest GLMNet example, the predicted untreated ED probability is 0.3806 and the predicted treated ED probability is 0.0380, giving a predicted benefit of 0.3426. This means the model estimates a 34.26 percentage point reduction in ED probability under treatment for that member.
+
+This 0.3806 value is not inconsistent with the factual prediction-range table in Analytical Task 3. The Task 3 range summarizes factual outcome-model evaluation only: actual treated members are evaluated with `pred_ed_if_treated`, and actual control members are evaluated with `pred_ed_if_control`. In the top GLMNet benefit example, the member was actually treated, so their `pred_ed_if_control` value is a counterfactual prediction and is not included in the factual-control prediction range. Analytical Task 4 uses both counterfactual predictions for every test member because that is required to estimate benefit.
 
 The table above shows the highest-benefit members, but benefit scores are most useful when comparing different member profiles. The examples below show how the same output fields can support outreach prioritization:
 
