@@ -1,2 +1,2 @@
 model,top_decile_n,top_decile_treated_n,top_decile_control_n,top_decile_avg_predicted_benefit,top_decile_observed_ed_rate,top_decile_treated_observed_ed_rate,top_decile_control_observed_ed_rate,top_decile_observed_control_minus_treated_gap,top_decile_treated_pct,top_decile_estimated_ed_visits_avoided,top_decile_gross_savings,top_decile_intervention_cost,top_decile_net_savings,top_decile_roi
-XGBoost,30,10,20,0.082797505,0.1,0.2,0.05,-0.15000000000000002,0.3333333333333333,2.483924925327301,2980.7099103927612,7500.0,-4519.290089607239,-0.6025720119476319
+XGBoost,30,9,21,0.048250962,0.1,0.1111111111111111,0.09523809523809523,-0.015873015873015872,0.3,1.447528749704361,1737.0344996452332,7500.0,-5762.965500354767,-0.7683954000473022
