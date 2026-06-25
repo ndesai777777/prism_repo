@@ -56,7 +56,9 @@ Supporting files:
 
 ### Train/Test Methodology
 
-The dataset is split into training and held-out test sets, with 700 data points used for training and 300 data points reserved for final evaluation. Within the training set, treated and control members are separated so that two outcome models can be trained: one model for members who received the intervention and one model for members who did not. Five-fold cross-validation is used within the training data to support model tuning and assess model stability. Final model performance is then evaluated on the held-out test data.
+The dataset is split into training and held-out test sets, with 700 data points used for training and 300 data points reserved for final evaluation. The split is stratified on the combination of treatment status and ED outcome so that the training and test sets preserve the treated-positive, treated-negative, control-positive, and control-negative proportions observed in the available dataset. This is important because the outcome is rare and the T-learner trains separate treated and control outcome models.
+
+Within the training set, treated and control members are separated so that two outcome models can be trained: one model for members who received the intervention and one model for members who did not. Five-fold cross-validation is used within the training data to support model tuning and assess model stability. Final model performance is then evaluated on the held-out test data.
 
 This setup is important because the uplift task is not only about predicting ED utilization. It is about comparing two counterfactual predictions for the same member: the expected ED risk if treated versus the expected ED risk if untreated.
 
@@ -144,10 +146,10 @@ The main modeling constraint is not only the 6.0% overall ED outcome rate. It is
 <!-- AUTO_TABLE:factual_event_counts START -->
 | Split | Group | N | Positive ED events | Negative ED events | Event rate |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| Train | Treated | 272 | 10 | 262 | 3.7% |
-| Train | Control | 428 | 31 | 397 | 7.2% |
-| Test | Treated | 122 | 6 | 116 | 4.9% |
-| Test | Control | 178 | 13 | 165 | 7.3% |
+| Train | Treated | 276 | 11 | 265 | 4.0% |
+| Train | Control | 424 | 31 | 393 | 7.3% |
+| Test | Treated | 118 | 5 | 113 | 4.2% |
+| Test | Control | 182 | 13 | 169 | 7.1% |
 <!-- AUTO_TABLE:factual_event_counts END -->
 
 This event-count table is important context for all performance metrics. With only a small number of ED-positive cases, especially in the treated group, AUC, calibration, and decile-level observed rates can move noticeably with small changes in the train/test split. The results should therefore be interpreted as directional evidence rather than definitive proof of individual-level prediction accuracy.
@@ -159,11 +161,11 @@ Discrimination asks whether the model ranks actual ED-positive members above act
 <!-- AUTO_TABLE:model_performance_summary START -->
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC |
 | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 0.8038 | 0.6290 | 0.5216 | 0.6503 |
-| GLMNet | 0.8033 | 0.6305 | 0.7126 | 0.6695 |
+| XGBoost | 0.7399 | 0.6680 | 0.8354 | 0.5833 |
+| GLMNet | 0.7138 | 0.6500 | 0.9062 | 0.6582 |
 <!-- AUTO_TABLE:model_performance_summary END -->
 
-GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also slightly better. XGBoost's treated test AUC is close to random ranking, which makes the XGBoost treated outcome model weak in the held-out sample. GLMNet is therefore the stronger candidate for outcome-risk ranking.
+GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also higher. XGBoost now ranks treated members well, but its control test AUC is weaker than GLMNet's control test AUC. Because both treated and control outcome models feed into the benefit score, GLMNet remains the stronger candidate for outcome-risk ranking.
 
 ### Positive-Vs-Negative Prediction Separation
 
@@ -172,10 +174,10 @@ AUC is useful, but it can feel abstract. A more direct diagnostic is whether act
 <!-- AUTO_TABLE:factual_prediction_separation START -->
 | Model | Group | Positive events | Negative events | AUC | Avg pred for ED=1 | Avg pred for ED=0 | Avg difference | Median pred for ED=1 | Median pred for ED=0 |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Treated | 6 | 116 | 0.5216 | 0.0812 | 0.0792 | 0.0020 | 0.0751 | 0.0721 |
-| XGBoost | Control | 13 | 165 | 0.6503 | 0.1434 | 0.1352 | 0.0082 | 0.1389 | 0.1320 |
-| GLMNet | Treated | 6 | 116 | 0.7126 | 0.0372 | 0.0370 | 0.0002 | 0.0373 | 0.0369 |
-| GLMNet | Control | 13 | 165 | 0.6695 | 0.1092 | 0.0735 | 0.0357 | 0.1149 | 0.0643 |
+| XGBoost | Treated | 5 | 113 | 0.8354 | 0.1289 | 0.1165 | 0.0124 | 0.1286 | 0.1110 |
+| XGBoost | Control | 13 | 169 | 0.5833 | 0.1184 | 0.1134 | 0.0050 | 0.1119 | 0.1055 |
+| GLMNet | Treated | 5 | 113 | 0.9062 | 0.0409 | 0.0401 | 0.0008 | 0.0410 | 0.0400 |
+| GLMNet | Control | 13 | 169 | 0.6582 | 0.0864 | 0.0734 | 0.0130 | 0.0758 | 0.0689 |
 <!-- AUTO_TABLE:factual_prediction_separation END -->
 
 This table is one of the most important diagnostics for the project. A useful risk model should assign higher average and median predicted risk to actual ED-positive members than to actual ED-negative members. If this separation is weak, then the model may have acceptable-looking calibration or Brier scores but still be poor at identifying which members are most likely to experience ED utilization.
@@ -197,8 +199,8 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 <!-- AUTO_TABLE:brier_calibration_summary START -->
 | Model | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
 | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 0.0479 | 0.0707 | 0.0534 | 0.0633 |
-| GLMNet | 0.0469 | 0.0644 | 0.0490 | 0.0415 |
+| XGBoost | 0.0452 | 0.0681 | 0.0803 | 0.0644 |
+| GLMNet | 0.0405 | 0.0651 | 0.0660 | 0.0298 |
 <!-- AUTO_TABLE:brier_calibration_summary END -->
 
 GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside AUC, positive-vs-negative separation, prediction range, and threshold-based classification behavior.
@@ -212,13 +214,13 @@ The prediction ranges below are **factual evaluation ranges**. For treated membe
 <!-- AUTO_TABLE:factual_prediction_ranges START -->
 | Model | Group | Min | P10 | Median | Mean | P90 | Max |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Treated | 0.0576 | 0.0591 | 0.0721 | 0.0793 | 0.1089 | 0.1210 |
-| XGBoost | Control | 0.1245 | 0.1250 | 0.1321 | 0.1358 | 0.1522 | 0.1748 |
-| GLMNet | Treated | 0.0366 | 0.0367 | 0.0370 | 0.0370 | 0.0374 | 0.0378 |
-| GLMNet | Control | 0.0235 | 0.0381 | 0.0653 | 0.0761 | 0.1313 | 0.2559 |
+| XGBoost | Treated | 0.1096 | 0.1096 | 0.1121 | 0.1170 | 0.1288 | 0.1525 |
+| XGBoost | Control | 0.0814 | 0.0895 | 0.1057 | 0.1138 | 0.1557 | 0.1854 |
+| GLMNet | Treated | 0.0394 | 0.0397 | 0.0400 | 0.0401 | 0.0408 | 0.0417 |
+| GLMNet | Control | 0.0453 | 0.0525 | 0.0698 | 0.0744 | 0.1023 | 0.2067 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-This table helps explain why threshold-based classification can behave differently from AUC. GLMNet's treated predictions are tightly compressed around 3.7%, so even small rank-order differences can produce a reasonable AUC while still producing almost no probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
+This table helps explain why threshold-based classification can behave differently from AUC. GLMNet's treated predictions are tightly compressed around 4.0%, so even small rank-order differences can produce a strong AUC while still producing very little probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
 
 ### Event-Rate Threshold Classification Evaluation
 
@@ -234,17 +236,17 @@ For actual treated members, `pred_ed_if_treated` is compared with the treated th
 <!-- AUTO_TABLE:factual_event_rate_threshold_classification START -->
 | Model | Group | Threshold | Predicted positive N | True positives | False positives | True negatives | False negatives | Precision | Recall |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Treated | 4.9% | 122 | 6 | 116 | 0 | 0 | 0.0492 | 1.0000 |
-| XGBoost | Control | 7.3% | 178 | 13 | 165 | 0 | 0 | 0.0730 | 1.0000 |
-| GLMNet | Treated | 4.9% | 0 | 0 | 0 | 116 | 6 | N/A | 0.0000 |
-| GLMNet | Control | 7.3% | 70 | 7 | 63 | 102 | 6 | 0.1000 | 0.5385 |
+| XGBoost | Treated | 4.2% | 118 | 5 | 113 | 0 | 0 | 0.0424 | 1.0000 |
+| XGBoost | Control | 7.1% | 182 | 13 | 169 | 0 | 0 | 0.0714 | 1.0000 |
+| GLMNet | Treated | 4.2% | 0 | 0 | 0 | 113 | 5 | N/A | 0.0000 |
+| GLMNet | Control | 7.1% | 85 | 10 | 75 | 94 | 3 | 0.1176 | 0.7692 |
 <!-- AUTO_TABLE:factual_event_rate_threshold_classification END -->
 
 This threshold-based table should be interpreted as a diagnostic rather than the main measure of model quality. It is stricter than AUC because it depends on probability magnitude and calibration, not just ranking. It also shows why overall accuracy is not emphasized: with a rare ED outcome, predicting nearly everyone as negative could look accurate while missing the members who actually had ED events. Precision and recall are more useful because they show how many flagged members were true ED events and how many actual ED events were captured.
 
 ### Model Performance Takeaway
 
-Overall, GLMNet is the stronger outcome-risk model in this run. It has better held-out discrimination than XGBoost, lower Brier scores, and lower calibration error. The strongest conclusion is that GLMNet appears more useful for relative risk ranking than XGBoost, especially because the XGBoost treated model performs near random on the held-out treated test group.
+Overall, GLMNet is the stronger outcome-risk model in this run. It has better held-out discrimination across the two factual groups, lower Brier scores, and lower calibration error. XGBoost performs well in the treated group but is weaker in the control group, while GLMNet is more consistent across both arms. The strongest conclusion is that GLMNet appears more useful for relative risk ranking and probability quality than XGBoost.
 
 The main limitation is event scarcity. The treated model is trained and evaluated with very few positive ED events, which makes individual-level probability estimates and decile-level validation unstable. The current results support GLMNet as the preferred candidate model for the rest of the analysis, but the evidence should be described as directionally supportive rather than definitive. Uplift decile behavior and operational prioritization are evaluated in Analytical Task 5.
 
@@ -272,26 +274,26 @@ A higher benefit score means the model predicts a larger reduction in ED risk un
 
 The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
-Current high-benefit examples from the scored outputs:
+Current high-benefit examples from the full scored outputs:
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
 | Model | Example | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Highest benefit | 1 | 0 | 0.0749 | 0.1927 | 0.1177 | 1 |
-| XGBoost | Second highest benefit | 1 | 0 | 0.0831 | 0.1865 | 0.1035 | 1 |
-| GLMNet | Highest benefit | 1 | 0 | 0.0380 | 0.3806 | 0.3426 | 1 |
-| GLMNet | Second highest benefit | 0 | 1 | 0.0375 | 0.3242 | 0.2867 | 1 |
+| XGBoost | Highest benefit | 0 | 1 | 0.1107 | 0.1898 | 0.0792 | 1 |
+| XGBoost | Second highest benefit | 1 | 0 | 0.1209 | 0.1983 | 0.0774 | 1 |
+| GLMNet | Highest benefit | 1 | 0 | 0.0438 | 0.4700 | 0.4263 | 1 |
+| GLMNet | Second highest benefit | 1 | 1 | 0.0443 | 0.4021 | 0.3579 | 1 |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
-The GLMNet examples show larger predicted benefit scores than the XGBoost examples. In the highest GLMNet example, the predicted untreated ED probability is 0.3806 and the predicted treated ED probability is 0.0380, giving a predicted benefit of 0.3426. This means the model estimates a 34.26 percentage point reduction in ED probability under treatment for that member.
+The GLMNet examples show larger predicted benefit scores than the XGBoost examples. In the highest GLMNet example, the predicted untreated ED probability is 0.4700 and the predicted treated ED probability is 0.0438, giving a predicted benefit of 0.4263. This means the model estimates a 42.63 percentage point reduction in ED probability under treatment for that member.
 
-This 0.3806 value is not inconsistent with the factual prediction-range table in Analytical Task 3. The Task 3 range summarizes factual outcome-model evaluation only: actual treated members are evaluated with `pred_ed_if_treated`, and actual control members are evaluated with `pred_ed_if_control`. In the top GLMNet benefit example, the member was actually treated, so their `pred_ed_if_control` value is a counterfactual prediction and is not included in the factual-control prediction range. Analytical Task 4 uses both counterfactual predictions for every test member because that is required to estimate benefit.
+The high `pred_ed_if_control` values in this table are not inconsistent with the factual prediction-range table in Analytical Task 3. The Task 3 range summarizes held-out factual outcome-model evaluation only: actual treated test members are evaluated with `pred_ed_if_treated`, and actual control test members are evaluated with `pred_ed_if_control`. The scored-output examples in Analytical Task 4 come from the full scored output and use both predicted scenarios for each member because that is required to estimate benefit.
 
 The table above shows the highest-benefit members, but benefit scores are most useful when comparing different member profiles. The examples below show how the same output fields can support outreach prioritization:
 
 | Member comparison type | Predicted ED if treated | Predicted ED if control | Benefit score | Outreach interpretation |
 |---|---:|---:|---:|---|
-| High benefit | 0.04 | 0.38 | 0.34 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
+| High benefit | 0.04 | 0.47 | 0.43 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
 | High risk, low benefit | 0.30 | 0.32 | 0.02 | Clinically high risk, but the model does not predict a large intervention effect. |
 | Low risk, low benefit | 0.02 | 0.03 | 0.01 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
 | Possible negative benefit, or sleeping dog | 0.08 | 0.05 | -0.03 | Not prioritized by uplift score because predicted risk is not lower under treatment. |
@@ -307,74 +309,74 @@ Supporting files:
 
 Members are ranked by predicted benefit score and split into 10 uplift deciles. Decile 1 is the highest predicted benefit group. This section evaluates whether the highest-ranked members show stronger predicted benefit and whether observed outcomes directionally support the ranking.
 
-Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and top-decile observed direction, the full decile review below focuses on GLMNet. Each decile contains 30 held-out test members.
+Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and predicted benefit separation, the full decile review below focuses on GLMNet. Each decile contains 30 held-out test members.
 
 <!-- AUTO_TABLE:glmnet_uplift_decile_summary START -->
 | Uplift decile | N | Avg benefit score | Observed ED rate | Avg predicted ED if treated | Avg predicted ED if control | Treatment pct |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 30 | 0.1291 | 0.2333 | 0.0375 | 0.1666 | 0.3667 |
-| 2 | 30 | 0.0794 | 0.1000 | 0.0372 | 0.1166 | 0.4333 |
-| 3 | 30 | 0.0579 | 0.0000 | 0.0371 | 0.0950 | 0.6000 |
-| 4 | 30 | 0.0441 | 0.0333 | 0.0369 | 0.0810 | 0.3667 |
-| 5 | 30 | 0.0340 | 0.0667 | 0.0369 | 0.0709 | 0.3000 |
-| 6 | 30 | 0.0260 | 0.0333 | 0.0368 | 0.0628 | 0.4333 |
-| 7 | 30 | 0.0209 | 0.0333 | 0.0369 | 0.0578 | 0.5667 |
-| 8 | 30 | 0.0153 | 0.0667 | 0.0368 | 0.0521 | 0.4333 |
-| 9 | 30 | 0.0068 | 0.0667 | 0.0369 | 0.0436 | 0.3333 |
-| 10 | 30 | -0.0038 | 0.0000 | 0.0368 | 0.0330 | 0.2333 |
+| 1 | 30 | 0.0827 | 0.2333 | 0.0409 | 0.1236 | 0.5000 |
+| 2 | 30 | 0.0576 | 0.1000 | 0.0406 | 0.0982 | 0.3667 |
+| 3 | 30 | 0.0461 | 0.0333 | 0.0402 | 0.0863 | 0.5000 |
+| 4 | 30 | 0.0382 | 0.0667 | 0.0401 | 0.0784 | 0.4000 |
+| 5 | 30 | 0.0322 | 0.0667 | 0.0400 | 0.0722 | 0.2667 |
+| 6 | 30 | 0.0281 | 0.0333 | 0.0400 | 0.0681 | 0.5333 |
+| 7 | 30 | 0.0240 | 0.0000 | 0.0399 | 0.0639 | 0.4000 |
+| 8 | 30 | 0.0205 | 0.0000 | 0.0398 | 0.0603 | 0.3000 |
+| 9 | 30 | 0.0166 | 0.0000 | 0.0397 | 0.0563 | 0.4333 |
+| 10 | 30 | 0.0116 | 0.0667 | 0.0396 | 0.0512 | 0.2333 |
 <!-- AUTO_TABLE:glmnet_uplift_decile_summary END -->
 
-The average benefit score declines steadily from decile 1 to decile 10. This is the expected pattern because members are ranked by predicted benefit. The strongest predicted intervention benefit is concentrated in decile 1, followed by deciles 2 and 3. GLMNet decile 1 has an average predicted benefit of 0.1291, meaning the model estimates an average 12.91 percentage point ED risk reduction under intervention for that group.
+The average benefit score declines steadily from decile 1 to decile 10. This is the expected pattern because members are ranked by predicted benefit. The strongest predicted intervention benefit is concentrated in decile 1, followed by deciles 2 and 3. GLMNet decile 1 has an average predicted benefit of 0.0827, meaning the model estimates an average 8.27 percentage point ED risk reduction under intervention for that group.
 
-The predicted ED risk columns show why the benefit score is highest in the top deciles. The average predicted ED risk if treated is fairly stable at about 3.7% across deciles, while the average predicted ED risk if control falls from 16.66% in decile 1 to 3.30% in decile 10. This means GLMNet is mostly distinguishing benefit by identifying members whose untreated risk is high relative to their treated-risk prediction.
+The predicted ED risk columns show why the benefit score is highest in the top deciles. The average predicted ED risk if treated is fairly stable at about 4.0% across deciles, while the average predicted ED risk if control falls from 12.36% in decile 1 to 5.12% in decile 10. This means GLMNet is mostly distinguishing benefit by identifying members whose untreated risk is high relative to their treated-risk prediction.
 
 Observed ED rates are noisy because each decile contains only 30 members and the overall ED outcome prevalence is 6.0%. Decile 1 has the highest observed ED rate at 23.33%, which suggests the model is identifying a high-risk/high-benefit segment. However, observed ED rate alone does not prove treatment benefit; the more relevant validation check is whether control members have higher observed ED rates than treated members within the same high-benefit decile.
 
-Treatment penetration varies across deciles rather than increasing smoothly with predicted benefit. For example, GLMNet decile 1 has a treatment rate of 36.67%, while decile 3 has a treatment rate of 60.00% and decile 10 has a treatment rate of 23.33%. This indicates that historical intervention assignment was not perfectly aligned with predicted benefit. Operationally, this is useful because the model may identify high-benefit members who were not consistently reached by past intervention patterns.
+Treatment penetration varies across deciles rather than increasing smoothly with predicted benefit. For example, GLMNet decile 1 has a treatment rate of 50.00%, while decile 6 has a treatment rate of 53.33% and decile 10 has a treatment rate of 23.33%. This indicates that historical intervention assignment was not perfectly aligned with predicted benefit. Operationally, this is useful because the model may identify high-benefit members who were not consistently reached by past intervention patterns.
 
 The table below compares predicted benefit with the observed control-minus-treated ED gap by uplift decile. This decile-level validation is intentionally shown here rather than in the model-performance section because it evaluates the usefulness of the uplift ranking after the underlying outcome models have been assessed.
 
 <!-- AUTO_TABLE:observed_gap_by_decile START -->
 | Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | Observed gap 95% CI lower | Observed gap 95% CI upper | Predicted benefit within observed gap 95% CI |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 1 | 30 | 10 | 20 | 0.0828 | -0.1500 | -0.5010 | 0.1794 | Yes |
-| XGBoost | 2 | 30 | 12 | 18 | 0.0726 | -0.0833 | -0.3539 | 0.1610 | Yes |
-| XGBoost | 3 | 30 | 13 | 17 | 0.0697 | 0.0588 | -0.2176 | 0.2698 | Yes |
-| XGBoost | 4 | 30 | 8 | 22 | 0.0674 | 0.0455 | -0.3163 | 0.2180 | Yes |
-| XGBoost | 5 | 30 | 14 | 16 | 0.0654 | 0.0000 | -0.2153 | 0.1936 | Yes |
-| XGBoost | 6 | 30 | 11 | 19 | 0.0614 | 0.0144 | -0.3480 | 0.2977 | Yes |
-| XGBoost | 7 | 30 | 10 | 20 | 0.0564 | 0.1500 | -0.2252 | 0.3604 | Yes |
-| XGBoost | 8 | 30 | 16 | 14 | 0.0505 | 0.0804 | -0.2432 | 0.3883 | Yes |
-| XGBoost | 9 | 30 | 12 | 18 | 0.0429 | 0.1111 | -0.2115 | 0.3280 | Yes |
-| XGBoost | 10 | 30 | 16 | 14 | 0.0269 | 0.0089 | -0.2706 | 0.3036 | Yes |
-| GLMNet | 1 | 30 | 11 | 19 | 0.1291 | 0.0813 | -0.3589 | 0.4365 | Yes |
-| GLMNet | 2 | 30 | 13 | 17 | 0.0794 | 0.0407 | -0.3003 | 0.3297 | Yes |
-| GLMNet | 3 | 30 | 18 | 12 | 0.0579 | 0.0000 | -0.1759 | 0.2425 | Yes |
-| GLMNet | 4 | 30 | 11 | 19 | 0.0441 | -0.0909 | -0.3774 | 0.1519 | Yes |
-| GLMNet | 5 | 30 | 9 | 21 | 0.0340 | -0.0635 | -0.4265 | 0.2068 | Yes |
-| GLMNet | 6 | 30 | 13 | 17 | 0.0260 | 0.0588 | -0.2176 | 0.2698 | Yes |
-| GLMNet | 7 | 30 | 17 | 13 | 0.0209 | -0.0588 | -0.2698 | 0.2176 | Yes |
-| GLMNet | 8 | 30 | 13 | 17 | 0.0153 | 0.1176 | -0.1952 | 0.3434 | Yes |
-| GLMNet | 9 | 30 | 10 | 20 | 0.0068 | 0.1000 | -0.2497 | 0.3010 | Yes |
-| GLMNet | 10 | 30 | 7 | 23 | -0.0038 | 0.0000 | -0.3543 | 0.1431 | Yes |
+| XGBoost | 1 | 30 | 9 | 21 | 0.0483 | -0.0159 | -0.4085 | 0.2693 | Yes |
+| XGBoost | 2 | 30 | 16 | 14 | 0.0272 | -0.1161 | -0.4174 | 0.2488 | Yes |
+| XGBoost | 3 | 30 | 12 | 18 | 0.0087 | 0.0000 | -0.2425 | 0.1759 | Yes |
+| XGBoost | 4 | 30 | 8 | 22 | -0.0026 | 0.0455 | -0.3163 | 0.2180 | Yes |
+| XGBoost | 5 | 30 | 10 | 20 | -0.0070 | 0.1500 | -0.2252 | 0.3604 | Yes |
+| XGBoost | 6 | 30 | 16 | 14 | -0.0105 | 0.1429 | -0.1535 | 0.3994 | Yes |
+| XGBoost | 7 | 30 | 14 | 16 | -0.0142 | -0.0089 | -0.3036 | 0.2706 | Yes |
+| XGBoost | 8 | 30 | 10 | 20 | -0.0188 | 0.0000 | -0.2775 | 0.1611 | Yes |
+| XGBoost | 9 | 30 | 9 | 21 | -0.0244 | 0.0000 | -0.2991 | 0.1546 | Yes |
+| XGBoost | 10 | 30 | 14 | 16 | -0.0335 | 0.1875 | -0.1494 | 0.4301 | Yes |
+| GLMNet | 1 | 30 | 15 | 15 | 0.0827 | -0.0667 | -0.4490 | 0.3429 | Yes |
+| GLMNet | 2 | 30 | 11 | 19 | 0.0576 | 0.0144 | -0.3480 | 0.2977 | Yes |
+| GLMNet | 3 | 30 | 15 | 15 | 0.0461 | 0.0667 | -0.1920 | 0.2982 | Yes |
+| GLMNet | 4 | 30 | 12 | 18 | 0.0382 | 0.1111 | -0.2115 | 0.3280 | Yes |
+| GLMNet | 5 | 30 | 8 | 22 | 0.0322 | 0.0909 | -0.2991 | 0.2781 | Yes |
+| GLMNet | 6 | 30 | 16 | 14 | 0.0281 | 0.0714 | -0.1809 | 0.3147 | Yes |
+| GLMNet | 7 | 30 | 12 | 18 | 0.0240 | 0.0000 | -0.2425 | 0.1759 | Yes |
+| GLMNet | 8 | 30 | 9 | 21 | 0.0205 | 0.0000 | -0.2991 | 0.1546 | Yes |
+| GLMNet | 9 | 30 | 13 | 17 | 0.0166 | 0.0000 | -0.2281 | 0.1843 | Yes |
+| GLMNet | 10 | 30 | 7 | 23 | 0.0116 | 0.0870 | -0.3302 | 0.2680 | Yes |
 <!-- AUTO_TABLE:observed_gap_by_decile END -->
 
 <!-- AUTO_TABLE:top_decile_comparison START -->
 | Model | Top decile n | Treated n | Control n | Avg predicted benefit | Observed ED rate | Treated observed ED rate | Control observed ED rate | Observed control-treated gap | Treatment pct |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 30 | 10 | 20 | 0.0828 | 0.1000 | 0.2000 | 0.0500 | -0.1500 | 0.3333 |
-| GLMNet | 30 | 11 | 19 | 0.1291 | 0.2333 | 0.1818 | 0.2632 | 0.0813 | 0.3667 |
+| XGBoost | 30 | 9 | 21 | 0.0483 | 0.1000 | 0.1111 | 0.0952 | -0.0159 | 0.3000 |
+| GLMNet | 30 | 15 | 15 | 0.0827 | 0.2333 | 0.2667 | 0.2000 | -0.0667 | 0.5000 |
 <!-- AUTO_TABLE:top_decile_comparison END -->
 
-Both models place the greatest predicted benefit in decile 1. XGBoost decile 1 has an average predicted benefit of 0.0828, while GLMNet decile 1 has a larger average predicted benefit of 0.1291.
+Both models place the greatest predicted benefit in decile 1. XGBoost decile 1 has an average predicted benefit of 0.0483, while GLMNet decile 1 has a larger average predicted benefit of 0.0827.
 
-The observed validation signal is stronger for GLMNet. In GLMNet decile 1, the control observed ED rate is 26.3% and the treated observed ED rate is 18.2%, producing an observed control-treated gap of 8.13 percentage points. This directionally supports the model's benefit ranking.
+The observed validation signal is mixed after the stratified split. In GLMNet decile 1, the control observed ED rate is 20.0% and the treated observed ED rate is 26.7%, producing an observed control-treated gap of -6.67 percentage points. This does not directionally support the top-decile benefit ranking, even though the confidence interval is wide and includes positive values.
 
-XGBoost decile 1 has a negative observed control-treated gap of -15.0 percentage points. In that decile, treated members had a higher observed ED rate than control members. This does not support the XGBoost top-decile ranking as strongly, although the small decile sample sizes mean the observed rates are unstable and require cautious interpretation.
+XGBoost decile 1 also has a negative observed control-treated gap of -1.59 percentage points. In that decile, treated members had a slightly higher observed ED rate than control members. This also does not provide observed top-decile support for the benefit ranking, although the small decile sample sizes mean the observed rates are unstable and require cautious interpretation.
 
-GLMNet also shows a clearer benefit gradient across deciles. Its decile 1 average predicted benefit is 0.1291, while decile 10 is -0.0038, indicating essentially no expected benefit or slight expected harm in the lowest-ranked group. XGBoost remains positive across all deciles, but its spread is narrower: 0.0828 in decile 1 versus 0.0269 in decile 10.
+GLMNet shows a clearer predicted benefit gradient across deciles. Its decile 1 average predicted benefit is 0.0827, while decile 10 is 0.0116, indicating lower but still positive expected benefit in the lowest-ranked group. XGBoost has a weaker and less consistently positive spread: 0.0483 in decile 1 versus -0.0335 in decile 10.
 
-From an operational perspective, decile 1 would be the first group to target if the organization decided to use the model for prioritization. GLMNet currently provides stronger support for this approach because its top decile has both higher predicted benefit and a positive observed control-treated ED gap. Expansion beyond decile 1 depends on outreach capacity, calibration, ROI assumptions, and validation on live data.
+From an operational perspective, decile 1 would be the first group to review if the organization decided to use the model for prioritization, but the observed top-decile treatment gap should temper confidence. GLMNet currently provides stronger predicted benefit ranking than XGBoost, but neither model shows a positive observed control-treated gap in the top decile after the stratified split. Expansion beyond exploratory use depends on outreach capacity, calibration, ROI assumptions, and validation on live data.
 
 A high observed ED rate in the top benefit decile does not by itself prove uplift quality. It may indicate that the model is finding high-risk members. The more relevant observed validation check is:
 
@@ -472,11 +474,11 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention.
 <!-- AUTO_TABLE:roi_summary START -->
 | Model | Top decile n | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 30 | 2.4839 | $2,980.71 | $7,500.00 | -$4,519.29 | -0.6026 |
-| GLMNet | 30 | 3.8742 | $4,649.06 | $7,500.00 | -$2,850.94 | -0.3801 |
+| XGBoost | 30 | 1.4475 | $1,737.03 | $7,500.00 | -$5,762.97 | -0.7684 |
+| GLMNet | 30 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
 <!-- AUTO_TABLE:roi_summary END -->
 
-Both models estimate avoided ED visits in the top benefit decile, but the estimated gross savings do not exceed intervention costs under the current assumptions. GLMNet has the stronger top-decile ROI because it predicts more ED visits avoided: 3.8742 for GLMNet versus 2.4839 for XGBoost. However, ROI remains negative for both models.
+Both models estimate avoided ED visits in the top benefit decile, but the estimated gross savings do not exceed intervention costs under the current assumptions. GLMNet has the stronger top-decile ROI because it predicts more ED visits avoided: 2.4807 for GLMNet versus 1.4475 for XGBoost. However, ROI remains negative for both models.
 
 These ROI results are directional rather than definitive. ROI is sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
@@ -491,9 +493,9 @@ Supporting files:
 
 From the perspective of a Medicaid health plan executive team, the most important conclusion is that the uplift framework provides a more targeted prioritization method than baseline risk alone. It attempts to identify members whose ED risk is expected to decrease with intervention.
 
-GLMNet is the stronger current candidate model. It has better held-out test AUC, better calibration, higher top-decile predicted benefit, and a positive observed control-treated gap in the top benefit decile. XGBoost identifies positive predicted benefit, but its top-decile observed gap is negative, so it provides weaker current support for operational targeting.
+GLMNet is the stronger current candidate model. It has better held-out test AUC, better calibration, and higher top-decile predicted benefit. However, after the stratified split, neither GLMNet nor XGBoost has a positive observed control-treated gap in the top benefit decile. This means the current results support GLMNet as the stronger ranking model, but they do not yet provide strong observed top-decile validation for operational targeting.
 
-If the model were used for prioritization, uplift decile 1 would be the first outreach group. GLMNet decile 1 has average predicted benefit of 0.1291 and an observed control-treated ED gap of 0.0813. This suggests that the highest-ranked GLMNet group may represent members who are more impactable by intervention. However, because estimated top-decile ROI remains negative under current cost assumptions, the model is best presented as a promising prioritization proof of concept rather than a ready financial case.
+If the model were used for exploratory prioritization, uplift decile 1 would be the first group to review. GLMNet decile 1 has average predicted benefit of 0.0827 and an observed control-treated ED gap of -0.0667. The negative observed gap means the highest-ranked group should not be presented as validated proof of treatment benefit. Because estimated top-decile ROI also remains negative under current cost assumptions, the model is best presented as a promising prioritization proof of concept rather than a ready financial case.
 
 The results are explainable enough for stakeholder discussion. XGBoost provides SHAP-based risk and benefit explanations, while GLMNet provides standardized coefficient/logit contribution explanations. The benefit-driver analysis is especially important because the variables that drive baseline ED risk are not always the same as the variables that drive expected treatment benefit.
 
@@ -503,15 +505,15 @@ Operationally, the workflow would score members using the trained uplift model, 
 
 ## Recommendation
 
-The uplift modeling framework provides a structured way to prioritize members by predicted intervention benefit rather than baseline ED risk alone. In the current outputs, GLMNet provides the stronger candidate model because it has better held-out test AUC, better calibration, higher top-decile predicted benefit, and a positive observed control-treated ED gap in the top benefit decile.
+The uplift modeling framework provides a structured way to prioritize members by predicted intervention benefit rather than baseline ED risk alone. In the current outputs, GLMNet provides the stronger candidate model because it has better held-out test AUC, better calibration, and higher top-decile predicted benefit. The observed top-decile treatment gap is negative after the stratified split, so the model should be described as a promising but not yet validated prioritization workflow.
 
-The current GLMNet top decile has average predicted benefit of 0.1291, observed ED rate of 23.3%, and observed control-treated ED gap of 8.13 percentage points. However, estimated top-decile ROI remains negative under the current assumptions of $1,200 per ED visit and $250 per intervention. Therefore, the model is best presented as a promising prioritization workflow that requires live-data validation, calibration review, and ROI sensitivity testing before production deployment.
+The current GLMNet top decile has average predicted benefit of 0.0827, observed ED rate of 23.3%, and observed control-treated ED gap of -6.67 percentage points. Estimated top-decile ROI remains negative under the current assumptions of $1,200 per ED visit and $250 per intervention. Therefore, the model is best presented as a promising prioritization workflow that requires live-data validation, calibration review, observed-outcome validation, and ROI sensitivity testing before production deployment.
 
 ## Presentation Summary
 
 A presentation based on these results can be organized around the business problem, the reason high risk is not always high benefit, the T-learner modeling approach, the data review, model performance, uplift decile findings, explainability results, ROI, limitations, and final recommendation.
 
-The strongest slide story is that GLMNet currently performs better than XGBoost for this use case. It has better held-out performance, better calibration, higher predicted benefit in the top decile, and a positive observed control-treated gap in the highest-benefit group. The caution is that ROI is still negative under current assumptions and the data are synthetic, so the workflow requires live-data validation before operational use.
+The strongest slide story is that GLMNet currently performs better than XGBoost for this use case on held-out outcome-model metrics and predicted benefit ranking. The caution is that the observed top-decile control-treated gap is not positive after the stratified split, ROI is still negative under current assumptions, and the data are synthetic. The workflow is promising, but it requires live-data validation before operational use.
 
 ## Reproducibility
 
