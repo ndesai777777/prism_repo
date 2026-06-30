@@ -334,9 +334,24 @@ The current top benefit drivers by magnitude are:
 
 | Top current benefit drivers by magnitude |
 |---|
-| `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
+| `admits_last_6m`, `ed_visits_last_6m`, `percolator_clinical_score`, `chf_flag`, `current_risk_score` |
 
-For GLMNet, `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, and recent ED utilization are the largest benefit-driver features by absolute contribution-difference magnitude.
+The current top benefit drivers by signed value are:
+
+| Direction | Top current benefit drivers by signed value | Mean signed benefit contribution |
+|---|---|---:|
+| Increase predicted benefit | `ed_visits_last_6m` | 0.0156 |
+| Increase predicted benefit | `admits_last_6m` | 0.0128 |
+| Increase predicted benefit | `current_risk_score` | 0.0075 |
+| Increase predicted benefit | `percolator_clinical_score` | 0.0048 |
+| Increase predicted benefit | `chf_flag` | 0.0045 |
+| Decrease predicted benefit | `risk_tier_Very_High` | -0.0020 |
+| Decrease predicted benefit | `service_region_Central` | -0.0002 |
+| Decrease predicted benefit | `risk_tier_Medium` | -0.0001 |
+| Decrease predicted benefit | `service_region_West` | -0.0001 |
+| Decrease predicted benefit | `case_manager_name_CM_15` | -0.0001 |
+
+For GLMNet, recent utilization, clinical risk, heart failure, and current risk score are the largest benefit-driver features by absolute contribution-difference magnitude. By signed value, recent ED visits, admissions, and current risk score have the strongest positive average contribution to predicted benefit, while the strongest negative signed contributors are much smaller in magnitude.
 
 The absolute benefit-driver value measures how strongly a feature changes predicted benefit, regardless of direction. The signed benefit contribution shows whether the feature tends to increase or decrease predicted benefit, and the percent-positive column shows the share of members where the feature increased predicted benefit. Therefore, the benefit-driver tables are interpreted using both magnitude and direction.
 
