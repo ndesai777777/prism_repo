@@ -205,6 +205,8 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 
 GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside factual AUC, positive-vs-negative prediction separation, and prediction range.
 
+![GLMNet calibration plot](Outputs/Uplift/Python/GLMNet/dashboard_calibration_plot.png)
+
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
 The model is not expected to produce many probabilities above 0.50 because the ED outcome rate is low. A maximum predicted probability below 0.50 does not imply model failure. The more important question is whether higher predicted probabilities correspond to higher observed ED risk and whether the model ranks members usefully within each factual group.
@@ -277,6 +279,8 @@ The table above shows the highest-benefit members, but benefit scores are most u
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
+![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/GLMNet/dashboard_predicted_treated_vs_control.png)
+
 Supporting files:
 
 - [`XGBoost/uplift_scored_output.csv`](Outputs/Uplift/Python/XGBoost/uplift_scored_output.csv)
@@ -302,6 +306,8 @@ Because GLMNet is the stronger candidate model based on held-out AUC, Brier scor
 | 9 | 30 | 0.0166 | 0.0000 | 0.0397 | 0.0563 | 0.4333 |
 | 10 | 30 | 0.0116 | 0.0667 | 0.0396 | 0.0512 | 0.2333 |
 <!-- AUTO_TABLE:glmnet_uplift_decile_summary END -->
+
+![GLMNet average predicted benefit by uplift decile](Outputs/Uplift/Python/GLMNet/dashboard_avg_benefit_by_decile.png)
 
 Supporting files:
 
@@ -359,6 +365,8 @@ GLMNet provides coefficient-based interpretability, but coefficient interpretati
 
 Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment.
 
+![GLMNet benefit-driver importance](Outputs/Uplift/Python/GLMNet/dashboard_shap_benefit_score.png)
+
 Supporting files:
 
 - [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/GLMNet/shap_importance_treated_control_models.csv)
@@ -392,6 +400,8 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention.
 GLMNet uplift targeting estimates 2.4807 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 2.2456 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit.
 
 The current-risk comparison uses the same held-out test population and the same cost assumptions. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using the GLMNet predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
+
+![GLMNet ROI net savings by uplift decile](Outputs/Uplift/Python/GLMNet/dashboard_roi_net_savings_by_decile.png)
 
 These ROI results are directional rather than definitive. ROI is sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
