@@ -369,7 +369,7 @@ Supporting files:
 
 ## Analytical Task 7: Business Value Assessment
 
-The ROI analysis estimates the financial value of targeting members by uplift decile. The current calculation assumes:
+The ROI analysis estimates the financial value of targeting members by uplift decile. It also compares uplift-based targeting with the prior-style approach of targeting members strictly by highest `current_risk_score`. The current calculation assumes:
 
 ```text
 expected_ed_rate_reduction = avg_benefit_score
@@ -383,12 +383,15 @@ roi = net_savings / intervention_cost
 The current cost assumptions are $1,200 per ED visit and $250 per intervention.
 
 <!-- AUTO_TABLE:roi_summary START -->
-| Top decile n | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 30 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
+| Targeting approach | Top decile n | Avg predicted benefit | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| GLMNet uplift score | 30 | 0.0827 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
+| Current risk score | 30 | 0.0749 | 2.2456 | $2,694.72 | $7,500.00 | -$4,805.28 | -0.6407 |
 <!-- AUTO_TABLE:roi_summary END -->
 
-GLMNet estimates 2.4807 avoided ED visits in the top benefit decile. Under the current assumptions, the estimated gross savings do not exceed intervention costs, so ROI remains negative.
+GLMNet uplift targeting estimates 2.4807 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 2.2456 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit.
+
+The current-risk comparison uses the same held-out test population and the same cost assumptions. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using the GLMNet predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
 
 These ROI results are directional rather than definitive. ROI is sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
