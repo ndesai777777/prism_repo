@@ -315,24 +315,14 @@ The explainability analysis separates risk drivers from benefit drivers. Risk dr
 
 The current top risk drivers are:
 
-| Model | Group | Top current drivers |
-|---|---|---|
-| XGBoost | Treated model | `percolator_utilization_score`, `current_risk_score`, `diabetes_flag`, `percolator_clinical_score`, `client_contract_Contract_B` |
-| XGBoost | Control model | `current_risk_score`, `age`, `county_County_A`, `percolator_clinical_score`, `copd_flag` |
-| GLMNet | Treated model | `current_risk_score`, `percolator_utilization_score`, `ed_visits_last_6m`, `total_cost_last_6m`, `risk_tier_High` |
-| GLMNet | Control model | `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
+| Group | Top current drivers |
+|---|---|
+| Treated model | `current_risk_score`, `percolator_utilization_score`, `ed_visits_last_6m`, `total_cost_last_6m`, `risk_tier_High` |
+| Control model | `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
 
-Both model families identify risk-related variables such as `current_risk_score`, recent utilization, and percolator scores as important ED risk drivers. This is clinically reasonable because prior utilization and composite risk scores are expected to be strongly related to future ED risk.
-
-XGBoost treated-model risk is especially driven by `percolator_utilization_score` and `current_risk_score`. GLMNet control-model risk is more strongly influenced by `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, and recent ED utilization.
+GLMNet identifies risk-related variables such as `current_risk_score`, recent utilization, and percolator scores as important ED risk drivers. This is clinically reasonable because prior utilization and composite risk scores are expected to be strongly related to future ED risk. In the control model, risk is also strongly influenced by `utilities_insecurity_flag`, `dual_eligible`, and recent ED utilization.
 
 ### Benefit Drivers
-
-For XGBoost, benefit-driver importance is based on:
-
-```text
-benefit_shap = control_shap - treated_shap
-```
 
 For GLMNet, benefit-driver importance is based on:
 
@@ -342,28 +332,22 @@ benefit_contribution = control_contribution - treated_contribution
 
 The current top benefit drivers by magnitude are:
 
-| Model | Top current benefit drivers by magnitude |
-|---|---|
-| XGBoost | `percolator_utilization_score`, `current_risk_score`, `diabetes_flag`, `age`, `county_County_A` |
-| GLMNet | `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
+| Top current benefit drivers by magnitude |
+|---|
+| `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
 
-For XGBoost, `percolator_utilization_score` and `current_risk_score` are the largest benefit-driver features by absolute SHAP-difference magnitude. For GLMNet, `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, and recent ED utilization are the largest benefit-driver features by absolute contribution-difference magnitude.
+For GLMNet, `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, and recent ED utilization are the largest benefit-driver features by absolute contribution-difference magnitude.
 
 The absolute benefit-driver value measures how strongly a feature changes predicted benefit, regardless of direction. The signed benefit contribution shows whether the feature tends to increase or decrease predicted benefit, and the percent-positive column shows the share of members where the feature increased predicted benefit. Therefore, the benefit-driver tables are interpreted using both magnitude and direction.
 
-For machine learning models such as XGBoost, variable importance is usually evaluated through out-of-sample performance, feature importance, SHAP values, and stability across samples rather than classical p-values. GLMNet provides coefficient-based interpretability, but coefficient interpretation can still be affected by correlation among predictors.
+GLMNet provides coefficient-based interpretability, but coefficient interpretation can still be affected by correlation among predictors.
 
-Collinearity is generally a larger interpretability concern for regression-style models than for tree-based models such as XGBoost. It can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment.
+Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment.
 
 Supporting files:
 
-- [`XGBoost/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/XGBoost/shap_importance_treated_control_models.csv)
 - [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/GLMNet/shap_importance_treated_control_models.csv)
-- [`XGBoost/shap_importance_benefit_score.csv`](Outputs/Uplift/Python/XGBoost/shap_importance_benefit_score.csv)
 - [`GLMNet/shap_importance_benefit_score.csv`](Outputs/Uplift/Python/GLMNet/shap_importance_benefit_score.csv)
-- [`XGBoost/dashboard_shap_treated_model.png`](Outputs/Uplift/Python/XGBoost/dashboard_shap_treated_model.png)
-- [`XGBoost/dashboard_shap_control_model.png`](Outputs/Uplift/Python/XGBoost/dashboard_shap_control_model.png)
-- [`XGBoost/dashboard_shap_benefit_score.png`](Outputs/Uplift/Python/XGBoost/dashboard_shap_benefit_score.png)
 - [`GLMNet/dashboard_shap_treated_model.png`](Outputs/Uplift/Python/GLMNet/dashboard_shap_treated_model.png)
 - [`GLMNet/dashboard_shap_control_model.png`](Outputs/Uplift/Python/GLMNet/dashboard_shap_control_model.png)
 - [`GLMNet/dashboard_shap_benefit_score.png`](Outputs/Uplift/Python/GLMNet/dashboard_shap_benefit_score.png)
@@ -384,32 +368,29 @@ roi = net_savings / intervention_cost
 The current cost assumptions are $1,200 per ED visit and $250 per intervention.
 
 <!-- AUTO_TABLE:roi_summary START -->
-| Model | Top decile n | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 30 | 1.4475 | $1,737.03 | $7,500.00 | -$5,762.97 | -0.7684 |
-| GLMNet | 30 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
+| Top decile n | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 30 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
 <!-- AUTO_TABLE:roi_summary END -->
 
-Both models estimate avoided ED visits in the top benefit decile, but the estimated gross savings do not exceed intervention costs under the current assumptions. GLMNet has the stronger top-decile ROI because it predicts more ED visits avoided: 2.4807 for GLMNet versus 1.4475 for XGBoost. However, ROI remains negative for both models.
+GLMNet estimates 2.4807 avoided ED visits in the top benefit decile. Under the current assumptions, the estimated gross savings do not exceed intervention costs, so ROI remains negative.
 
 These ROI results are directional rather than definitive. ROI is sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
 Supporting files:
 
-- [`XGBoost/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/XGBoost/uplift_roi_by_decile.csv)
 - [`GLMNet/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/GLMNet/uplift_roi_by_decile.csv)
-- [`XGBoost/dashboard_roi_net_savings_by_decile.png`](Outputs/Uplift/Python/XGBoost/dashboard_roi_net_savings_by_decile.png)
 - [`GLMNet/dashboard_roi_net_savings_by_decile.png`](Outputs/Uplift/Python/GLMNet/dashboard_roi_net_savings_by_decile.png)
 
 ## Analytical Task 8: Client Perspective
 
 From the perspective of a Medicaid health plan executive team, the most important conclusion is that the uplift framework provides a more targeted prioritization method than baseline risk alone. It attempts to identify members whose ED risk is expected to decrease with intervention.
 
-GLMNet is the stronger current candidate model. It has better held-out test AUC, better calibration, and higher top-decile predicted benefit. However, after the stratified split, neither GLMNet nor XGBoost has a positive observed control-treated gap in the top benefit decile. This means the current results support GLMNet as the stronger ranking model, but they do not yet provide strong observed top-decile validation for operational targeting.
+GLMNet is the current candidate model for interpretation and operational discussion. It has better held-out test AUC, better calibration, and higher top-decile predicted benefit. However, after the stratified split, the GLMNet top decile does not have a positive observed control-treated gap. This means the current results support GLMNet as the stronger ranking model, but they do not yet provide strong observed top-decile validation for operational targeting.
 
 If the model were used for exploratory prioritization, uplift decile 1 would be the first group to review. GLMNet decile 1 has average predicted benefit of 0.0827 and an observed control-treated ED gap of -0.0667. The negative observed gap means the highest-ranked group should not be presented as validated proof of treatment benefit. Because estimated top-decile ROI also remains negative under current cost assumptions, the model is best presented as a promising prioritization proof of concept rather than a ready financial case.
 
-The results are explainable enough for stakeholder discussion. XGBoost provides SHAP-based risk and benefit explanations, while GLMNet provides standardized coefficient/logit contribution explanations. The benefit-driver analysis is especially important because the variables that drive baseline ED risk are not always the same as the variables that drive expected treatment benefit.
+The results are explainable enough for stakeholder discussion because GLMNet provides standardized coefficient/logit contribution explanations. The benefit-driver analysis is especially important because the variables that drive baseline ED risk are not always the same as the variables that drive expected treatment benefit.
 
 Several limitations are central to the interpretation. The dataset is synthetic and may not reflect live population behavior. Treatment assignment may be confounded. Observed treated-control gaps are not randomized treatment effects. Decile-level sample sizes are small, which can make observed rates unstable. Rare outcome prevalence can compress predicted probabilities toward zero. ROI depends heavily on cost assumptions and model calibration. Live-data validation is required before production deployment.
 
@@ -425,28 +406,21 @@ The current GLMNet top decile has average predicted benefit of 0.0827, observed 
 
 A presentation based on these results can be organized around the business problem, the reason high risk is not always high benefit, the T-learner modeling approach, the data review, model performance, uplift decile findings, explainability results, ROI, limitations, and final recommendation.
 
-The strongest slide story is that GLMNet currently performs better than XGBoost for this use case on held-out outcome-model metrics and predicted benefit ranking. The caution is that the observed top-decile control-treated gap is not positive after the stratified split, ROI is still negative under current assumptions, and the data are synthetic. The workflow is promising, but it requires live-data validation before operational use.
+The strongest slide story is that GLMNet is the candidate model carried forward for uplift prioritization. The caution is that the observed top-decile control-treated gap is not positive after the stratified split, ROI is still negative under current assumptions, and the data are synthetic. The workflow is promising, but it requires live-data validation before operational use.
 
 ## Reproducibility
 
-The analysis can be reproduced by opening `Code/Uplift Model Code_rh06032026.ipynb`, restarting the kernel, and running all cells in order. The notebook writes model outputs to `Outputs/Uplift/Python/XGBoost` and `Outputs/Uplift/Python/GLMNet`.
+The analysis can be reproduced by opening `Code/Uplift Model Code_rh06032026.ipynb`, restarting the kernel, and running all cells in order. The GLMNet outputs used in the final interpretation are saved in `Outputs/Uplift/Python/GLMNet`.
 
 Key output files:
 
 - [`data_review_summary.csv`](Outputs/Uplift/Python/data_review_summary.csv)
 - [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
 - [`model_recommendation_summary.csv`](Outputs/Uplift/Python/model_recommendation_summary.csv)
-- [`XGBoost/uplift_decile_summary.csv`](Outputs/Uplift/Python/XGBoost/uplift_decile_summary.csv)
 - [`GLMNet/uplift_decile_summary.csv`](Outputs/Uplift/Python/GLMNet/uplift_decile_summary.csv)
-- [`XGBoost/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/XGBoost/uplift_roi_by_decile.csv)
 - [`GLMNet/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/GLMNet/uplift_roi_by_decile.csv)
-- [`XGBoost/calibration_summary.csv`](Outputs/Uplift/Python/XGBoost/calibration_summary.csv)
 - [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/GLMNet/calibration_summary.csv)
-- [`XGBoost/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/XGBoost/uplift_observed_gap_by_decile.csv)
 - [`GLMNet/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/GLMNet/uplift_observed_gap_by_decile.csv)
-- [`XGBoost/top_benefit_decile_summary.csv`](Outputs/Uplift/Python/XGBoost/top_benefit_decile_summary.csv)
 - [`GLMNet/top_benefit_decile_summary.csv`](Outputs/Uplift/Python/GLMNet/top_benefit_decile_summary.csv)
-- [`XGBoost/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/XGBoost/shap_importance_treated_control_models.csv)
 - [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/GLMNet/shap_importance_treated_control_models.csv)
-- [`XGBoost/shap_importance_benefit_score.csv`](Outputs/Uplift/Python/XGBoost/shap_importance_benefit_score.csv)
 - [`GLMNet/shap_importance_benefit_score.csv`](Outputs/Uplift/Python/GLMNet/shap_importance_benefit_score.csv)
