@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#0f172a" flood-opacity=".12"/>
+    </filter>
+    <linearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="55%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#84cc16"/>
+    </linearGradient>
+    <style>
+      .bg{fill:#f5f7fb}
+      .card{fill:#ffffff;stroke:#d9e2ec;stroke-width:1.2;filter:url(#cardShadow)}
+      .soft{fill:#f8fafc;stroke:#e2e8f0;stroke-width:1}
+      .goodSoft{fill:#ecfdf5;stroke:#a7f3d0;stroke-width:1}
+      .warnSoft{fill:#fff7ed;stroke:#fed7aa;stroke-width:1}
+      .badSoft{fill:#fef2f2;stroke:#fecaca;stroke-width:1}
+      .title{font-family:Arial,Helvetica,sans-serif;font-weight:800;fill:#0f172a}
+      .text{font-family:Arial,Helvetica,sans-serif;fill:#1f2937}
+      .muted{font-family:Arial,Helvetica,sans-serif;fill:#64748b}
+      .green{font-family:Arial,Helvetica,sans-serif;fill:#059669}
+      .teal{font-family:Arial,Helvetica,sans-serif;fill:#0f766e}
+      .amber{font-family:Arial,Helvetica,sans-serif;fill:#b45309}
+      .red{font-family:Arial,Helvetica,sans-serif;fill:#dc2626}
+      .h2{font-size:24px;font-weight:800}
+      .h3{font-size:18px;font-weight:800}
+      .body{font-size:18px}
+      .small{font-size:15px}
+      .tiny{font-size:13px}
+      .line{stroke:#e2e8f0;stroke-width:1}
+      .barBg{fill:#e5e7eb}
+      .barGood{fill:#22c55e}
+      .barBad{fill:#ef4444}
+      .icon{fill:none;stroke:#0f766e;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1600" height="900"/>
+
+  <text class="title" x="64" y="62" font-size="34">PRISM Candidate Targeting Review</text>
+  <text class="muted body" x="64" y="94">Clear member-level view for deciding whether a candidate is strong enough for outreach</text>
+  <text class="muted small" x="64" y="124">Candidate ID: M-1042 | Program: Complex Care | Outcome: 90-day ED utilization | Model: GLMNet T-Learner</text>
+
+  <rect class="goodSoft" x="1170" y="42" width="350" height="96" rx="14"/>
+  <text class="green small" x="1204" y="73" font-weight="800">OVERALL RECOMMENDATION</text>
+  <text class="title" x="1204" y="112" font-size="38">Target</text>
+  <text class="muted small" x="1342" y="82">Confidence</text>
+  <text class="green h2" x="1342" y="114">High</text>
+
+  <rect class="card" x="64" y="166" width="410" height="250" rx="16"/>
+  <text class="title h2" x="96" y="206">Why This Candidate Stands Out</text>
+  <text class="muted small" x="96" y="232">PRISM estimates a meaningful preventable ED-risk gap.</text>
+  <text class="muted small" x="96" y="282">Risk if targeted</text>
+  <text class="title" x="96" y="324" font-size="46">18%</text>
+  <text class="muted small" x="236" y="282">Risk if not targeted</text>
+  <text class="title" x="236" y="324" font-size="46">31%</text>
+  <rect x="96" y="350" width="300" height="14" rx="7" fill="#e5e7eb"/>
+  <rect x="96" y="350" width="210" height="14" rx="7" fill="url(#scoreGradient)"/>
+  <text class="green h3" x="96" y="392">Estimated benefit: +13 percentage points</text>
+
+  <rect class="card" x="506" y="166" width="338" height="250" rx="16"/>
+  <text class="title h2" x="538" y="206">Targeting Score</text>
+  <circle cx="674" cy="304" r="72" fill="none" stroke="#e5e7eb" stroke-width="18"/>
+  <circle cx="674" cy="304" r="72" fill="none" stroke="url(#scoreGradient)" stroke-width="18" stroke-dasharray="355 98" transform="rotate(-90 674 304)" stroke-linecap="round"/>
+  <text class="title" x="674" y="299" font-size="40" font-weight="800" text-anchor="middle">86</text>
+  <text class="muted small" x="674" y="324" text-anchor="middle">out of 100</text>
+  <rect class="goodSoft" x="566" y="362" width="216" height="34" rx="17"/>
+  <text class="green small" x="674" y="384" text-anchor="middle" font-weight="800">Top Benefit Decile</text>
+
+  <rect class="card" x="876" y="166" width="660" height="250" rx="16"/>
+  <text class="title h2" x="908" y="206">LLM-Generated Summary</text>
+  <text class="muted small" x="908" y="232">Plain-language rationale generated from model outputs and member context.</text>
+  <circle cx="922" cy="274" r="10" fill="#dcfce7" stroke="#22c55e"/>
+  <path d="M917 274l4 5 8-11" stroke="#16a34a" stroke-width="2" fill="none"/>
+  <text class="text body" x="946" y="280">Good candidate because recent utilization and risk profile suggest avoidable near-term ED use.</text>
+  <circle cx="922" cy="323" r="10" fill="#dcfce7" stroke="#22c55e"/>
+  <path d="M917 323l4 5 8-11" stroke="#16a34a" stroke-width="2" fill="none"/>
+  <text class="text body" x="946" y="329">Transportation and medication-adherence signals appear actionable through care coordination.</text>
+  <circle cx="922" cy="372" r="10" fill="#ffedd5" stroke="#f59e0b"/>
+  <path d="M916 372h12" stroke="#b45309" stroke-width="2"/>
+  <text class="text body" x="946" y="378">Review recent outreach history before assignment to avoid duplicative contact.</text>
+
+  <rect class="card" x="64" y="448" width="706" height="300" rx="16"/>
+  <text class="title h2" x="96" y="488">Top Positive Contributors</text>
+  <text class="muted small" x="96" y="514">Features increasing expected value from targeting.</text>
+  <g class="text small">
+    <text x="96" y="566">Recent ED visits last 6 months</text>
+    <rect class="barBg" x="360" y="550" width="250" height="18" rx="9"/>
+    <rect class="barGood" x="360" y="550" width="230" height="18" rx="9"/>
+    <text class="green" x="642" y="565" font-weight="800">+0.041</text>
+    <line class="line" x1="96" y1="590" x2="738" y2="590"/>
+
+    <text x="96" y="622">Current risk score</text>
+    <rect class="barBg" x="360" y="606" width="250" height="18" rx="9"/>
+    <rect class="barGood" x="360" y="606" width="190" height="18" rx="9"/>
+    <text class="green" x="642" y="621" font-weight="800">+0.034</text>
+    <line class="line" x1="96" y1="646" x2="738" y2="646"/>
+
+    <text x="96" y="678">Transportation barrier</text>
+    <rect class="barBg" x="360" y="662" width="250" height="18" rx="9"/>
+    <rect class="barGood" x="360" y="662" width="124" height="18" rx="9"/>
+    <text class="green" x="642" y="677" font-weight="800">+0.022</text>
+    <line class="line" x1="96" y1="702" x2="738" y2="702"/>
+
+    <text x="96" y="734">CHF / COPD comorbidity flags</text>
+    <rect class="barBg" x="360" y="718" width="250" height="18" rx="9"/>
+    <rect class="barGood" x="360" y="718" width="92" height="18" rx="9"/>
+    <text class="green" x="642" y="733" font-weight="800">+0.016</text>
+  </g>
+
+  <rect class="card" x="802" y="448" width="386" height="300" rx="16"/>
+  <text class="title h2" x="834" y="488">Negative Contributors</text>
+  <text class="muted small" x="834" y="514">Factors that reduce targeting priority.</text>
+  <g class="text small">
+    <text x="834" y="566">Stable PCP engagement</text>
+    <rect class="barBg" x="1015" y="550" width="104" height="18" rx="9"/>
+    <rect class="barBad" x="1070" y="550" width="49" height="18" rx="9"/>
+    <text class="red" x="1150" y="565" font-weight="800">-0.018</text>
+    <line class="line" x1="834" y1="590" x2="1156" y2="590"/>
+
+    <text x="834" y="622">Low inpatient use</text>
+    <rect class="barBg" x="1015" y="606" width="104" height="18" rx="9"/>
+    <rect class="barBad" x="1081" y="606" width="38" height="18" rx="9"/>
+    <text class="red" x="1150" y="621" font-weight="800">-0.014</text>
+    <line class="line" x1="834" y1="646" x2="1156" y2="646"/>
+
+    <text x="834" y="678">Prior program exposure</text>
+    <rect class="barBg" x="1015" y="662" width="104" height="18" rx="9"/>
+    <rect class="barBad" x="1092" y="662" width="27" height="18" rx="9"/>
+    <text class="red" x="1150" y="677" font-weight="800">-0.010</text>
+  </g>
+  <rect class="warnSoft" x="834" y="704" width="306" height="32" rx="8"/>
+  <text class="amber tiny" x="850" y="725" font-weight="800">Net read: positives outweigh caution signals</text>
+
+  <rect class="card" x="1220" y="448" width="316" height="300" rx="16"/>
+  <text class="title h2" x="1252" y="488">Next Action</text>
+  <rect class="goodSoft" x="1252" y="524" width="220" height="44" rx="22"/>
+  <text class="green body" x="1362" y="552" text-anchor="middle" font-weight="800">Assign Outreach</text>
+  <text class="muted small" x="1252" y="605">Recommended focus:</text>
+  <text class="text small" x="1252" y="636">Care navigation, transportation support,</text>
+  <text class="text small" x="1252" y="662">medication adherence follow-up, and ED</text>
+  <text class="text small" x="1252" y="688">diversion planning.</text>
+  <line class="line" x1="1252" y1="715" x2="1498" y2="715"/>
+  <text class="muted tiny" x="1252" y="737">Human review required before final assignment</text>
+
+  <rect class="soft" x="64" y="780" width="1472" height="72" rx="14"/>
+  <text class="title h3" x="96" y="824">Reviewer guardrails</text>
+  <text class="muted small" x="280" y="824">Confirm eligibility, recent contact history, member engagement channel, and care-manager capacity before acting on the recommendation.</text>
+</svg>

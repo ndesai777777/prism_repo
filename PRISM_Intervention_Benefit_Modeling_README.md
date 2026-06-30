@@ -284,7 +284,7 @@ Supporting files:
 
 ## Analytical Task 5: Uplift Decile Analysis
 
-Members are ranked by predicted benefit score and split into 10 uplift deciles. Decile 1 is the highest predicted benefit group. This section evaluates whether the highest-ranked members show stronger predicted benefit and whether observed outcomes directionally support the ranking.
+Members are ranked by predicted benefit score and split into 10 uplift deciles. Decile 1 is the highest predicted benefit group.
 
 Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and predicted benefit separation, the full decile review below focuses on GLMNet. Each decile contains 30 held-out test members.
 
@@ -303,74 +303,9 @@ Because GLMNet is the stronger candidate model based on held-out AUC, Brier scor
 | 10 | 30 | 0.0116 | 0.0667 | 0.0396 | 0.0512 | 0.2333 |
 <!-- AUTO_TABLE:glmnet_uplift_decile_summary END -->
 
-The average benefit score declines steadily from decile 1 to decile 10. This is the expected pattern because members are ranked by predicted benefit. The strongest predicted intervention benefit is concentrated in decile 1, followed by deciles 2 and 3. GLMNet decile 1 has an average predicted benefit of 0.0827, meaning the model estimates an average 8.27 percentage point ED risk reduction under intervention for that group.
-
-The predicted ED risk columns show why the benefit score is highest in the top deciles. The average predicted ED risk if treated is fairly stable at about 4.0% across deciles, while the average predicted ED risk if control falls from 12.36% in decile 1 to 5.12% in decile 10. This means GLMNet is mostly distinguishing benefit by identifying members whose untreated risk is high relative to their treated-risk prediction.
-
-Observed ED rates are noisy because each decile contains only 30 members and the overall ED outcome prevalence is 6.0%. Decile 1 has the highest observed ED rate at 23.33%, which suggests the model is identifying a high-risk/high-benefit segment. However, observed ED rate alone does not prove treatment benefit; the more relevant validation check is whether control members have higher observed ED rates than treated members within the same high-benefit decile.
-
-Treatment penetration varies across deciles rather than increasing smoothly with predicted benefit. For example, GLMNet decile 1 has a treatment rate of 50.00%, while decile 6 has a treatment rate of 53.33% and decile 10 has a treatment rate of 23.33%. This indicates that historical intervention assignment was not perfectly aligned with predicted benefit. Operationally, this is useful because the model may identify high-benefit members who were not consistently reached by past intervention patterns.
-
-The table below compares predicted benefit with the observed control-minus-treated ED gap by uplift decile. This decile-level validation is intentionally shown here rather than in the model-performance section because it evaluates the usefulness of the uplift ranking after the underlying outcome models have been assessed.
-
-<!-- AUTO_TABLE:observed_gap_by_decile START -->
-| Model | Uplift decile | N | Treated N | Control N | Avg predicted benefit | Observed control-treated gap | Observed gap 95% CI lower | Observed gap 95% CI upper | Predicted benefit within observed gap 95% CI |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 1 | 30 | 9 | 21 | 0.0483 | -0.0159 | -0.4085 | 0.2693 | Yes |
-| XGBoost | 2 | 30 | 16 | 14 | 0.0272 | -0.1161 | -0.4174 | 0.2488 | Yes |
-| XGBoost | 3 | 30 | 12 | 18 | 0.0087 | 0.0000 | -0.2425 | 0.1759 | Yes |
-| XGBoost | 4 | 30 | 8 | 22 | -0.0026 | 0.0455 | -0.3163 | 0.2180 | Yes |
-| XGBoost | 5 | 30 | 10 | 20 | -0.0070 | 0.1500 | -0.2252 | 0.3604 | Yes |
-| XGBoost | 6 | 30 | 16 | 14 | -0.0105 | 0.1429 | -0.1535 | 0.3994 | Yes |
-| XGBoost | 7 | 30 | 14 | 16 | -0.0142 | -0.0089 | -0.3036 | 0.2706 | Yes |
-| XGBoost | 8 | 30 | 10 | 20 | -0.0188 | 0.0000 | -0.2775 | 0.1611 | Yes |
-| XGBoost | 9 | 30 | 9 | 21 | -0.0244 | 0.0000 | -0.2991 | 0.1546 | Yes |
-| XGBoost | 10 | 30 | 14 | 16 | -0.0335 | 0.1875 | -0.1494 | 0.4301 | Yes |
-| GLMNet | 1 | 30 | 15 | 15 | 0.0827 | -0.0667 | -0.4490 | 0.3429 | Yes |
-| GLMNet | 2 | 30 | 11 | 19 | 0.0576 | 0.0144 | -0.3480 | 0.2977 | Yes |
-| GLMNet | 3 | 30 | 15 | 15 | 0.0461 | 0.0667 | -0.1920 | 0.2982 | Yes |
-| GLMNet | 4 | 30 | 12 | 18 | 0.0382 | 0.1111 | -0.2115 | 0.3280 | Yes |
-| GLMNet | 5 | 30 | 8 | 22 | 0.0322 | 0.0909 | -0.2991 | 0.2781 | Yes |
-| GLMNet | 6 | 30 | 16 | 14 | 0.0281 | 0.0714 | -0.1809 | 0.3147 | Yes |
-| GLMNet | 7 | 30 | 12 | 18 | 0.0240 | 0.0000 | -0.2425 | 0.1759 | Yes |
-| GLMNet | 8 | 30 | 9 | 21 | 0.0205 | 0.0000 | -0.2991 | 0.1546 | Yes |
-| GLMNet | 9 | 30 | 13 | 17 | 0.0166 | 0.0000 | -0.2281 | 0.1843 | Yes |
-| GLMNet | 10 | 30 | 7 | 23 | 0.0116 | 0.0870 | -0.3302 | 0.2680 | Yes |
-<!-- AUTO_TABLE:observed_gap_by_decile END -->
-
-<!-- AUTO_TABLE:top_decile_comparison START -->
-| Model | Top decile n | Treated n | Control n | Avg predicted benefit | Observed ED rate | Treated observed ED rate | Control observed ED rate | Observed control-treated gap | Treatment pct |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | 30 | 9 | 21 | 0.0483 | 0.1000 | 0.1111 | 0.0952 | -0.0159 | 0.3000 |
-| GLMNet | 30 | 15 | 15 | 0.0827 | 0.2333 | 0.2667 | 0.2000 | -0.0667 | 0.5000 |
-<!-- AUTO_TABLE:top_decile_comparison END -->
-
-Both models place the greatest predicted benefit in decile 1. XGBoost decile 1 has an average predicted benefit of 0.0483, while GLMNet decile 1 has a larger average predicted benefit of 0.0827.
-
-The observed validation signal is mixed after the stratified split. In GLMNet decile 1, the control observed ED rate is 20.0% and the treated observed ED rate is 26.7%, producing an observed control-treated gap of -6.67 percentage points. This does not directionally support the top-decile benefit ranking, even though the confidence interval is wide and includes positive values.
-
-XGBoost decile 1 also has a negative observed control-treated gap of -1.59 percentage points. In that decile, treated members had a slightly higher observed ED rate than control members. This also does not provide observed top-decile support for the benefit ranking, although the small decile sample sizes mean the observed rates are unstable and require cautious interpretation.
-
-GLMNet shows a clearer predicted benefit gradient across deciles. Its decile 1 average predicted benefit is 0.0827, while decile 10 is 0.0116, indicating lower but still positive expected benefit in the lowest-ranked group. XGBoost has a weaker and less consistently positive spread: 0.0483 in decile 1 versus -0.0335 in decile 10.
-
-From an operational perspective, decile 1 would be the first group to review if the organization decided to use the model for prioritization, but the observed top-decile treatment gap should temper confidence. GLMNet currently provides stronger predicted benefit ranking than XGBoost, but neither model shows a positive observed control-treated gap in the top decile after the stratified split. Expansion beyond exploratory use depends on outreach capacity, calibration, ROI assumptions, and validation on live data.
-
-A high observed ED rate in the top benefit decile does not by itself prove uplift quality. It may indicate that the model is finding high-risk members. The more relevant observed validation check is:
-
-```text
-observed_control_minus_treated_gap = control_observed_ed_rate - treated_observed_ed_rate
-```
-
-A positive observed gap in a high-benefit decile means untreated/control members had a higher ED rate than treated members in that same decile, which directionally supports the predicted benefit ranking. This is still not interpreted as a randomized causal estimate.
-
 Supporting files:
 
-- [`XGBoost/uplift_decile_summary.csv`](Outputs/Uplift/Python/XGBoost/uplift_decile_summary.csv)
 - [`GLMNet/uplift_decile_summary.csv`](Outputs/Uplift/Python/GLMNet/uplift_decile_summary.csv)
-- [`XGBoost/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/XGBoost/uplift_observed_gap_by_decile.csv)
-- [`GLMNet/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/GLMNet/uplift_observed_gap_by_decile.csv)
-- [`XGBoost/top_benefit_decile_summary.csv`](Outputs/Uplift/Python/XGBoost/top_benefit_decile_summary.csv)
-- [`GLMNet/top_benefit_decile_summary.csv`](Outputs/Uplift/Python/GLMNet/top_benefit_decile_summary.csv)
 
 ## Analytical Task 6: Variable Importance And Explainability
 
