@@ -15,6 +15,7 @@ Markdown blocks marked with:
 from __future__ import annotations
 
 import csv
+import html
 import re
 from pathlib import Path
 from typing import Callable
@@ -97,6 +98,18 @@ def markdown_table(headers: list[str], rows: list[list[object]], align_right: bo
     for row in rows:
         lines.append("| " + " | ".join(str(item) for item in row) + " |")
     return "\n".join(lines)
+
+
+def html_table(headers: list[str], rows: list[list[object]]) -> str:
+    header_html = "".join(f"<th>{html.escape(str(header))}</th>" for header in headers)
+    row_html = []
+    for row in rows:
+        row_html.append(
+            "<tr>"
+            + "".join(f"<td>{html.escape(str(item))}</td>" for item in row)
+            + "</tr>"
+        )
+    return "<table><thead><tr>" + header_html + "</tr></thead><tbody>" + "".join(row_html) + "</tbody></table>"
 
 
 def data_review_table() -> str:
@@ -318,9 +331,9 @@ def top_benefit_examples_table() -> str:
     )
 
 
-def glmnet_decile_table() -> str:
+def learner_decile_rows(rows_in: list[dict[str, str]]) -> list[list[object]]:
     rows = []
-    for row in read_csv(GLMNET_ROOT / "uplift_decile_summary.csv"):
+    for row in rows_in:
         rows.append(
             [
                 int(float(row["uplift_decile"])),
@@ -332,6 +345,11 @@ def glmnet_decile_table() -> str:
                 fnum(row["treated_pct"]),
             ]
         )
+    return rows
+
+
+def learner_decile_table(rows_in: list[dict[str, str]]) -> str:
+    rows = learner_decile_rows(rows_in)
     return markdown_table(
         [
             "Uplift decile",
@@ -346,6 +364,10 @@ def glmnet_decile_table() -> str:
     )
 
 
+def glmnet_decile_table() -> str:
+    return learner_decile_table(read_csv(GLMNET_ROOT / "uplift_decile_summary.csv"))
+
+
 def glmnet_xlearner_decile_path() -> Path:
     return XLEARNER_GLMNET_ROOT / "xlearner_decile_summary.csv"
 
@@ -357,35 +379,28 @@ def glmnet_t_vs_x_decile_table() -> str:
 
     t_rows = read_csv(GLMNET_ROOT / "uplift_decile_summary.csv")
     x_rows = read_csv(x_path)
-    x_by_decile = {int(float(row["uplift_decile"])): row for row in x_rows}
-    rows = []
-    for t_row in t_rows:
-        decile = int(float(t_row["uplift_decile"]))
-        x_row = x_by_decile[decile]
-        rows.append(
-            [
-                decile,
-                int(float(t_row["n"])),
-                fnum(t_row["avg_benefit_score"]),
-                fnum(x_row["avg_benefit_score"]),
-                fnum(t_row["observed_ed_rate"]),
-                fnum(x_row["observed_ed_rate"]),
-                fnum(t_row["treated_pct"]),
-                fnum(x_row["treated_pct"]),
-            ]
-        )
-    return markdown_table(
+    headers = [
+        "Uplift decile",
+        "N",
+        "Avg benefit score",
+        "Observed ED rate",
+        "Avg predicted ED if treated",
+        "Avg predicted ED if control",
+        "Treatment pct",
+    ]
+    t_table = html_table(headers, learner_decile_rows(t_rows))
+    x_table = html_table(headers, learner_decile_rows(x_rows))
+    return "\n".join(
         [
-            "Uplift decile",
-            "N",
-            "T-learner avg benefit",
-            "X-learner avg benefit",
-            "T-learner observed ED rate",
-            "X-learner observed ED rate",
-            "T-learner treatment pct",
-            "X-learner treatment pct",
-        ],
-        rows,
+            '<table><tr>',
+            '<td valign="top" width="50%"><strong>GLMNet T-learner deciles</strong>',
+            t_table,
+            '</td>',
+            '<td valign="top" width="50%"><strong>GLMNet X-learner deciles</strong>',
+            x_table,
+            '</td>',
+            '</tr></table>',
+        ]
     )
 
 

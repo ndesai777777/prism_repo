@@ -297,18 +297,14 @@ Members are ranked by predicted benefit score and split into 10 uplift deciles. 
 Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and predicted benefit separation, the decile review below focuses on GLMNet. This section compares the GLMNet T-learner and GLMNet X-learner decile patterns side by side so the two treatment-effect frameworks can be checked for consistency. Each decile contains 30 held-out test members.
 
 <!-- AUTO_TABLE:glmnet_t_vs_x_decile_summary START -->
-| Uplift decile | N | T-learner avg benefit | X-learner avg benefit | T-learner observed ED rate | X-learner observed ED rate | T-learner treatment pct | X-learner treatment pct |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 30 | 0.0827 | 0.0838 | 0.2333 | 0.2000 | 0.5000 | 0.5333 |
-| 2 | 30 | 0.0576 | 0.0552 | 0.1000 | 0.0667 | 0.3667 | 0.3667 |
-| 3 | 30 | 0.0461 | 0.0460 | 0.0333 | 0.0333 | 0.5000 | 0.2667 |
-| 4 | 30 | 0.0382 | 0.0410 | 0.0667 | 0.0667 | 0.4000 | 0.3000 |
-| 5 | 30 | 0.0322 | 0.0382 | 0.0667 | 0.0667 | 0.2667 | 0.2333 |
-| 6 | 30 | 0.0281 | 0.0352 | 0.0333 | 0.0333 | 0.5333 | 0.5333 |
-| 7 | 30 | 0.0240 | 0.0314 | 0.0000 | 0.0000 | 0.4000 | 0.4667 |
-| 8 | 30 | 0.0205 | 0.0278 | 0.0000 | 0.1000 | 0.3000 | 0.5000 |
-| 9 | 30 | 0.0166 | 0.0239 | 0.0000 | 0.0333 | 0.4333 | 0.3333 |
-| 10 | 30 | 0.0116 | 0.0137 | 0.0667 | 0.0000 | 0.2333 | 0.4000 |
+<table><tr>
+<td valign="top" width="50%"><strong>GLMNet T-learner deciles</strong>
+<table><thead><tr><th>Uplift decile</th><th>N</th><th>Avg benefit score</th><th>Observed ED rate</th><th>Avg predicted ED if treated</th><th>Avg predicted ED if control</th><th>Treatment pct</th></tr></thead><tbody><tr><td>1</td><td>30</td><td>0.0827</td><td>0.2333</td><td>0.0409</td><td>0.1236</td><td>0.5000</td></tr><tr><td>2</td><td>30</td><td>0.0576</td><td>0.1000</td><td>0.0406</td><td>0.0982</td><td>0.3667</td></tr><tr><td>3</td><td>30</td><td>0.0461</td><td>0.0333</td><td>0.0402</td><td>0.0863</td><td>0.5000</td></tr><tr><td>4</td><td>30</td><td>0.0382</td><td>0.0667</td><td>0.0401</td><td>0.0784</td><td>0.4000</td></tr><tr><td>5</td><td>30</td><td>0.0322</td><td>0.0667</td><td>0.0400</td><td>0.0722</td><td>0.2667</td></tr><tr><td>6</td><td>30</td><td>0.0281</td><td>0.0333</td><td>0.0400</td><td>0.0681</td><td>0.5333</td></tr><tr><td>7</td><td>30</td><td>0.0240</td><td>0.0000</td><td>0.0399</td><td>0.0639</td><td>0.4000</td></tr><tr><td>8</td><td>30</td><td>0.0205</td><td>0.0000</td><td>0.0398</td><td>0.0603</td><td>0.3000</td></tr><tr><td>9</td><td>30</td><td>0.0166</td><td>0.0000</td><td>0.0397</td><td>0.0563</td><td>0.4333</td></tr><tr><td>10</td><td>30</td><td>0.0116</td><td>0.0667</td><td>0.0396</td><td>0.0512</td><td>0.2333</td></tr></tbody></table>
+</td>
+<td valign="top" width="50%"><strong>GLMNet X-learner deciles</strong>
+<table><thead><tr><th>Uplift decile</th><th>N</th><th>Avg benefit score</th><th>Observed ED rate</th><th>Avg predicted ED if treated</th><th>Avg predicted ED if control</th><th>Treatment pct</th></tr></thead><tbody><tr><td>1</td><td>30</td><td>0.0838</td><td>0.2000</td><td>0.0410</td><td>0.1181</td><td>0.5333</td></tr><tr><td>2</td><td>30</td><td>0.0552</td><td>0.0667</td><td>0.0404</td><td>0.0951</td><td>0.3667</td></tr><tr><td>3</td><td>30</td><td>0.0460</td><td>0.0333</td><td>0.0400</td><td>0.0763</td><td>0.2667</td></tr><tr><td>4</td><td>30</td><td>0.0410</td><td>0.0667</td><td>0.0401</td><td>0.0772</td><td>0.3000</td></tr><tr><td>5</td><td>30</td><td>0.0382</td><td>0.0667</td><td>0.0399</td><td>0.0691</td><td>0.2333</td></tr><tr><td>6</td><td>30</td><td>0.0352</td><td>0.0333</td><td>0.0399</td><td>0.0692</td><td>0.5333</td></tr><tr><td>7</td><td>30</td><td>0.0314</td><td>0.0000</td><td>0.0398</td><td>0.0646</td><td>0.4667</td></tr><tr><td>8</td><td>30</td><td>0.0278</td><td>0.1000</td><td>0.0399</td><td>0.0646</td><td>0.5000</td></tr><tr><td>9</td><td>30</td><td>0.0239</td><td>0.0333</td><td>0.0398</td><td>0.0640</td><td>0.3333</td></tr><tr><td>10</td><td>30</td><td>0.0137</td><td>0.0000</td><td>0.0399</td><td>0.0601</td><td>0.4000</td></tr></tbody></table>
+</td>
+</tr></table>
 <!-- AUTO_TABLE:glmnet_t_vs_x_decile_summary END -->
 
 <!-- AUTO_CHART:glmnet_t_vs_x_avg_benefit_charts START -->
