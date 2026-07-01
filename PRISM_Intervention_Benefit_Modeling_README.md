@@ -50,9 +50,9 @@ The predictor data dictionary provides each variable's category, description, da
 
 Supporting files:
 
-- [`predictor_data_dictionary.csv`](Outputs/Uplift/Python/predictor_data_dictionary.csv)
-- [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/numeric_predictor_summary.csv)
-- [`categorical_predictor_summary.csv`](Outputs/Uplift/Python/categorical_predictor_summary.csv)
+- [`predictor_data_dictionary.csv`](Outputs/Uplift/Python/Predictor_Distributions/predictor_data_dictionary.csv)
+- [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/numeric_predictor_summary.csv)
+- [`categorical_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/categorical_predictor_summary.csv)
 
 ### Train/Test Methodology
 

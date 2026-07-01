@@ -217,40 +217,6 @@ def factual_prediction_separation_table() -> str:
     )
 
 
-def factual_event_rate_threshold_classification_table() -> str:
-    rows = []
-    for row in read_csv(OUTPUT_ROOT / "factual_event_rate_threshold_classification.csv"):
-        rows.append(
-            [
-                row["model"].replace("GLMNET", "GLMNet"),
-                row["group"],
-                pct(row["threshold"]),
-                int(float(row["predicted_positive_n"])),
-                int(float(row["true_positive"])),
-                int(float(row["false_positive"])),
-                int(float(row["true_negative"])),
-                int(float(row["false_negative"])),
-                fnum(row["precision"]),
-                fnum(row["recall"]),
-            ]
-        )
-    return markdown_table(
-        [
-            "Model",
-            "Group",
-            "Threshold",
-            "Predicted positive N",
-            "True positives",
-            "False positives",
-            "True negatives",
-            "False negatives",
-            "Precision",
-            "Recall",
-        ],
-        rows,
-    )
-
-
 def factual_prediction_ranges_table() -> str:
     rows = []
     for row in read_csv(OUTPUT_ROOT / "factual_prediction_ranges.csv"):

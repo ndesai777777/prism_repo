@@ -1,5 +1,0 @@
-model,group,prediction_column,n,total_events,overall_event_rate,top_risk_fraction,top_risk_n,top_risk_events,top_risk_event_rate,event_capture_rate,top_risk_lift_vs_overall
-XGBoost,Treated,pred_ed_if_treated,122,6,0.04918032786885246,0.1,13,0,0.0,0.0,0.0
-XGBoost,Control,pred_ed_if_control,178,13,0.07303370786516854,0.1,18,3,0.16666666666666666,0.23076923076923078,2.282051282051282
-GLMNET,Treated,pred_ed_if_treated,122,6,0.04918032786885246,0.1,13,2,0.15384615384615385,0.3333333333333333,3.1282051282051286
-GLMNET,Control,pred_ed_if_control,178,13,0.07303370786516854,0.1,18,5,0.2777777777777778,0.38461538461538464,3.8034188034188037
