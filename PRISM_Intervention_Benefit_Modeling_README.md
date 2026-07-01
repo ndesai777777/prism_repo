@@ -361,35 +361,24 @@ GLMNet identifies risk-related variables such as `current_risk_score`, recent ut
 
 ### Benefit Drivers
 
-For GLMNet, benefit-driver importance is based on:
+For GLMNet, benefit-driver importance is compared across the T-learner and X-learner frameworks. The T-learner benefit-driver calculation is based on:
 
 ```text
 benefit_contribution = control_contribution - treated_contribution
 ```
 
+The X-learner benefit-driver calculation uses the propensity-weighted contributions from the second-stage treated-effect and control-effect models. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
+
 The current top benefit drivers by magnitude are:
 
 <!-- AUTO_TABLE:glmnet_benefit_magnitude START -->
-| Top current benefit drivers by magnitude |
-| --- |
-| `admits_last_6m`, `ed_visits_last_6m`, `percolator_clinical_score`, `chf_flag`, `current_risk_score` |
+_Pending: run the notebook to generate `Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_benefit_driver_importance.csv`._
 <!-- AUTO_TABLE:glmnet_benefit_magnitude END -->
 
 The current top benefit drivers by signed value are:
 
 <!-- AUTO_TABLE:glmnet_benefit_signed START -->
-| Direction | Top current benefit drivers by signed value | Mean signed benefit contribution |
-| --- | --- | --- |
-| Increase predicted benefit | `ed_visits_last_6m` | 0.0156 |
-| Increase predicted benefit | `admits_last_6m` | 0.0128 |
-| Increase predicted benefit | `current_risk_score` | 0.0075 |
-| Increase predicted benefit | `percolator_clinical_score` | 0.0048 |
-| Increase predicted benefit | `chf_flag` | 0.0045 |
-| Decrease predicted benefit | `risk_tier_Very_High` | -0.0020 |
-| Decrease predicted benefit | `service_region_Central` | -0.0002 |
-| Decrease predicted benefit | `risk_tier_Medium` | -0.0001 |
-| Decrease predicted benefit | `service_region_West` | -0.0001 |
-| Decrease predicted benefit | `case_manager_name_CM_15` | -0.0001 |
+_Pending: run the notebook to generate `Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_benefit_driver_importance.csv`._
 <!-- AUTO_TABLE:glmnet_benefit_signed END -->
 
 <!-- AUTO_TEXT:glmnet_benefit_driver_interpretation START -->
@@ -400,10 +389,10 @@ The absolute benefit-driver value measures how strongly a feature changes predic
 
 GLMNet provides coefficient-based interpretability, but coefficient interpretation can still be affected by correlation among predictors.
 
-Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment.
+Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment. The X-learner driver comparison should be treated as a consistency check rather than a separate causal explanation.
 
 <!-- AUTO_CHART:glmnet_benefit_driver_chart START -->
-![GLMNet benefit-driver importance](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_benefit_score.png)
+_Pending: run the notebook to generate `Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png`._
 <!-- AUTO_CHART:glmnet_benefit_driver_chart END -->
 
 Supporting files:
@@ -413,6 +402,9 @@ Supporting files:
 - [`GLMNet/dashboard_shap_treated_model.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_treated_model.png)
 - [`GLMNet/dashboard_shap_control_model.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_control_model.png)
 - [`GLMNet/dashboard_shap_benefit_score.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_benefit_score.png)
+- [`GLMNet X-learner/xlearner_benefit_driver_importance.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_benefit_driver_importance.csv)
+- [`GLMNet X-learner/dashboard_xlearner_benefit_drivers.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png)
+- [`GLMNet T-vs-X benefit-driver comparison chart`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png)
 
 ## Analytical Task 7: Business Value Assessment
 

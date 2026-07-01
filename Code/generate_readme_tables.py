@@ -488,53 +488,122 @@ def glmnet_xlearner_consistency_table() -> str:
 
 
 def glmnet_benefit_magnitude_table() -> str:
-    rows = sorted(
-        read_csv(GLMNET_ROOT / "shap_importance_benefit_score.csv"),
-        key=lambda row: float(row["mean_abs_benefit_contribution"]),
-        reverse=True,
-    )[:5]
-    features = ", ".join(f"`{row['feature']}`" for row in rows)
-    return markdown_table(["Top current benefit drivers by magnitude"], [[features]], align_right=False)
+    t_path = GLMNET_ROOT / "shap_importance_benefit_score.csv"
+    x_path = XLEARNER_GLMNET_ROOT / "xlearner_benefit_driver_importance.csv"
+    if not x_path.exists():
+        return missing_output_note(x_path)
+
+    t_rows = [
+        [f"`{row['feature']}`", fnum(row["mean_abs_benefit_contribution"])]
+        for row in sorted(
+            read_csv(t_path),
+            key=lambda item: float(item["mean_abs_benefit_contribution"]),
+            reverse=True,
+        )[:5]
+    ]
+    x_rows = [
+        [f"`{row['feature']}`", fnum(row["mean_abs_xlearner_benefit_contribution"])]
+        for row in sorted(
+            read_csv(x_path),
+            key=lambda item: float(item["mean_abs_xlearner_benefit_contribution"]),
+            reverse=True,
+        )[:5]
+    ]
+    headers = ["Feature", "Mean absolute contribution"]
+    return "\n".join(
+        [
+            '<table><tr>',
+            '<td valign="top" width="50%"><strong>GLMNet T-learner</strong>',
+            html_table(headers, t_rows),
+            '</td>',
+            '<td valign="top" width="50%"><strong>GLMNet X-learner</strong>',
+            html_table(headers, x_rows),
+            '</td>',
+            '</tr></table>',
+        ]
+    )
 
 
 def glmnet_benefit_signed_table() -> str:
-    data = read_csv(GLMNET_ROOT / "shap_importance_benefit_score.csv")
-    positive_rows = sorted(
-        [row for row in data if float(row["mean_signed_benefit_contribution"]) > 0],
-        key=lambda row: float(row["mean_signed_benefit_contribution"]),
-        reverse=True,
-    )[:5]
-    negative_rows = sorted(
-        [row for row in data if float(row["mean_signed_benefit_contribution"]) < 0],
-        key=lambda row: float(row["mean_signed_benefit_contribution"]),
-    )[:5]
+    t_path = GLMNET_ROOT / "shap_importance_benefit_score.csv"
+    x_path = XLEARNER_GLMNET_ROOT / "xlearner_benefit_driver_importance.csv"
+    if not x_path.exists():
+        return missing_output_note(x_path)
 
-    rows = []
-    for row in positive_rows:
-        rows.append(
-            [
-                "Increase predicted benefit",
-                f"`{row['feature']}`",
-                fnum(row["mean_signed_benefit_contribution"]),
-            ]
-        )
-    for row in negative_rows:
-        rows.append(
-            [
-                "Decrease predicted benefit",
-                f"`{row['feature']}`",
-                fnum(row["mean_signed_benefit_contribution"]),
-            ]
-        )
+    def signed_rows(path: Path, signed_col: str) -> list[list[str]]:
+        data = read_csv(path)
+        positive_rows = sorted(
+            [row for row in data if float(row[signed_col]) > 0],
+            key=lambda row: float(row[signed_col]),
+            reverse=True,
+        )[:5]
+        negative_rows = sorted(
+            [row for row in data if float(row[signed_col]) < 0],
+            key=lambda row: float(row[signed_col]),
+        )[:5]
 
-    return markdown_table(
+        rows = []
+        for row in positive_rows:
+            rows.append(
+                [
+                    "Increase predicted benefit",
+                    f"`{row['feature']}`",
+                    fnum(row[signed_col]),
+                ]
+            )
+        for row in negative_rows:
+            rows.append(
+                [
+                    "Decrease predicted benefit",
+                    f"`{row['feature']}`",
+                    fnum(row[signed_col]),
+                ]
+            )
+        return rows
+
+    headers = ["Direction", "Feature", "Mean signed contribution"]
+    return "\n".join(
         [
-            "Direction",
-            "Top current benefit drivers by signed value",
-            "Mean signed benefit contribution",
-        ],
-        rows,
-        align_right=False,
+            '<table><tr>',
+            '<td valign="top" width="50%"><strong>GLMNet T-learner</strong>',
+            html_table(headers, signed_rows(t_path, "mean_signed_benefit_contribution")),
+            '</td>',
+            '<td valign="top" width="50%"><strong>GLMNet X-learner</strong>',
+            html_table(headers, signed_rows(x_path, "mean_signed_xlearner_benefit_contribution")),
+            '</td>',
+            '</tr></table>',
+        ]
+    )
+
+
+def glmnet_benefit_driver_chart_block() -> str:
+    comparison_path = XLEARNER_GLMNET_ROOT / "dashboard_t_vs_x_benefit_driver_comparison.png"
+    if comparison_path.exists():
+        return markdown_image(
+            "GLMNet T-learner versus X-learner top drivers of predicted treatment benefit",
+            "Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png",
+        )
+
+    x_chart_path = XLEARNER_GLMNET_ROOT / "dashboard_xlearner_benefit_drivers.png"
+    if not x_chart_path.exists():
+        return missing_output_note(x_chart_path)
+
+    return "\n".join(
+        [
+            "| GLMNet T-learner | GLMNet X-learner |",
+            "|---|---|",
+            "| "
+            + markdown_image(
+                "GLMNet T-learner benefit-driver importance",
+                "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_benefit_score.png",
+            )
+            + " | "
+            + markdown_image(
+                "GLMNet X-learner benefit-driver importance",
+                "Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png",
+            )
+            + " |",
+        ]
     )
 
 
@@ -740,10 +809,7 @@ CHART_GENERATORS: dict[str, Callable[[], str]] = {
         "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png",
     ),
     "glmnet_t_vs_x_avg_benefit_charts": glmnet_t_vs_x_chart_block,
-    "glmnet_benefit_driver_chart": lambda: markdown_image(
-        "GLMNet benefit-driver importance",
-        "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_benefit_score.png",
-    ),
+    "glmnet_benefit_driver_chart": glmnet_benefit_driver_chart_block,
     "glmnet_roi_by_decile": lambda: markdown_image(
         "GLMNet ROI net savings by uplift decile",
         "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_roi_net_savings_by_decile.png",
