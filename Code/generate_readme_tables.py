@@ -297,25 +297,24 @@ def observed_gap_table() -> str:
 
 def top_benefit_examples_table() -> str:
     rows = []
-    for model_folder, model_label in [("XGBoost", "XGBoost"), ("GLMNet", "GLMNet")]:
-        scored = sorted(
-            read_csv(TLEARNER_ROOT / model_folder / "uplift_scored_output.csv"),
-            key=lambda row: float(row["benefit_score"]),
-            reverse=True,
-        )[:2]
-        for index, row in enumerate(scored):
-            rows.append(
-                [
-                    model_label,
-                    "Highest benefit" if index == 0 else "Second highest benefit",
-                    int(float(row["outcome_ed_90d"])),
-                    int(float(row["intervention_flag"])),
-                    fnum(row["pred_ed_if_treated"]),
-                    fnum(row["pred_ed_if_control"]),
-                    fnum(row["benefit_score"]),
-                    int(float(row["uplift_decile"])),
-                ]
-            )
+    scored = sorted(
+        read_csv(GLMNET_ROOT / "uplift_scored_output.csv"),
+        key=lambda row: float(row["benefit_score"]),
+        reverse=True,
+    )[:2]
+    for index, row in enumerate(scored):
+        rows.append(
+            [
+                "GLMNet",
+                "Highest benefit" if index == 0 else "Second highest benefit",
+                int(float(row["outcome_ed_90d"])),
+                int(float(row["intervention_flag"])),
+                fnum(row["pred_ed_if_treated"]),
+                fnum(row["pred_ed_if_control"]),
+                fnum(row["benefit_score"]),
+                int(float(row["uplift_decile"])),
+            ]
+        )
     return markdown_table(
         [
             "Model",

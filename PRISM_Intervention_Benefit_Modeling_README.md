@@ -86,9 +86,29 @@ A higher benefit score means the model predicts a larger reduction in ED risk if
 
 Separate treated and control models are useful because the relationship between member features and ED risk may differ depending on whether a member receives the intervention. A single risk model can identify members who are likely to have an ED visit, but it does not directly estimate whether the intervention changes that risk.
 
+### X-Learner Framework
+
+The X-learner is used as a second treatment-effect framework to check whether the uplift ranking is directionally consistent with the T-learner. It starts with the same basic counterfactual idea: estimate what would have happened to treated members without treatment and what would have happened to control members with treatment. It then converts those counterfactual comparisons into imputed treatment-effect targets and trains separate treatment-effect models.
+
+For treated members, the X-learner compares the observed outcome with the predicted untreated outcome. For control members, it compares the predicted treated outcome with the observed outcome. These imputed effects are then modeled as functions of member features. At scoring time, a propensity model estimates each member's probability of receiving treatment, and the final X-learner benefit estimate is a weighted combination of the treated-effect and control-effect model predictions.
+
+In this report, the X-learner is not used to replace the T-learner. It is used as a consistency check: if the T-learner and X-learner identify similar high-benefit members and show similar decile patterns, that increases confidence that the benefit ranking is not purely an artifact of one modeling framework.
+
+### How The Analytical Tasks Fit Together
+
+Analytical Tasks 2 and 3 are intentionally upstream of the T-learner versus X-learner comparison. Task 2 describes the data, treatment rate, outcome prevalence, and modeling constraints. Task 3 evaluates whether the factual outcome models are credible enough to support treatment-effect analysis. Those checks matter regardless of whether the final benefit estimate is produced through a T-learner or an X-learner.
+
+The later tasks use those foundations differently. Task 4 explains the member-level treatment-effect logic using the GLMNet T-learner because it is the most direct way to show `pred_ed_if_treated`, `pred_ed_if_control`, and their difference. Task 5 then compares GLMNet T-learner and GLMNet X-learner decile behavior side by side to assess consistency across treatment-effect frameworks.
+
+### Hyperparameter Tuning
+
+Model tuning was performed within the training data using cross-validation. For XGBoost, the notebook used 5-fold cross-validation over tree depth, learning rate, and minimum child weight, with early stopping up to 500 boosting rounds. For GLMNet, the notebook used `LogisticRegressionCV` with standardized predictors, elastic-net mixing values from 0.0 to 1.0, and a regularization-strength grid. The selected treated and control outcome models were chosen using cross-validated AUC within the training data.
+
+The current X-learner implementation uses fixed second-stage treatment-effect model settings as a framework comparison rather than a full tuning exercise. A future refinement would tune X-learner second-stage models separately and compare T-learner and X-learner results after both frameworks have been tuned.
+
 ### Modeling Techniques Used
 
-Two modeling techniques were used inside the T-learner framework: XGBoost and GLMNet. Both techniques were used to estimate the same two quantities for each member: predicted ED risk if treated and predicted ED risk if untreated. The difference is how each technique learns the relationship between member features and ED risk.
+Two modeling techniques were used inside the treatment-effect workflow: XGBoost and GLMNet. Both techniques can be used inside the T-learner and X-learner frameworks. The modeling technique controls how the relationship between member features and outcomes or treatment effects is learned; the learner framework controls how treatment benefit is constructed from those models.
 
 XGBoost is a tree-based machine learning method. It builds many small decision trees sequentially, where each new tree attempts to correct errors made by the previous trees. Each tree splits members into groups based on predictor values, such as risk scores, utilization history, diagnosis flags, or demographic variables. The final XGBoost prediction is the combined output of all trees. In this project, one XGBoost model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
 
@@ -125,17 +145,17 @@ Supporting file:
 
 ## Analytical Task 3: Model Performance
 
-This section evaluates whether the outcome models behind the T-learner are credible enough to support benefit scoring. The T-learner estimates treatment benefit by subtracting two predicted probabilities:
+This section evaluates whether the factual outcome models are credible enough to support treatment-effect analysis. These diagnostics are useful before comparing T-learner and X-learner results because both frameworks depend on reasonable estimates of ED risk under treated and untreated conditions. In the T-learner, treatment benefit is estimated by subtracting two predicted probabilities:
 
 ```text
 benefit_score = pred_ed_if_control - pred_ed_if_treated
 ```
 
-Because the benefit score depends on both outcome models, model performance is evaluated first at the factual outcome-model level. The treated model is evaluated among actual treated members using `pred_ed_if_treated`, and the control model is evaluated among actual control members using `pred_ed_if_control`. Detailed uplift decile behavior is evaluated separately in Analytical Task 5.
+Because the benefit score depends on outcome modeling quality, model performance is evaluated first at the factual outcome-model level. The treated model is evaluated among actual treated members using `pred_ed_if_treated`, and the control model is evaluated among actual control members using `pred_ed_if_control`. Detailed uplift decile behavior is evaluated separately in Analytical Task 5.
 
 ### Hyperparameter Tuning
 
-Both model families were tuned using cross-validation. For XGBoost, the notebook used 5-fold cross-validation over tree depth, learning rate, and minimum child weight, with early stopping up to 500 boosting rounds. For GLMNet, the notebook used `LogisticRegressionCV` with standardized predictors, elastic-net mixing values from 0.0 to 1.0, and a regularization-strength grid. The selected treated and control models were chosen using cross-validated AUC within the training data.
+As described in Analytical Task 1, both model families were tuned using cross-validation within the training data. This tuning section is included before the treatment-effect comparison because both the T-learner and X-learner depend on credible underlying outcome models. In other words, Task 3 evaluates model quality before the report asks whether the T-learner and X-learner produce consistent uplift rankings.
 
 Cross-validation AUC is useful for model selection, but held-out test performance is more important for judging generalization. Because the ED outcome is rare and each T-learner arm is trained separately, performance should be interpreted with attention to the number of positive ED events available in each group.
 
@@ -245,7 +265,7 @@ Supporting files:
 
 ## Analytical Task 4: Treatment Effect Analysis
 
-This section applies the T-learner outputs at the member level. Each member receives two predicted ED probabilities: one assuming the member receives intervention and one assuming the member does not receive intervention. The benefit score is the difference between those two predicted probabilities:
+This section applies the GLMNet T-learner outputs at the member level. GLMNet is used here because Analytical Task 3 identified it as the stronger candidate outcome-risk model. Each member receives two predicted ED probabilities: one assuming the member receives intervention and one assuming the member does not receive intervention. The benefit score is the difference between those two predicted probabilities:
 
 ```text
 benefit_score = pred_ed_if_control - pred_ed_if_treated
@@ -255,18 +275,16 @@ A higher benefit score means the model predicts a larger reduction in ED risk un
 
 The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
-Current high-benefit examples from the full scored outputs:
+Current high-benefit examples from the GLMNet T-learner scored output:
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
 | Model | Example | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| XGBoost | Highest benefit | 0 | 1 | 0.1107 | 0.1898 | 0.0792 | 1 |
-| XGBoost | Second highest benefit | 1 | 0 | 0.1209 | 0.1983 | 0.0774 | 1 |
 | GLMNet | Highest benefit | 1 | 0 | 0.0438 | 0.4700 | 0.4263 | 1 |
 | GLMNet | Second highest benefit | 1 | 1 | 0.0443 | 0.4021 | 0.3579 | 1 |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
-The GLMNet examples show larger predicted benefit scores than the XGBoost examples. In the highest GLMNet example, the predicted untreated ED probability is 0.4700 and the predicted treated ED probability is 0.0438, giving a predicted benefit of 0.4263. This means the model estimates a 42.63 percentage point reduction in ED probability under treatment for that member.
+In the highest GLMNet example, the predicted untreated ED probability is 0.4700 and the predicted treated ED probability is 0.0438, giving a predicted benefit of 0.4263. This means the model estimates a 42.63 percentage point reduction in ED probability under treatment for that member.
 
 The high `pred_ed_if_control` values in this table are not inconsistent with the factual prediction-range table in Analytical Task 3. The Task 3 range summarizes held-out factual outcome-model evaluation only: actual treated test members are evaluated with `pred_ed_if_treated`, and actual control test members are evaluated with `pred_ed_if_control`. The scored-output examples in Analytical Task 4 come from the full scored output and use both predicted scenarios for each member because that is required to estimate benefit.
 
@@ -287,7 +305,6 @@ This is why uplift modeling can be more useful than risk ranking alone. A pure r
 
 Supporting files:
 
-- [`XGBoost/uplift_scored_output.csv`](Outputs/Uplift/Python/T-Learner/XGBoost/uplift_scored_output.csv)
 - [`GLMNet/uplift_scored_output.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_scored_output.csv)
 
 ## Analytical Task 5: Uplift Decile Analysis
