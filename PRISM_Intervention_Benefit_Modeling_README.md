@@ -205,7 +205,9 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 
 GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside factual AUC, positive-vs-negative prediction separation, and prediction range.
 
+<!-- AUTO_CHART:glmnet_calibration_plot START -->
 ![GLMNet calibration plot](Outputs/Uplift/Python/GLMNet/dashboard_calibration_plot.png)
+<!-- AUTO_CHART:glmnet_calibration_plot END -->
 
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
@@ -279,7 +281,9 @@ The table above shows the highest-benefit members, but benefit scores are most u
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
+<!-- AUTO_CHART:glmnet_predicted_treated_vs_control START -->
 ![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/GLMNet/dashboard_predicted_treated_vs_control.png)
+<!-- AUTO_CHART:glmnet_predicted_treated_vs_control END -->
 
 Supporting files:
 
@@ -307,7 +311,9 @@ Because GLMNet is the stronger candidate model based on held-out AUC, Brier scor
 | 10 | 30 | 0.0116 | 0.0667 | 0.0396 | 0.0512 | 0.2333 |
 <!-- AUTO_TABLE:glmnet_uplift_decile_summary END -->
 
+<!-- AUTO_CHART:glmnet_avg_benefit_by_decile START -->
 ![GLMNet average predicted benefit by uplift decile](Outputs/Uplift/Python/GLMNet/dashboard_avg_benefit_by_decile.png)
+<!-- AUTO_CHART:glmnet_avg_benefit_by_decile END -->
 
 Supporting files:
 
@@ -338,14 +344,17 @@ benefit_contribution = control_contribution - treated_contribution
 
 The current top benefit drivers by magnitude are:
 
+<!-- AUTO_TABLE:glmnet_benefit_magnitude START -->
 | Top current benefit drivers by magnitude |
-|---|
+| --- |
 | `admits_last_6m`, `ed_visits_last_6m`, `percolator_clinical_score`, `chf_flag`, `current_risk_score` |
+<!-- AUTO_TABLE:glmnet_benefit_magnitude END -->
 
 The current top benefit drivers by signed value are:
 
+<!-- AUTO_TABLE:glmnet_benefit_signed START -->
 | Direction | Top current benefit drivers by signed value | Mean signed benefit contribution |
-|---|---|---:|
+| --- | --- | --- |
 | Increase predicted benefit | `ed_visits_last_6m` | 0.0156 |
 | Increase predicted benefit | `admits_last_6m` | 0.0128 |
 | Increase predicted benefit | `current_risk_score` | 0.0075 |
@@ -356,8 +365,11 @@ The current top benefit drivers by signed value are:
 | Decrease predicted benefit | `risk_tier_Medium` | -0.0001 |
 | Decrease predicted benefit | `service_region_West` | -0.0001 |
 | Decrease predicted benefit | `case_manager_name_CM_15` | -0.0001 |
+<!-- AUTO_TABLE:glmnet_benefit_signed END -->
 
-For GLMNet, recent utilization, clinical risk, heart failure, and current risk score are the largest benefit-driver features by absolute contribution-difference magnitude. By signed value, recent ED visits, admissions, and current risk score have the strongest positive average contribution to predicted benefit, while the strongest negative signed contributors are much smaller in magnitude.
+<!-- AUTO_TEXT:glmnet_benefit_driver_interpretation START -->
+For GLMNet, `admits_last_6m`, `ed_visits_last_6m`, `percolator_clinical_score`, `chf_flag`, `current_risk_score` are the largest benefit-driver features by absolute contribution-difference magnitude. By signed value, `ed_visits_last_6m`, `admits_last_6m`, `current_risk_score` have the strongest positive average contribution to predicted benefit. The strongest negative signed contributor is `risk_tier_Very_High`.
+<!-- AUTO_TEXT:glmnet_benefit_driver_interpretation END -->
 
 The absolute benefit-driver value measures how strongly a feature changes predicted benefit, regardless of direction. The signed benefit contribution shows whether the feature tends to increase or decrease predicted benefit, and the percent-positive column shows the share of members where the feature increased predicted benefit. Therefore, the benefit-driver tables are interpreted using both magnitude and direction.
 
@@ -365,7 +377,9 @@ GLMNet provides coefficient-based interpretability, but coefficient interpretati
 
 Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment.
 
+<!-- AUTO_CHART:glmnet_benefit_driver_chart START -->
 ![GLMNet benefit-driver importance](Outputs/Uplift/Python/GLMNet/dashboard_shap_benefit_score.png)
+<!-- AUTO_CHART:glmnet_benefit_driver_chart END -->
 
 Supporting files:
 
@@ -392,16 +406,20 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention.
 
 <!-- AUTO_TABLE:roi_summary START -->
 | Targeting approach | Top decile n | Avg predicted benefit | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
-|---|---:|---:|---:|---:|---:|---:|---:|
+| --- | --- | --- | --- | --- | --- | --- | --- |
 | GLMNet uplift score | 30 | 0.0827 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
 | Current risk score | 30 | 0.0749 | 2.2456 | $2,694.72 | $7,500.00 | -$4,805.28 | -0.6407 |
 <!-- AUTO_TABLE:roi_summary END -->
 
-GLMNet uplift targeting estimates 2.4807 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 2.2456 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit.
+<!-- AUTO_TEXT:roi_interpretation START -->
+GLMNet uplift targeting estimates 2.4807 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 2.2456 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit (-0.6031 versus -0.6407).
+<!-- AUTO_TEXT:roi_interpretation END -->
 
 The current-risk comparison uses the same held-out test population and the same cost assumptions. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using the GLMNet predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
 
+<!-- AUTO_CHART:glmnet_roi_by_decile START -->
 ![GLMNet ROI net savings by uplift decile](Outputs/Uplift/Python/GLMNet/dashboard_roi_net_savings_by_decile.png)
+<!-- AUTO_CHART:glmnet_roi_by_decile END -->
 
 These ROI results are directional rather than definitive. ROI is sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
@@ -439,6 +457,12 @@ The strongest slide story is that GLMNet is the candidate model carried forward 
 ## Reproducibility
 
 The analysis can be reproduced by opening `Code/Uplift Model Code_rh06032026.ipynb`, restarting the kernel, and running all cells in order. The GLMNet outputs used in the final interpretation are saved in `Outputs/Uplift/Python/GLMNet`.
+
+After rerunning the notebook, refresh the generated README tables, text snippets, and chart embeds with:
+
+```bash
+python Code/generate_readme_tables.py
+```
 
 Key output files:
 

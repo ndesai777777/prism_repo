@@ -19,6 +19,10 @@ import re
 from pathlib import Path
 from typing import Callable
 
+import pandas as pd
+
+from _prism_model_utils import split_train_test
+
 
 ROOT = Path(__file__).resolve().parents[1]
 README_PATH = ROOT / "PRISM_Intervention_Benefit_Modeling_README.md"
@@ -57,6 +61,10 @@ def money(value: object) -> str:
         return str(value)
     sign = "-" if number < 0 else ""
     return f"{sign}${abs(number):,.2f}"
+
+
+def markdown_image(alt: str, path: str) -> str:
+    return f"![{alt}]({path})"
 
 
 def yes_no(value: object) -> str:
@@ -362,6 +370,85 @@ def glmnet_decile_table() -> str:
     )
 
 
+def glmnet_benefit_magnitude_table() -> str:
+    rows = sorted(
+        read_csv(OUTPUT_ROOT / "GLMNet" / "shap_importance_benefit_score.csv"),
+        key=lambda row: float(row["mean_abs_benefit_contribution"]),
+        reverse=True,
+    )[:5]
+    features = ", ".join(f"`{row['feature']}`" for row in rows)
+    return markdown_table(["Top current benefit drivers by magnitude"], [[features]], align_right=False)
+
+
+def glmnet_benefit_signed_table() -> str:
+    data = read_csv(OUTPUT_ROOT / "GLMNet" / "shap_importance_benefit_score.csv")
+    positive_rows = sorted(
+        [row for row in data if float(row["mean_signed_benefit_contribution"]) > 0],
+        key=lambda row: float(row["mean_signed_benefit_contribution"]),
+        reverse=True,
+    )[:5]
+    negative_rows = sorted(
+        [row for row in data if float(row["mean_signed_benefit_contribution"]) < 0],
+        key=lambda row: float(row["mean_signed_benefit_contribution"]),
+    )[:5]
+
+    rows = []
+    for row in positive_rows:
+        rows.append(
+            [
+                "Increase predicted benefit",
+                f"`{row['feature']}`",
+                fnum(row["mean_signed_benefit_contribution"]),
+            ]
+        )
+    for row in negative_rows:
+        rows.append(
+            [
+                "Decrease predicted benefit",
+                f"`{row['feature']}`",
+                fnum(row["mean_signed_benefit_contribution"]),
+            ]
+        )
+
+    return markdown_table(
+        [
+            "Direction",
+            "Top current benefit drivers by signed value",
+            "Mean signed benefit contribution",
+        ],
+        rows,
+        align_right=False,
+    )
+
+
+def glmnet_benefit_driver_interpretation() -> str:
+    data = read_csv(OUTPUT_ROOT / "GLMNet" / "shap_importance_benefit_score.csv")
+    magnitude = sorted(
+        data,
+        key=lambda row: float(row["mean_abs_benefit_contribution"]),
+        reverse=True,
+    )[:5]
+    positive = sorted(
+        [row for row in data if float(row["mean_signed_benefit_contribution"]) > 0],
+        key=lambda row: float(row["mean_signed_benefit_contribution"]),
+        reverse=True,
+    )[:3]
+    negative = sorted(
+        [row for row in data if float(row["mean_signed_benefit_contribution"]) < 0],
+        key=lambda row: float(row["mean_signed_benefit_contribution"]),
+    )[:1]
+
+    mag_text = ", ".join(f"`{row['feature']}`" for row in magnitude)
+    pos_text = ", ".join(f"`{row['feature']}`" for row in positive)
+    neg_text = f"`{negative[0]['feature']}`" if negative else "no negative signed contributors"
+    return (
+        f"For GLMNet, {mag_text} are the largest benefit-driver features by "
+        "absolute contribution-difference magnitude. By signed value, "
+        f"{pos_text} have the strongest positive average contribution to predicted "
+        f"benefit. The strongest negative signed contributor is {neg_text}."
+    )
+
+
 def top_decile_comparison_table() -> str:
     rows = []
     for model_folder, model_label in [("XGBoost", "XGBoost"), ("GLMNet", "GLMNet")]:
@@ -398,24 +485,64 @@ def top_decile_comparison_table() -> str:
 
 
 def roi_table() -> str:
-    rows = []
-    for model_folder, model_label in [("XGBoost", "XGBoost"), ("GLMNet", "GLMNet")]:
-        row = read_csv(OUTPUT_ROOT / model_folder / "top_benefit_decile_summary.csv")[0]
-        rows.append(
-            [
-                model_label,
-                int(float(row["top_decile_n"])),
-                fnum(row["top_decile_estimated_ed_visits_avoided"]),
-                money(row["top_decile_gross_savings"]),
-                money(row["top_decile_intervention_cost"]),
-                money(row["top_decile_net_savings"]),
-                fnum(row["top_decile_roi"]),
-            ]
-        )
+    glmnet_row = read_csv(OUTPUT_ROOT / "GLMNet" / "top_benefit_decile_summary.csv")[0]
+    scored = pd.read_csv(OUTPUT_ROOT / "GLMNet" / "uplift_scored_output.csv")
+    _, test_df = split_train_test(
+        scored,
+        train_fraction=0.70,
+        seed=123,
+        stratify_columns=["intervention_flag", "outcome_ed_90d"],
+    )
+    risk_top = test_df.sort_values("current_risk_score", ascending=False).head(
+        int(float(glmnet_row["top_decile_n"]))
+    )
+
+    def roi_values(frame: pd.DataFrame) -> dict[str, float]:
+        n = len(frame)
+        avg_benefit = float(frame["benefit_score"].mean())
+        avoided = n * avg_benefit
+        gross = avoided * 1200
+        intervention_cost = n * 250
+        net = gross - intervention_cost
+        roi = net / intervention_cost
+        return {
+            "n": n,
+            "avg_benefit": avg_benefit,
+            "avoided": avoided,
+            "gross": gross,
+            "intervention_cost": intervention_cost,
+            "net": net,
+            "roi": roi,
+        }
+
+    risk_roi = roi_values(risk_top)
+    rows = [
+        [
+            "GLMNet uplift score",
+            int(float(glmnet_row["top_decile_n"])),
+            fnum(glmnet_row["top_decile_avg_predicted_benefit"]),
+            fnum(glmnet_row["top_decile_estimated_ed_visits_avoided"]),
+            money(glmnet_row["top_decile_gross_savings"]),
+            money(glmnet_row["top_decile_intervention_cost"]),
+            money(glmnet_row["top_decile_net_savings"]),
+            fnum(glmnet_row["top_decile_roi"]),
+        ],
+        [
+            "Current risk score",
+            risk_roi["n"],
+            fnum(risk_roi["avg_benefit"]),
+            fnum(risk_roi["avoided"]),
+            money(risk_roi["gross"]),
+            money(risk_roi["intervention_cost"]),
+            money(risk_roi["net"]),
+            fnum(risk_roi["roi"]),
+        ],
+    ]
     return markdown_table(
         [
-            "Model",
+            "Targeting approach",
             "Top decile n",
+            "Avg predicted benefit",
             "Estimated ED visits avoided",
             "Gross savings",
             "Intervention cost",
@@ -423,10 +550,41 @@ def roi_table() -> str:
             "ROI",
         ],
         rows,
+        align_right=False,
     )
 
 
-GENERATORS: dict[str, Callable[[], str]] = {
+def roi_interpretation() -> str:
+    glmnet_row = read_csv(OUTPUT_ROOT / "GLMNet" / "top_benefit_decile_summary.csv")[0]
+    scored = pd.read_csv(OUTPUT_ROOT / "GLMNet" / "uplift_scored_output.csv")
+    _, test_df = split_train_test(
+        scored,
+        train_fraction=0.70,
+        seed=123,
+        stratify_columns=["intervention_flag", "outcome_ed_90d"],
+    )
+    n = int(float(glmnet_row["top_decile_n"]))
+    risk_top = test_df.sort_values("current_risk_score", ascending=False).head(n)
+    risk_avg_benefit = float(risk_top["benefit_score"].mean())
+    risk_avoided = n * risk_avg_benefit
+    risk_gross = risk_avoided * 1200
+    risk_cost = n * 250
+    risk_net = risk_gross - risk_cost
+    risk_roi = risk_net / risk_cost
+
+    return (
+        "GLMNet uplift targeting estimates "
+        f"{fnum(glmnet_row['top_decile_estimated_ed_visits_avoided'])} avoided ED visits "
+        "in the top benefit decile. Targeting the top decile by current risk score instead "
+        f"estimates {fnum(risk_avoided)} avoided ED visits. Under the current assumptions, "
+        "the estimated gross savings do not exceed intervention costs in either approach, "
+        "so ROI remains negative. However, uplift-based targeting produces a less negative "
+        "ROI than current-risk targeting because it selects members with higher average "
+        f"predicted intervention benefit ({fnum(glmnet_row['top_decile_roi'])} versus {fnum(risk_roi)})."
+    )
+
+
+TABLE_GENERATORS: dict[str, Callable[[], str]] = {
     "data_review_summary": data_review_table,
     "model_performance_summary": model_performance_table,
     "brier_calibration_summary": brier_calibration_table,
@@ -436,29 +594,65 @@ GENERATORS: dict[str, Callable[[], str]] = {
     "observed_gap_by_decile": observed_gap_table,
     "top_benefit_examples": top_benefit_examples_table,
     "glmnet_uplift_decile_summary": glmnet_decile_table,
+    "glmnet_benefit_magnitude": glmnet_benefit_magnitude_table,
+    "glmnet_benefit_signed": glmnet_benefit_signed_table,
     "top_decile_comparison": top_decile_comparison_table,
     "roi_summary": roi_table,
 }
 
 
-def replace_block(text: str, name: str, content: str) -> str:
-    start = f"<!-- AUTO_TABLE:{name} START -->"
-    end = f"<!-- AUTO_TABLE:{name} END -->"
+TEXT_GENERATORS: dict[str, Callable[[], str]] = {
+    "glmnet_benefit_driver_interpretation": glmnet_benefit_driver_interpretation,
+    "roi_interpretation": roi_interpretation,
+}
+
+
+CHART_GENERATORS: dict[str, Callable[[], str]] = {
+    "glmnet_calibration_plot": lambda: markdown_image(
+        "GLMNet calibration plot",
+        "Outputs/Uplift/Python/GLMNet/dashboard_calibration_plot.png",
+    ),
+    "glmnet_predicted_treated_vs_control": lambda: markdown_image(
+        "GLMNet predicted ED risk if treated versus control",
+        "Outputs/Uplift/Python/GLMNet/dashboard_predicted_treated_vs_control.png",
+    ),
+    "glmnet_avg_benefit_by_decile": lambda: markdown_image(
+        "GLMNet average predicted benefit by uplift decile",
+        "Outputs/Uplift/Python/GLMNet/dashboard_avg_benefit_by_decile.png",
+    ),
+    "glmnet_benefit_driver_chart": lambda: markdown_image(
+        "GLMNet benefit-driver importance",
+        "Outputs/Uplift/Python/GLMNet/dashboard_shap_benefit_score.png",
+    ),
+    "glmnet_roi_by_decile": lambda: markdown_image(
+        "GLMNet ROI net savings by uplift decile",
+        "Outputs/Uplift/Python/GLMNet/dashboard_roi_net_savings_by_decile.png",
+    ),
+}
+
+
+def replace_block(text: str, kind: str, name: str, content: str) -> str:
+    start = f"<!-- AUTO_{kind}:{name} START -->"
+    end = f"<!-- AUTO_{kind}:{name} END -->"
     pattern = re.compile(
         rf"{re.escape(start)}\n.*?\n{re.escape(end)}",
         flags=re.DOTALL,
     )
     replacement = f"{start}\n{content}\n{end}"
     updated, count = pattern.subn(replacement, text)
-    if count != 1:
-        raise ValueError(f"Expected exactly one generated block for {name}, found {count}.")
+    if count > 1:
+        raise ValueError(f"Expected at most one generated block for {name}, found {count}.")
     return updated
 
 
 def main() -> None:
     text = README_PATH.read_text(encoding="utf-8")
-    for name, generator in GENERATORS.items():
-        text = replace_block(text, name, generator())
+    for name, generator in TABLE_GENERATORS.items():
+        text = replace_block(text, "TABLE", name, generator())
+    for name, generator in TEXT_GENERATORS.items():
+        text = replace_block(text, "TEXT", name, generator())
+    for name, generator in CHART_GENERATORS.items():
+        text = replace_block(text, "CHART", name, generator())
     README_PATH.write_text(text, encoding="utf-8", newline="\n")
     print(f"Updated generated tables in {README_PATH}")
 
