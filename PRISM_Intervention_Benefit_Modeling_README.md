@@ -372,13 +372,27 @@ The X-learner benefit-driver calculation uses the propensity-weighted contributi
 The current top benefit drivers by magnitude are:
 
 <!-- AUTO_TABLE:glmnet_benefit_magnitude START -->
-_Pending: run the notebook to generate `Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_benefit_driver_importance.csv`._
+<table><tr>
+<td valign="top" width="50%"><strong>GLMNet T-learner</strong>
+<table><thead><tr><th>Feature</th><th>Mean absolute contribution</th></tr></thead><tbody><tr><td>`admits_last_6m`</td><td>0.0868</td></tr><tr><td>`ed_visits_last_6m`</td><td>0.0764</td></tr><tr><td>`percolator_clinical_score`</td><td>0.0750</td></tr><tr><td>`chf_flag`</td><td>0.0513</td></tr><tr><td>`current_risk_score`</td><td>0.0496</td></tr></tbody></table>
+</td>
+<td valign="top" width="50%"><strong>GLMNet X-learner</strong>
+<table><thead><tr><th>Feature</th><th>Mean absolute contribution</th></tr></thead><tbody><tr><td>`admits_last_6m`</td><td>0.0028</td></tr><tr><td>`ed_visits_last_6m`</td><td>0.0026</td></tr><tr><td>`chf_flag`</td><td>0.0020</td></tr><tr><td>`anxiety_flag`</td><td>0.0019</td></tr><tr><td>`percolator_clinical_score`</td><td>0.0019</td></tr></tbody></table>
+</td>
+</tr></table>
 <!-- AUTO_TABLE:glmnet_benefit_magnitude END -->
 
 The current top benefit drivers by signed value are:
 
 <!-- AUTO_TABLE:glmnet_benefit_signed START -->
-_Pending: run the notebook to generate `Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_benefit_driver_importance.csv`._
+<table><tr>
+<td valign="top" width="50%"><strong>GLMNet T-learner</strong>
+<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed contribution</th></tr></thead><tbody><tr><td>Increase predicted benefit</td><td>`ed_visits_last_6m`</td><td>0.0156</td></tr><tr><td>Increase predicted benefit</td><td>`admits_last_6m`</td><td>0.0128</td></tr><tr><td>Increase predicted benefit</td><td>`current_risk_score`</td><td>0.0075</td></tr><tr><td>Increase predicted benefit</td><td>`percolator_clinical_score`</td><td>0.0048</td></tr><tr><td>Increase predicted benefit</td><td>`chf_flag`</td><td>0.0045</td></tr><tr><td>Decrease predicted benefit</td><td>`risk_tier_Very_High`</td><td>-0.0020</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_Central`</td><td>-0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`risk_tier_Medium`</td><td>-0.0001</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_West`</td><td>-0.0001</td></tr><tr><td>Decrease predicted benefit</td><td>`case_manager_name_CM_15`</td><td>-0.0001</td></tr></tbody></table>
+</td>
+<td valign="top" width="50%"><strong>GLMNet X-learner</strong>
+<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed contribution</th></tr></thead><tbody><tr><td>Increase predicted benefit</td><td>`ed_visits_last_6m`</td><td>0.0009</td></tr><tr><td>Increase predicted benefit</td><td>`admits_last_6m`</td><td>0.0007</td></tr><tr><td>Increase predicted benefit</td><td>`current_risk_score`</td><td>0.0006</td></tr><tr><td>Increase predicted benefit</td><td>`risk_tier_High`</td><td>0.0004</td></tr><tr><td>Increase predicted benefit</td><td>`total_cost_last_6m`</td><td>0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`opioid_flag`</td><td>-0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`pcp_visits_last_6m`</td><td>-0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`transportation_barrier_flag`</td><td>-0.0003</td></tr><tr><td>Decrease predicted benefit</td><td>`specialist_visits_last_6m`</td><td>-0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`county_County_A`</td><td>-0.0002</td></tr></tbody></table>
+</td>
+</tr></table>
 <!-- AUTO_TABLE:glmnet_benefit_signed END -->
 
 <!-- AUTO_TEXT:glmnet_benefit_driver_interpretation START -->
@@ -392,7 +406,7 @@ GLMNet provides coefficient-based interpretability, but coefficient interpretati
 Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment. The X-learner driver comparison should be treated as a consistency check rather than a separate causal explanation.
 
 <!-- AUTO_CHART:glmnet_benefit_driver_chart START -->
-_Pending: run the notebook to generate `Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png`._
+![GLMNet T-learner versus X-learner top drivers of predicted treatment benefit](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png)
 <!-- AUTO_CHART:glmnet_benefit_driver_chart END -->
 
 Supporting files:
