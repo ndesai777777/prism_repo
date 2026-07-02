@@ -182,7 +182,7 @@ Discrimination asks whether the model ranks actual ED-positive members above act
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC |
 | ---: | ---: | ---: | ---: | ---: |
 | XGBoost | 0.7399 | 0.6680 | 0.8354 | 0.5833 |
-| GLMNet | 0.7138 | 0.6500 | 0.9062 | 0.6582 |
+| GLMNet | 0.7195 | 0.6472 | 0.9044 | 0.6600 |
 <!-- AUTO_TABLE:model_performance_summary END -->
 
 GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also higher. XGBoost now ranks treated members well, but its control test AUC is weaker than GLMNet's control test AUC. Because both treated and control outcome models feed into the benefit score, GLMNet remains the stronger candidate for outcome-risk ranking.
@@ -196,8 +196,8 @@ AUC is useful, but it can feel abstract. The table below combines factual-group 
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | XGBoost | Treated | 5 | 113 | 0.8354 | 0.1289 | 0.1165 | 0.0124 | 0.1286 | 0.1110 |
 | XGBoost | Control | 13 | 169 | 0.5833 | 0.1184 | 0.1134 | 0.0050 | 0.1119 | 0.1055 |
-| GLMNet | Treated | 5 | 113 | 0.9062 | 0.0409 | 0.0401 | 0.0008 | 0.0410 | 0.0400 |
-| GLMNet | Control | 13 | 169 | 0.6582 | 0.0864 | 0.0734 | 0.0130 | 0.0758 | 0.0689 |
+| GLMNet | Treated | 5 | 113 | 0.9044 | 0.0574 | 0.0395 | 0.0179 | 0.0606 | 0.0363 |
+| GLMNet | Control | 13 | 169 | 0.6600 | 0.0774 | 0.0729 | 0.0045 | 0.0742 | 0.0713 |
 <!-- AUTO_TABLE:factual_prediction_separation END -->
 
 This table is one of the most important diagnostics for the project. The AUC column measures whether the model ranks actual ED-positive members above ED-negative members. The average and median prediction columns show whether ED-positive members receive higher predicted probabilities in magnitude. A useful risk model should show both stronger ranking and higher predicted risk among actual ED-positive members.
@@ -220,7 +220,7 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 | Model | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
 | ---: | ---: | ---: | ---: | ---: |
 | XGBoost | 0.0452 | 0.0681 | 0.0803 | 0.0644 |
-| GLMNet | 0.0405 | 0.0651 | 0.0660 | 0.0298 |
+| GLMNet | 0.0392 | 0.0658 | 0.0615 | 0.0511 |
 <!-- AUTO_TABLE:brier_calibration_summary END -->
 
 GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside factual AUC, positive-vs-negative prediction separation, and prediction range.
@@ -240,8 +240,8 @@ The prediction ranges below are **factual evaluation ranges**. For treated membe
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | XGBoost | Treated | 0.1096 | 0.1096 | 0.1121 | 0.1170 | 0.1288 | 0.1525 |
 | XGBoost | Control | 0.0814 | 0.0895 | 0.1057 | 0.1138 | 0.1557 | 0.1854 |
-| GLMNet | Treated | 0.0394 | 0.0397 | 0.0400 | 0.0401 | 0.0408 | 0.0417 |
-| GLMNet | Control | 0.0453 | 0.0525 | 0.0698 | 0.0744 | 0.1023 | 0.2067 |
+| GLMNet | Treated | 0.0274 | 0.0318 | 0.0372 | 0.0403 | 0.0545 | 0.0858 |
+| GLMNet | Control | 0.0601 | 0.0644 | 0.0716 | 0.0732 | 0.0844 | 0.1084 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
 This table helps explain probability magnitude in a rare-outcome setting. GLMNet's treated predictions are tightly compressed around 4.0%, so even small rank-order differences can produce a strong AUC while still producing very little probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
@@ -280,8 +280,8 @@ Current high-benefit examples from the GLMNet T-learner scored output:
 <!-- AUTO_TABLE:top_benefit_examples START -->
 | Model | Example | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| GLMNet | Highest benefit | 1 | 0 | 0.0438 | 0.4700 | 0.4263 | 1 |
-| GLMNet | Second highest benefit | 1 | 1 | 0.0443 | 0.4021 | 0.3579 | 1 |
+| GLMNet | Highest benefit | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 |
+| GLMNet | Second highest benefit | 0 | 0 | 0.0355 | 0.0871 | 0.0516 | 1 |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
 In the highest GLMNet example, the predicted untreated ED probability is 0.4700 and the predicted treated ED probability is 0.0438, giving a predicted benefit of 0.4263. This means the model estimates a 42.63 percentage point reduction in ED probability under treatment for that member.
@@ -316,10 +316,10 @@ Because GLMNet is the stronger candidate model based on held-out AUC, Brier scor
 <!-- AUTO_TABLE:glmnet_t_vs_x_decile_summary START -->
 <table><tr>
 <td valign="top" width="50%"><strong>GLMNet T-learner deciles</strong>
-<table><thead><tr><th>Uplift decile</th><th>N</th><th>Avg T-learner benefit score</th><th>Observed ED rate</th><th>Avg predicted ED if treated</th><th>Avg predicted ED if control</th><th>Treatment pct</th></tr></thead><tbody><tr><td>1</td><td>30</td><td>0.0827</td><td>0.2333</td><td>0.0409</td><td>0.1236</td><td>0.5000</td></tr><tr><td>2</td><td>30</td><td>0.0576</td><td>0.1000</td><td>0.0406</td><td>0.0982</td><td>0.3667</td></tr><tr><td>3</td><td>30</td><td>0.0461</td><td>0.0333</td><td>0.0402</td><td>0.0863</td><td>0.5000</td></tr><tr><td>4</td><td>30</td><td>0.0382</td><td>0.0667</td><td>0.0401</td><td>0.0784</td><td>0.4000</td></tr><tr><td>5</td><td>30</td><td>0.0322</td><td>0.0667</td><td>0.0400</td><td>0.0722</td><td>0.2667</td></tr><tr><td>6</td><td>30</td><td>0.0281</td><td>0.0333</td><td>0.0400</td><td>0.0681</td><td>0.5333</td></tr><tr><td>7</td><td>30</td><td>0.0240</td><td>0.0000</td><td>0.0399</td><td>0.0639</td><td>0.4000</td></tr><tr><td>8</td><td>30</td><td>0.0205</td><td>0.0000</td><td>0.0398</td><td>0.0603</td><td>0.3000</td></tr><tr><td>9</td><td>30</td><td>0.0166</td><td>0.0000</td><td>0.0397</td><td>0.0563</td><td>0.4333</td></tr><tr><td>10</td><td>30</td><td>0.0116</td><td>0.0667</td><td>0.0396</td><td>0.0512</td><td>0.2333</td></tr></tbody></table>
+<table><thead><tr><th>Uplift decile</th><th>N</th><th>Avg T-learner benefit score</th><th>Observed ED rate</th><th>Avg predicted ED if treated</th><th>Avg predicted ED if control</th><th>Treatment pct</th></tr></thead><tbody><tr><td>1</td><td>30</td><td>0.0440</td><td>0.0667</td><td>0.0357</td><td>0.0797</td><td>0.3667</td></tr><tr><td>2</td><td>30</td><td>0.0403</td><td>0.0000</td><td>0.0345</td><td>0.0748</td><td>0.4333</td></tr><tr><td>3</td><td>30</td><td>0.0382</td><td>0.0000</td><td>0.0336</td><td>0.0717</td><td>0.3667</td></tr><tr><td>4</td><td>30</td><td>0.0365</td><td>0.0333</td><td>0.0333</td><td>0.0698</td><td>0.3667</td></tr><tr><td>5</td><td>30</td><td>0.0354</td><td>0.0667</td><td>0.0367</td><td>0.0721</td><td>0.4000</td></tr><tr><td>6</td><td>30</td><td>0.0342</td><td>0.0333</td><td>0.0376</td><td>0.0719</td><td>0.3333</td></tr><tr><td>7</td><td>30</td><td>0.0329</td><td>0.0667</td><td>0.0378</td><td>0.0707</td><td>0.5667</td></tr><tr><td>8</td><td>30</td><td>0.0312</td><td>0.1333</td><td>0.0411</td><td>0.0723</td><td>0.4000</td></tr><tr><td>9</td><td>30</td><td>0.0287</td><td>0.0000</td><td>0.0442</td><td>0.0729</td><td>0.3333</td></tr><tr><td>10</td><td>30</td><td>0.0230</td><td>0.2000</td><td>0.0584</td><td>0.0815</td><td>0.3667</td></tr></tbody></table>
 </td>
 <td valign="top" width="50%"><strong>GLMNet X-learner deciles</strong>
-<table><thead><tr><th>Uplift decile</th><th>N</th><th>Avg X-learner benefit score</th><th>Observed ED rate</th><th>Avg outcome-model ED if treated</th><th>Avg outcome-model ED if control</th><th>Treatment pct</th></tr></thead><tbody><tr><td>1</td><td>30</td><td>0.0838</td><td>0.2000</td><td>0.0410</td><td>0.1181</td><td>0.5333</td></tr><tr><td>2</td><td>30</td><td>0.0552</td><td>0.0667</td><td>0.0404</td><td>0.0951</td><td>0.3667</td></tr><tr><td>3</td><td>30</td><td>0.0460</td><td>0.0333</td><td>0.0400</td><td>0.0763</td><td>0.2667</td></tr><tr><td>4</td><td>30</td><td>0.0410</td><td>0.0667</td><td>0.0401</td><td>0.0772</td><td>0.3000</td></tr><tr><td>5</td><td>30</td><td>0.0382</td><td>0.0667</td><td>0.0399</td><td>0.0691</td><td>0.2333</td></tr><tr><td>6</td><td>30</td><td>0.0352</td><td>0.0333</td><td>0.0399</td><td>0.0692</td><td>0.5333</td></tr><tr><td>7</td><td>30</td><td>0.0314</td><td>0.0000</td><td>0.0398</td><td>0.0646</td><td>0.4667</td></tr><tr><td>8</td><td>30</td><td>0.0278</td><td>0.1000</td><td>0.0399</td><td>0.0646</td><td>0.5000</td></tr><tr><td>9</td><td>30</td><td>0.0239</td><td>0.0333</td><td>0.0398</td><td>0.0640</td><td>0.3333</td></tr><tr><td>10</td><td>30</td><td>0.0137</td><td>0.0000</td><td>0.0399</td><td>0.0601</td><td>0.4000</td></tr></tbody></table>
+<table><thead><tr><th>Uplift decile</th><th>N</th><th>Avg X-learner benefit score</th><th>Observed ED rate</th><th>Avg outcome-model ED if treated</th><th>Avg outcome-model ED if control</th><th>Treatment pct</th></tr></thead><tbody><tr><td>1</td><td>30</td><td>0.0696</td><td>0.2000</td><td>0.0565</td><td>0.0869</td><td>0.5667</td></tr><tr><td>2</td><td>30</td><td>0.0502</td><td>0.0333</td><td>0.0419</td><td>0.0785</td><td>0.3000</td></tr><tr><td>3</td><td>30</td><td>0.0447</td><td>0.0667</td><td>0.0371</td><td>0.0733</td><td>0.3000</td></tr><tr><td>4</td><td>30</td><td>0.0411</td><td>0.0000</td><td>0.0354</td><td>0.0717</td><td>0.2333</td></tr><tr><td>5</td><td>30</td><td>0.0374</td><td>0.0333</td><td>0.0362</td><td>0.0726</td><td>0.4000</td></tr><tr><td>6</td><td>30</td><td>0.0348</td><td>0.0667</td><td>0.0353</td><td>0.0713</td><td>0.4667</td></tr><tr><td>7</td><td>30</td><td>0.0321</td><td>0.0667</td><td>0.0383</td><td>0.0718</td><td>0.5000</td></tr><tr><td>8</td><td>30</td><td>0.0285</td><td>0.0333</td><td>0.0364</td><td>0.0703</td><td>0.2667</td></tr><tr><td>9</td><td>30</td><td>0.0239</td><td>0.1000</td><td>0.0393</td><td>0.0723</td><td>0.4667</td></tr><tr><td>10</td><td>30</td><td>0.0150</td><td>0.0000</td><td>0.0366</td><td>0.0688</td><td>0.4333</td></tr></tbody></table>
 </td>
 </tr></table>
 
@@ -337,7 +337,7 @@ The consistency summary below is limited to GLMNet because GLMNet is the model c
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary START -->
 | Model | Pearson benefit score corr | Spearman benefit score corr | Top decile overlap | T-learner mean benefit score | X-learner mean benefit score |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| GLMNet | 0.8062 | 0.6778 | 60.0% | 0.0358 | 0.0396 |
+| GLMNet | -0.0761 | 0.1608 | 16.7% | 0.0344 | 0.0377 |
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary END -->
 
 Supporting files:
@@ -376,10 +376,10 @@ The current top benefit drivers by magnitude are:
 <!-- AUTO_TABLE:glmnet_benefit_magnitude START -->
 <table><tr>
 <td valign="top" width="50%"><strong>GLMNet T-learner</strong>
-<table><thead><tr><th>Feature</th><th>Mean absolute contribution</th></tr></thead><tbody><tr><td>`admits_last_6m`</td><td>0.0868</td></tr><tr><td>`ed_visits_last_6m`</td><td>0.0764</td></tr><tr><td>`percolator_clinical_score`</td><td>0.0750</td></tr><tr><td>`chf_flag`</td><td>0.0513</td></tr><tr><td>`current_risk_score`</td><td>0.0496</td></tr></tbody></table>
+<table><thead><tr><th>Feature</th><th>Mean absolute contribution</th></tr></thead><tbody><tr><td>`percolator_utilization_score`</td><td>0.0369</td></tr><tr><td>`total_cost_last_6m`</td><td>0.0349</td></tr><tr><td>`percolator_clinical_score`</td><td>0.0259</td></tr><tr><td>`behavioral_health_risk_flag`</td><td>0.0250</td></tr><tr><td>`food_insecurity_flag`</td><td>0.0226</td></tr></tbody></table>
 </td>
 <td valign="top" width="50%"><strong>GLMNet X-learner</strong>
-<table><thead><tr><th>Feature</th><th>Mean absolute contribution</th></tr></thead><tbody><tr><td>`admits_last_6m`</td><td>0.0028</td></tr><tr><td>`ed_visits_last_6m`</td><td>0.0026</td></tr><tr><td>`chf_flag`</td><td>0.0020</td></tr><tr><td>`anxiety_flag`</td><td>0.0019</td></tr><tr><td>`percolator_clinical_score`</td><td>0.0019</td></tr></tbody></table>
+<table><thead><tr><th>Feature</th><th>Mean absolute contribution</th></tr></thead><tbody><tr><td>`anxiety_flag`</td><td>0.0022</td></tr><tr><td>`program_Complex_CM`</td><td>0.0018</td></tr><tr><td>`percolator_clinical_score`</td><td>0.0016</td></tr><tr><td>`pcp_visits_last_6m`</td><td>0.0016</td></tr><tr><td>`admits_last_6m`</td><td>0.0016</td></tr></tbody></table>
 </td>
 </tr></table>
 <!-- AUTO_TABLE:glmnet_benefit_magnitude END -->
@@ -389,16 +389,16 @@ The current top benefit drivers by signed value are:
 <!-- AUTO_TABLE:glmnet_benefit_signed START -->
 <table><tr>
 <td valign="top" width="50%"><strong>GLMNet T-learner</strong>
-<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed contribution</th></tr></thead><tbody><tr><td>Increase predicted benefit</td><td>`ed_visits_last_6m`</td><td>0.0156</td></tr><tr><td>Increase predicted benefit</td><td>`admits_last_6m`</td><td>0.0128</td></tr><tr><td>Increase predicted benefit</td><td>`current_risk_score`</td><td>0.0075</td></tr><tr><td>Increase predicted benefit</td><td>`percolator_clinical_score`</td><td>0.0048</td></tr><tr><td>Increase predicted benefit</td><td>`chf_flag`</td><td>0.0045</td></tr><tr><td>Decrease predicted benefit</td><td>`risk_tier_Very_High`</td><td>-0.0020</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_Central`</td><td>-0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`risk_tier_Medium`</td><td>-0.0001</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_West`</td><td>-0.0001</td></tr><tr><td>Decrease predicted benefit</td><td>`case_manager_name_CM_15`</td><td>-0.0001</td></tr></tbody></table>
+<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed contribution</th></tr></thead><tbody><tr><td>Increase predicted benefit</td><td>`client_contract_Contract_B`</td><td>0.0022</td></tr><tr><td>Increase predicted benefit</td><td>`risk_tier_Very_High`</td><td>0.0017</td></tr><tr><td>Increase predicted benefit</td><td>`ckd_flag`</td><td>0.0016</td></tr><tr><td>Increase predicted benefit</td><td>`behavioral_health_risk_flag`</td><td>0.0015</td></tr><tr><td>Increase predicted benefit</td><td>`anxiety_flag`</td><td>0.0013</td></tr><tr><td>Decrease predicted benefit</td><td>`total_cost_last_6m`</td><td>-0.0042</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_Central`</td><td>-0.0029</td></tr><tr><td>Decrease predicted benefit</td><td>`risk_tier_High`</td><td>-0.0028</td></tr><tr><td>Decrease predicted benefit</td><td>`percolator_utilization_score`</td><td>-0.0020</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_West`</td><td>-0.0020</td></tr></tbody></table>
 </td>
 <td valign="top" width="50%"><strong>GLMNet X-learner</strong>
-<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed contribution</th></tr></thead><tbody><tr><td>Increase predicted benefit</td><td>`ed_visits_last_6m`</td><td>0.0009</td></tr><tr><td>Increase predicted benefit</td><td>`admits_last_6m`</td><td>0.0007</td></tr><tr><td>Increase predicted benefit</td><td>`current_risk_score`</td><td>0.0006</td></tr><tr><td>Increase predicted benefit</td><td>`risk_tier_High`</td><td>0.0004</td></tr><tr><td>Increase predicted benefit</td><td>`total_cost_last_6m`</td><td>0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`opioid_flag`</td><td>-0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`pcp_visits_last_6m`</td><td>-0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`transportation_barrier_flag`</td><td>-0.0003</td></tr><tr><td>Decrease predicted benefit</td><td>`specialist_visits_last_6m`</td><td>-0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`county_County_A`</td><td>-0.0002</td></tr></tbody></table>
+<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed contribution</th></tr></thead><tbody><tr><td>Increase predicted benefit</td><td>`ed_visits_last_6m`</td><td>0.0005</td></tr><tr><td>Increase predicted benefit</td><td>`current_risk_score`</td><td>0.0004</td></tr><tr><td>Increase predicted benefit</td><td>`admits_last_6m`</td><td>0.0003</td></tr><tr><td>Increase predicted benefit</td><td>`risk_tier_High`</td><td>0.0003</td></tr><tr><td>Increase predicted benefit</td><td>`percolator_utilization_score`</td><td>0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`pcp_visits_last_6m`</td><td>-0.0004</td></tr><tr><td>Decrease predicted benefit</td><td>`opioid_flag`</td><td>-0.0003</td></tr><tr><td>Decrease predicted benefit</td><td>`transportation_barrier_flag`</td><td>-0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`case_manager_name_CM_11`</td><td>-0.0002</td></tr><tr><td>Decrease predicted benefit</td><td>`service_region_Central`</td><td>-0.0001</td></tr></tbody></table>
 </td>
 </tr></table>
 <!-- AUTO_TABLE:glmnet_benefit_signed END -->
 
 <!-- AUTO_TEXT:glmnet_benefit_driver_interpretation START -->
-For GLMNet, `admits_last_6m`, `ed_visits_last_6m`, `percolator_clinical_score`, `chf_flag`, `current_risk_score` are the largest benefit-driver features by absolute contribution-difference magnitude. By signed value, `ed_visits_last_6m`, `admits_last_6m`, `current_risk_score` have the strongest positive average contribution to predicted benefit. The strongest negative signed contributor is `risk_tier_Very_High`.
+For GLMNet, `percolator_utilization_score`, `total_cost_last_6m`, `percolator_clinical_score`, `behavioral_health_risk_flag`, `food_insecurity_flag` are the largest benefit-driver features by absolute contribution-difference magnitude. By signed value, `client_contract_Contract_B`, `risk_tier_Very_High`, `ckd_flag` have the strongest positive average contribution to predicted benefit. The strongest negative signed contributor is `total_cost_last_6m`.
 <!-- AUTO_TEXT:glmnet_benefit_driver_interpretation END -->
 
 The absolute benefit-driver value measures how strongly a feature changes predicted benefit, regardless of direction. The signed benefit contribution shows whether the feature tends to increase or decrease predicted benefit, and the percent-positive column shows the share of members where the feature increased predicted benefit. Therefore, the benefit-driver tables are interpreted using both magnitude and direction.
@@ -440,12 +440,12 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention.
 <!-- AUTO_TABLE:roi_summary START -->
 | Targeting approach | Top decile n | Avg predicted benefit | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| GLMNet uplift score | 30 | 0.0827 | 2.4807 | $2,976.87 | $7,500.00 | -$4,523.13 | -0.6031 |
-| Current risk score | 30 | 0.0749 | 2.2456 | $2,694.72 | $7,500.00 | -$4,805.28 | -0.6407 |
+| GLMNet uplift score | 30 | 0.0440 | 1.3207 | $1,584.79 | $7,500.00 | -$5,915.21 | -0.7887 |
+| Current risk score | 30 | 0.0272 | 0.8161 | $979.31 | $7,500.00 | -$6,520.69 | -0.8694 |
 <!-- AUTO_TABLE:roi_summary END -->
 
 <!-- AUTO_TEXT:roi_interpretation START -->
-GLMNet uplift targeting estimates 2.4807 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 2.2456 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit (-0.6031 versus -0.6407).
+GLMNet uplift targeting estimates 1.3207 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 0.8161 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit (-0.7887 versus -0.8694).
 <!-- AUTO_TEXT:roi_interpretation END -->
 
 The current-risk comparison uses the same held-out test population and the same cost assumptions. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using the GLMNet predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.

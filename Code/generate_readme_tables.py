@@ -641,21 +641,38 @@ def ensure_glmnet_calibration_chart() -> Path:
     path = GLMNET_ROOT / "calibration_by_decile.csv"
     chart_path = GLMNET_ROOT / "dashboard_calibration_plot.png"
     df = pd.read_csv(path)
-    fig, ax = plt.subplots(figsize=(8, 5))
-    for group, group_df in df.groupby("group"):
-        group_df = group_df.sort_values("avg_predicted_ed_rate")
-        ax.plot(
+    groups = [group for group in ["Control", "Treated"] if group in set(df["group"])]
+    fig, axes = plt.subplots(1, len(groups), figsize=(7 * len(groups), 5), sharey=True)
+    if len(groups) == 1:
+        axes = [axes]
+
+    max_rate = max(df["avg_predicted_ed_rate"].max(), df["observed_ed_rate"].max(), 0.01)
+    for ax, group in zip(axes, groups):
+        group_df = df[df["group"] == group].sort_values("pred_risk_decile")
+        x_values = range(len(group_df))
+        bar_width = 0.38
+        ax.bar(
+            [x - bar_width / 2 for x in x_values],
             group_df["avg_predicted_ed_rate"],
-            group_df["observed_ed_rate"],
-            marker="o",
-            label=group,
+            width=bar_width,
+            label="Avg predicted ED rate",
         )
-    max_value = max(df["avg_predicted_ed_rate"].max(), df["observed_ed_rate"].max())
-    ax.plot([0, max_value], [0, max_value], linestyle="--", color="#555555", label="Perfect calibration")
-    ax.set_title("GLMNet Calibration By Factual Group")
-    ax.set_xlabel("Average predicted ED rate")
-    ax.set_ylabel("Observed ED rate")
-    ax.legend()
+        ax.bar(
+            [x + bar_width / 2 for x in x_values],
+            group_df["observed_ed_rate"],
+            width=bar_width,
+            label="Observed ED rate",
+        )
+        ax.set_title(f"GLMNet: {group} Calibration")
+        ax.set_xlabel("Predicted risk decile: 1 = highest risk")
+        ax.set_xticks(list(x_values))
+        ax.set_xticklabels(group_df["pred_risk_decile"].astype(str))
+        ax.set_ylim(0, max_rate * 1.2)
+        ax.grid(axis="y", alpha=0.25)
+
+    axes[0].set_ylabel("ED rate")
+    axes[-1].legend(loc="upper right")
+    fig.suptitle("GLMNet: Predicted vs Observed ED Rate By Factual Group")
     fig.tight_layout()
     fig.savefig(chart_path, dpi=150)
     plt.close(fig)
@@ -683,6 +700,7 @@ def ensure_glmnet_predicted_treated_vs_control_chart() -> Path:
     ax.set_xlabel("Uplift decile")
     ax.set_ylabel("Average predicted ED risk")
     ax.set_xticks(df["uplift_decile"])
+    ax.grid(axis="y", alpha=0.25)
     ax.legend()
     fig.tight_layout()
     fig.savefig(chart_path, dpi=150)
