@@ -73,8 +73,12 @@ def markdown_image(alt: str, path: str) -> str:
     return f"![{alt}]({path})"
 
 
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
 def missing_output_note(path: Path) -> str:
-    rel = path.relative_to(ROOT).as_posix()
+    rel = repo_rel(path)
     return f"_Pending: run the notebook to generate `{rel}`._"
 
 
@@ -378,17 +382,26 @@ def glmnet_t_vs_x_decile_table() -> str:
 
     t_rows = read_csv(GLMNET_ROOT / "uplift_decile_summary.csv")
     x_rows = read_csv(x_path)
-    headers = [
+    t_headers = [
         "Uplift decile",
         "N",
-        "Avg benefit score",
+        "Avg T-learner benefit score",
         "Observed ED rate",
         "Avg predicted ED if treated",
         "Avg predicted ED if control",
         "Treatment pct",
     ]
-    t_table = html_table(headers, learner_decile_rows(t_rows))
-    x_table = html_table(headers, learner_decile_rows(x_rows))
+    x_headers = [
+        "Uplift decile",
+        "N",
+        "Avg X-learner benefit score",
+        "Observed ED rate",
+        "Avg outcome-model ED if treated",
+        "Avg outcome-model ED if control",
+        "Treatment pct",
+    ]
+    t_table = html_table(t_headers, learner_decile_rows(t_rows))
+    x_table = html_table(x_headers, learner_decile_rows(x_rows))
     return "\n".join(
         [
             '<table><tr>',
@@ -399,6 +412,11 @@ def glmnet_t_vs_x_decile_table() -> str:
             x_table,
             '</td>',
             '</tr></table>',
+            "",
+            "_Note: In the T-learner table, benefit is the direct contrast between the "
+            "control and treated outcome-model predictions. In the X-learner table, "
+            "benefit is the final weighted treatment-effect-model estimate; the treated "
+            "and control outcome-model columns are included only as risk context._",
         ]
     )
 
@@ -452,27 +470,39 @@ def glmnet_t_vs_x_chart_block() -> str:
 
 
 def glmnet_xlearner_consistency_table() -> str:
-    path = XLEARNER_ROOT / "xlearner_vs_tlearner_consistency_summary.csv"
+    path = XLEARNER_GLMNET_ROOT / "xlearner_scored_test_output.csv"
     if not path.exists():
         return missing_output_note(path)
 
-    rows = []
-    for row in read_csv(path):
-        if row["model"].strip().upper() != "GLMNET":
-            continue
-        rows.append(
-            [
-                row["model"].replace("GLMNET", "GLMNet"),
-                fnum(row["pearson_benefit_score_corr"]),
-                fnum(row["spearman_benefit_score_corr"]),
-                pct(row["top_decile_overlap_pct"]),
-                fnum(row["t_learner_mean_benefit_score"]),
-                fnum(row["x_learner_mean_benefit_score"]),
-            ]
+    scored = pd.read_csv(path)
+    required = {"t_learner_benefit_score", "benefit_score", "uplift_decile"}
+    missing = sorted(required - set(scored.columns))
+    if missing:
+        return (
+            "_Pending: GLMNet X-learner scored output is missing required columns: "
+            + ", ".join(f"`{column}`" for column in missing)
+            + "._"
         )
 
-    if not rows:
-        return "_Pending: GLMNet consistency row was not found in the X-learner consistency output._"
+    t_decile = pd.qcut(
+        scored["t_learner_benefit_score"].rank(method="first", ascending=False),
+        q=10,
+        labels=False,
+    ) + 1
+    t_top = set(scored.index[t_decile == 1])
+    x_top = set(scored.index[scored["uplift_decile"] == 1])
+    top_overlap = len(t_top & x_top) / len(t_top) if t_top else float("nan")
+
+    rows = [
+        [
+            "GLMNet",
+            fnum(scored["t_learner_benefit_score"].corr(scored["benefit_score"], method="pearson")),
+            fnum(scored["t_learner_benefit_score"].corr(scored["benefit_score"], method="spearman")),
+            pct(top_overlap),
+            fnum(scored["t_learner_benefit_score"].mean()),
+            fnum(scored["benefit_score"].mean()),
+        ]
+    ]
 
     return markdown_table(
         [
@@ -605,6 +635,110 @@ def glmnet_benefit_driver_chart_block() -> str:
             + " |",
         ]
     )
+
+
+def ensure_glmnet_calibration_chart() -> Path:
+    path = GLMNET_ROOT / "calibration_by_decile.csv"
+    chart_path = GLMNET_ROOT / "dashboard_calibration_plot.png"
+    df = pd.read_csv(path)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for group, group_df in df.groupby("group"):
+        group_df = group_df.sort_values("avg_predicted_ed_rate")
+        ax.plot(
+            group_df["avg_predicted_ed_rate"],
+            group_df["observed_ed_rate"],
+            marker="o",
+            label=group,
+        )
+    max_value = max(df["avg_predicted_ed_rate"].max(), df["observed_ed_rate"].max())
+    ax.plot([0, max_value], [0, max_value], linestyle="--", color="#555555", label="Perfect calibration")
+    ax.set_title("GLMNet Calibration By Factual Group")
+    ax.set_xlabel("Average predicted ED rate")
+    ax.set_ylabel("Observed ED rate")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(chart_path, dpi=150)
+    plt.close(fig)
+    return chart_path
+
+
+def ensure_glmnet_predicted_treated_vs_control_chart() -> Path:
+    path = GLMNET_ROOT / "uplift_decile_summary.csv"
+    chart_path = GLMNET_ROOT / "dashboard_predicted_treated_vs_control.png"
+    df = pd.read_csv(path).sort_values("uplift_decile")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(
+        df["uplift_decile"],
+        df["avg_pred_ed_if_treated"],
+        marker="o",
+        label="Predicted ED if treated",
+    )
+    ax.plot(
+        df["uplift_decile"],
+        df["avg_pred_ed_if_control"],
+        marker="o",
+        label="Predicted ED if control",
+    )
+    ax.set_title("GLMNet Predicted ED Risk By Uplift Decile")
+    ax.set_xlabel("Uplift decile")
+    ax.set_ylabel("Average predicted ED risk")
+    ax.set_xticks(df["uplift_decile"])
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(chart_path, dpi=150)
+    plt.close(fig)
+    return chart_path
+
+
+def ensure_glmnet_avg_benefit_chart() -> Path:
+    path = GLMNET_ROOT / "uplift_decile_summary.csv"
+    chart_path = GLMNET_ROOT / "dashboard_avg_benefit_by_decile.png"
+    df = pd.read_csv(path).sort_values("uplift_decile")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.bar(df["uplift_decile"].astype(str), df["avg_benefit_score"])
+    ax.set_title("GLMNet Average Predicted Benefit By Uplift Decile")
+    ax.set_xlabel("Uplift decile")
+    ax.set_ylabel("Average predicted benefit")
+    ax.axhline(0, color="#333333", linewidth=1)
+    fig.tight_layout()
+    fig.savefig(chart_path, dpi=150)
+    plt.close(fig)
+    return chart_path
+
+
+def ensure_glmnet_benefit_driver_chart() -> Path:
+    path = GLMNET_ROOT / "shap_importance_benefit_score.csv"
+    chart_path = GLMNET_ROOT / "dashboard_shap_benefit_score.png"
+    df = pd.read_csv(path).head(20).sort_values("mean_abs_benefit_contribution")
+    fig, ax = plt.subplots(figsize=(9, 6))
+    ax.barh(df["feature"], df["mean_abs_benefit_contribution"])
+    ax.set_title("GLMNet T-Learner: Top Drivers of Predicted Treatment Benefit")
+    ax.set_xlabel("Mean absolute shared-standardized logit contribution")
+    ax.set_ylabel("Feature")
+    fig.tight_layout()
+    fig.savefig(chart_path, dpi=150)
+    plt.close(fig)
+    return chart_path
+
+
+def ensure_glmnet_roi_chart() -> Path:
+    path = GLMNET_ROOT / "uplift_roi_by_decile.csv"
+    chart_path = GLMNET_ROOT / "dashboard_roi_net_savings_by_decile.png"
+    df = pd.read_csv(path).sort_values("uplift_decile")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.bar(df["uplift_decile"].astype(str), df["net_savings"])
+    ax.axhline(0, color="#333333", linewidth=1)
+    ax.set_title("GLMNet Net Savings By Uplift Decile")
+    ax.set_xlabel("Uplift decile")
+    ax.set_ylabel("Net savings")
+    fig.tight_layout()
+    fig.savefig(chart_path, dpi=150)
+    plt.close(fig)
+    return chart_path
+
+
+def chart_image(alt: str, chart_path: Path) -> str:
+    return markdown_image(alt, repo_rel(chart_path))
 
 
 def glmnet_benefit_driver_interpretation() -> str:
@@ -796,23 +930,23 @@ TEXT_GENERATORS: dict[str, Callable[[], str]] = {
 
 
 CHART_GENERATORS: dict[str, Callable[[], str]] = {
-    "glmnet_calibration_plot": lambda: markdown_image(
+    "glmnet_calibration_plot": lambda: chart_image(
         "GLMNet calibration plot",
-        "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_calibration_plot.png",
+        ensure_glmnet_calibration_chart(),
     ),
-    "glmnet_predicted_treated_vs_control": lambda: markdown_image(
+    "glmnet_predicted_treated_vs_control": lambda: chart_image(
         "GLMNet predicted ED risk if treated versus control",
-        "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png",
+        ensure_glmnet_predicted_treated_vs_control_chart(),
     ),
-    "glmnet_avg_benefit_by_decile": lambda: markdown_image(
+    "glmnet_avg_benefit_by_decile": lambda: chart_image(
         "GLMNet average predicted benefit by uplift decile",
-        "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png",
+        ensure_glmnet_avg_benefit_chart(),
     ),
     "glmnet_t_vs_x_avg_benefit_charts": glmnet_t_vs_x_chart_block,
     "glmnet_benefit_driver_chart": glmnet_benefit_driver_chart_block,
-    "glmnet_roi_by_decile": lambda: markdown_image(
+    "glmnet_roi_by_decile": lambda: chart_image(
         "GLMNet ROI net savings by uplift decile",
-        "Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_roi_net_savings_by_decile.png",
+        ensure_glmnet_roi_chart(),
     ),
 }
 
@@ -840,7 +974,7 @@ def main() -> None:
     for name, generator in CHART_GENERATORS.items():
         text = replace_block(text, "CHART", name, generator())
     README_PATH.write_text(text, encoding="utf-8", newline="\n")
-    print(f"Updated generated tables in {README_PATH}")
+    print(f"Updated generated README tables and charts in {README_PATH}")
 
 
 if __name__ == "__main__":
