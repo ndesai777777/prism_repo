@@ -684,22 +684,25 @@ def ensure_glmnet_predicted_treated_vs_control_chart() -> Path:
     chart_path = GLMNET_ROOT / "dashboard_predicted_treated_vs_control.png"
     df = pd.read_csv(path).sort_values("uplift_decile")
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(
-        df["uplift_decile"],
+    x_values = range(len(df))
+    bar_width = 0.38
+    ax.bar(
+        [x - bar_width / 2 for x in x_values],
         df["avg_pred_ed_if_treated"],
-        marker="o",
+        width=bar_width,
         label="Predicted ED if treated",
     )
-    ax.plot(
-        df["uplift_decile"],
+    ax.bar(
+        [x + bar_width / 2 for x in x_values],
         df["avg_pred_ed_if_control"],
-        marker="o",
+        width=bar_width,
         label="Predicted ED if control",
     )
     ax.set_title("GLMNet Predicted ED Risk By Uplift Decile")
     ax.set_xlabel("Uplift decile")
     ax.set_ylabel("Average predicted ED risk")
-    ax.set_xticks(df["uplift_decile"])
+    ax.set_xticks(list(x_values))
+    ax.set_xticklabels(df["uplift_decile"].astype(str))
     ax.grid(axis="y", alpha=0.25)
     ax.legend()
     fig.tight_layout()
