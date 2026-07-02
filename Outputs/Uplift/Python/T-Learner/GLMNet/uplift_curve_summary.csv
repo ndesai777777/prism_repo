@@ -1,2 +1,2 @@
 model,observed_gap_area_under_curve,predicted_benefit_area_under_curve,final_cumulative_observed_gap,final_cumulative_avg_predicted_benefit
-GLMNET,0.011907119554368082,0.04703449510032159,0.029055690072639223,0.03577071645952889
+GLMNET,0.02015603035927122,0.03485769418408839,0.029055690072639223,0.03443606603360296
