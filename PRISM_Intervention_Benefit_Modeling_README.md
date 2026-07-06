@@ -281,15 +281,15 @@ The key value of this section is that it separates **high risk** from **high exp
 The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
-| Member profile | Scored row | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Highest benefit | 536 | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
-| High risk, low benefit | 688 | 1 | 0 | 0.2219 | 0.1977 | -0.0241 | 10 | Clinically higher risk, but the predicted intervention benefit is small. |
-| Low risk, low benefit | 59 | 0 | 0 | 0.0340 | 0.0597 | 0.0257 | 10 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
-| Sleeping dog / lowest benefit | 453 | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
+| Member profile | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Highest benefit | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
+| High risk, low benefit | 1 | 1 | 0.0868 | 0.0874 | 0.0006 | 10 | Clinically higher risk, but the predicted intervention benefit is small. |
+| Low risk, low benefit | 0 | 0 | 0.0491 | 0.0665 | 0.0174 | 10 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
+| Sleeping dog / lowest benefit | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
-The high-risk and low-risk examples are selected from lower-benefit members so that the table shows why baseline risk alone is not the same as expected intervention benefit. The sleeping-dog row uses the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
+The high-risk and low-risk examples are selected from low positive benefit members when available, so the table separates baseline risk from impactability. The sleeping-dog row is selected separately as the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 

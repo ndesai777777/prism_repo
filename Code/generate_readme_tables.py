@@ -309,21 +309,34 @@ def observed_gap_table() -> str:
 
 def top_benefit_examples_table() -> str:
     scored = pd.read_csv(GLMNET_ROOT / "uplift_scored_output.csv").copy()
-    scored["_row_id"] = scored.index + 1
     scored["benefit_score"] = pd.to_numeric(scored["benefit_score"])
     scored["pred_ed_if_treated"] = pd.to_numeric(scored["pred_ed_if_treated"])
     scored["pred_ed_if_control"] = pd.to_numeric(scored["pred_ed_if_control"])
 
     high_benefit = scored.sort_values("benefit_score", ascending=False).iloc[0]
-    low_benefit_cutoff = scored["benefit_score"].quantile(0.25)
-    low_benefit_pool = scored[scored["benefit_score"] <= low_benefit_cutoff].copy()
-    high_risk_low_benefit = low_benefit_pool.sort_values(
-        ["pred_ed_if_control", "benefit_score"],
-        ascending=[False, True],
+    low_positive_benefit = scored[scored["benefit_score"] >= 0].copy()
+    if low_positive_benefit.empty:
+        low_positive_benefit = scored.copy()
+    high_risk_cutoff = scored["pred_ed_if_control"].quantile(0.75)
+    low_risk_cutoff = scored["pred_ed_if_control"].quantile(0.25)
+    high_risk_low_benefit_pool = low_positive_benefit[
+        low_positive_benefit["pred_ed_if_control"] >= high_risk_cutoff
+    ].copy()
+    low_risk_low_benefit_pool = low_positive_benefit[
+        low_positive_benefit["pred_ed_if_control"] <= low_risk_cutoff
+    ].copy()
+    if high_risk_low_benefit_pool.empty:
+        high_risk_low_benefit_pool = low_positive_benefit.copy()
+    if low_risk_low_benefit_pool.empty:
+        low_risk_low_benefit_pool = low_positive_benefit.copy()
+
+    high_risk_low_benefit = high_risk_low_benefit_pool.sort_values(
+        "benefit_score",
+        ascending=True,
     ).iloc[0]
-    low_risk_low_benefit = low_benefit_pool.sort_values(
-        ["pred_ed_if_control", "benefit_score"],
-        ascending=[True, True],
+    low_risk_low_benefit = low_risk_low_benefit_pool.sort_values(
+        "benefit_score",
+        ascending=True,
     ).iloc[0]
     sleeping_dog = scored.sort_values("benefit_score", ascending=True).iloc[0]
 
@@ -355,7 +368,6 @@ def top_benefit_examples_table() -> str:
         rows.append(
             [
                 label,
-                int(row["_row_id"]),
                 int(float(row["outcome_ed_90d"])),
                 int(float(row["intervention_flag"])),
                 fnum(row["pred_ed_if_treated"]),
@@ -368,7 +380,6 @@ def top_benefit_examples_table() -> str:
     return markdown_table(
         [
             "Member profile",
-            "Scored row",
             "Actual outcome",
             "Treatment flag",
             "Predicted ED if treated",
