@@ -308,37 +308,77 @@ def observed_gap_table() -> str:
 
 
 def top_benefit_examples_table() -> str:
+    scored = pd.read_csv(GLMNET_ROOT / "uplift_scored_output.csv").copy()
+    scored["_row_id"] = scored.index + 1
+    scored["benefit_score"] = pd.to_numeric(scored["benefit_score"])
+    scored["pred_ed_if_treated"] = pd.to_numeric(scored["pred_ed_if_treated"])
+    scored["pred_ed_if_control"] = pd.to_numeric(scored["pred_ed_if_control"])
+
+    high_benefit = scored.sort_values("benefit_score", ascending=False).iloc[0]
+    low_benefit_cutoff = scored["benefit_score"].quantile(0.25)
+    low_benefit_pool = scored[scored["benefit_score"] <= low_benefit_cutoff].copy()
+    high_risk_low_benefit = low_benefit_pool.sort_values(
+        ["pred_ed_if_control", "benefit_score"],
+        ascending=[False, True],
+    ).iloc[0]
+    low_risk_low_benefit = low_benefit_pool.sort_values(
+        ["pred_ed_if_control", "benefit_score"],
+        ascending=[True, True],
+    ).iloc[0]
+    sleeping_dog = scored.sort_values("benefit_score", ascending=True).iloc[0]
+
+    example_specs = [
+        (
+            "Highest benefit",
+            high_benefit,
+            "Strong outreach candidate because predicted ED risk is much lower under treatment.",
+        ),
+        (
+            "High risk, low benefit",
+            high_risk_low_benefit,
+            "Clinically higher risk, but the predicted intervention benefit is small.",
+        ),
+        (
+            "Low risk, low benefit",
+            low_risk_low_benefit,
+            "Lower outreach priority because baseline ED risk and predicted benefit are both low.",
+        ),
+        (
+            "Sleeping dog / lowest benefit",
+            sleeping_dog,
+            "Not prioritized by uplift score because predicted benefit is lowest in the scored population.",
+        ),
+    ]
+
     rows = []
-    scored = sorted(
-        read_csv(GLMNET_ROOT / "uplift_scored_output.csv"),
-        key=lambda row: float(row["benefit_score"]),
-        reverse=True,
-    )[:2]
-    for index, row in enumerate(scored):
+    for label, row, interpretation in example_specs:
         rows.append(
             [
-                "GLMNet",
-                "Highest benefit" if index == 0 else "Second highest benefit",
+                label,
+                int(row["_row_id"]),
                 int(float(row["outcome_ed_90d"])),
                 int(float(row["intervention_flag"])),
                 fnum(row["pred_ed_if_treated"]),
                 fnum(row["pred_ed_if_control"]),
                 fnum(row["benefit_score"]),
                 int(float(row["uplift_decile"])),
+                interpretation,
             ]
         )
     return markdown_table(
         [
-            "Model",
-            "Example",
+            "Member profile",
+            "Scored row",
             "Actual outcome",
             "Treatment flag",
             "Predicted ED if treated",
             "Predicted ED if control",
             "Benefit score",
             "Uplift decile",
+            "Outreach interpretation",
         ],
         rows,
+        align_right=False,
     )
 
 

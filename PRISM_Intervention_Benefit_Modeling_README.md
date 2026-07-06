@@ -278,27 +278,18 @@ A higher benefit score means the model predicts a larger reduction in ED risk un
 
 The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
-Current high-benefit examples from the GLMNet T-learner scored output:
+The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
-| Model | Example | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| GLMNet | Highest benefit | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 |
-| GLMNet | Second highest benefit | 0 | 0 | 0.0355 | 0.0871 | 0.0516 | 1 |
+| Member profile | Scored row | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Highest benefit | 536 | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
+| High risk, low benefit | 688 | 1 | 0 | 0.2219 | 0.1977 | -0.0241 | 10 | Clinically higher risk, but the predicted intervention benefit is small. |
+| Low risk, low benefit | 59 | 0 | 0 | 0.0340 | 0.0597 | 0.0257 | 10 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
+| Sleeping dog / lowest benefit | 453 | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
-In the highest GLMNet example, the predicted untreated ED probability is 0.4700 and the predicted treated ED probability is 0.0438, giving a predicted benefit of 0.4263. This means the model estimates a 42.63 percentage point reduction in ED probability under treatment for that member.
-
-The high `pred_ed_if_control` values in this table are not inconsistent with the factual prediction-range table in Analytical Task 3. The Task 3 range summarizes held-out factual outcome-model evaluation only: actual treated test members are evaluated with `pred_ed_if_treated`, and actual control test members are evaluated with `pred_ed_if_control`. The scored-output examples in Analytical Task 4 come from the full scored output and use both predicted scenarios for each member because that is required to estimate benefit.
-
-The table above shows the highest-benefit members, but benefit scores are most useful when comparing different member profiles. The examples below show how the same output fields can support outreach prioritization:
-
-| Member comparison type | Predicted ED if treated | Predicted ED if control | Benefit score | Outreach interpretation |
-|---|---:|---:|---:|---|
-| High benefit | 0.04 | 0.47 | 0.43 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
-| High risk, low benefit | 0.30 | 0.32 | 0.02 | Clinically high risk, but the model does not predict a large intervention effect. |
-| Low risk, low benefit | 0.02 | 0.03 | 0.01 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
-| Possible negative benefit, or sleeping dog | 0.08 | 0.05 | -0.03 | Not prioritized by uplift score because predicted risk is not lower under treatment. |
+The high-risk and low-risk examples are selected from lower-benefit members so that the table shows why baseline risk alone is not the same as expected intervention benefit. The sleeping-dog row uses the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
