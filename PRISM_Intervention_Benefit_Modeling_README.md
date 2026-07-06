@@ -297,6 +297,10 @@ This is why uplift modeling can be more useful than risk ranking alone. A pure r
 ![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png)
 <!-- AUTO_CHART:glmnet_predicted_treated_vs_control END -->
 
+<!-- AUTO_TEXT:predicted_risk_by_decile_interpretation START -->
+This chart shows why uplift targeting is different from risk-based targeting. A historical risk-ranking approach would mostly look at the orange bars, which represent predicted ED risk without treatment. In the current GLMNet output, decile 10 has the highest average predicted ED risk without treatment (0.0815), but its predicted treatment benefit is 0.0230. Decile 1 is prioritized because its treatment-versus-control gap is larger: predicted ED risk falls from 0.0797 without treatment to 0.0357 with treatment, for an average predicted benefit of 0.0440. In other words, the orange bar reflects baseline risk, while the gap between the orange and blue bars reflects expected impactability.
+<!-- AUTO_TEXT:predicted_risk_by_decile_interpretation END -->
+
 Supporting files:
 
 - [`GLMNet/uplift_scored_output.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_scored_output.csv)

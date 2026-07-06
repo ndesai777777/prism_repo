@@ -984,6 +984,35 @@ def roi_interpretation() -> str:
     )
 
 
+def predicted_risk_by_decile_interpretation() -> str:
+    deciles = read_csv(GLMNET_ROOT / "uplift_decile_summary.csv")
+    rows = [
+        {
+            "decile": int(float(row["uplift_decile"])),
+            "treated": float(row["avg_pred_ed_if_treated"]),
+            "control": float(row["avg_pred_ed_if_control"]),
+            "benefit": float(row["avg_benefit_score"]),
+        }
+        for row in deciles
+    ]
+    top_uplift = next(row for row in rows if row["decile"] == 1)
+    highest_control_risk = max(rows, key=lambda row: row["control"])
+
+    return (
+        "This chart shows why uplift targeting is different from risk-based targeting. "
+        "A historical risk-ranking approach would mostly look at the orange bars, which "
+        "represent predicted ED risk without treatment. In the current GLMNet output, "
+        f"decile {highest_control_risk['decile']} has the highest average predicted ED risk "
+        f"without treatment ({fnum(highest_control_risk['control'])}), but its predicted "
+        f"treatment benefit is {fnum(highest_control_risk['benefit'])}. Decile 1 is prioritized "
+        f"because its treatment-versus-control gap is larger: predicted ED risk falls from "
+        f"{fnum(top_uplift['control'])} without treatment to {fnum(top_uplift['treated'])} "
+        f"with treatment, for an average predicted benefit of {fnum(top_uplift['benefit'])}. "
+        "In other words, the orange bar reflects baseline risk, while the gap between the "
+        "orange and blue bars reflects expected impactability."
+    )
+
+
 TABLE_GENERATORS: dict[str, Callable[[], str]] = {
     "data_review_summary": data_review_table,
     "model_performance_summary": model_performance_table,
@@ -1005,6 +1034,7 @@ TABLE_GENERATORS: dict[str, Callable[[], str]] = {
 
 TEXT_GENERATORS: dict[str, Callable[[], str]] = {
     "glmnet_benefit_driver_interpretation": glmnet_benefit_driver_interpretation,
+    "predicted_risk_by_decile_interpretation": predicted_risk_by_decile_interpretation,
     "roi_interpretation": roi_interpretation,
 }
 
