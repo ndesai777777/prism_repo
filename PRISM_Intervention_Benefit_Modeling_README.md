@@ -38,13 +38,13 @@ The treatment variable is `intervention_flag`. It indicates whether the member r
 
 ### Predictor Variables
 
-Predictors were grouped into six defined categories: demographics, clinical conditions, social determinants of health (SDOH), utilization, pharmacy, and risk scores. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
+Predictors were grouped into six defined categories: demographics, clinical conditions, social determinants of health (SDOH), utilization, pharmacy, and risk scores. The variables listed below are examples from each category rather than a complete inventory. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
 
-The demographics category includes `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Clinical conditions include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, `pregnancy_flag`, and `behavioral_health_risk_flag`. SDOH variables include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
+Example demographic predictors include `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Example clinical condition predictors include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, and `behavioral_health_risk_flag`. Example SDOH predictors include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
 
-Utilization variables include `pcp_visits_last_6m`, `specialist_visits_last_6m`, `ed_visits_last_30d`, `ed_visits_last_6m`, `admits_last_6m`, and `observation_stays_last_6m`. Pharmacy variables include `total_cost_last_6m`, `rx_count_last_6m`, `med_adherence_pdc`, `high_cost_drug_flag`, `opioid_flag`, and `polypharmacy_flag`. Risk score variables include the utilization, clinical, and SDOH score fields, plus `current_risk_score` and `risk_tier`.
+Example utilization predictors include `pcp_visits_last_6m`, `specialist_visits_last_6m`, `ed_visits_last_30d`, `ed_visits_last_6m`, `admits_last_6m`, and `observation_stays_last_6m`. Example pharmacy predictors include `total_cost_last_6m`, `rx_count_last_6m`, `med_adherence_pdc`, `high_cost_drug_flag`, `opioid_flag`, and `polypharmacy_flag`. Example risk score predictors include the percolator utilization, clinical, and SDOH score fields, plus `current_risk_score` and `risk_tier`.
 
-The final model uses 41 predictors before one-hot encoding: 32 numeric predictors and 9 categorical predictors. The categorical predictors are `client_contract`, `service_region`, `program`, `case_manager_name`, `gender`, `county`, `plan_type`, `language`, and `risk_tier`. After one-hot encoding, the modeling matrix contains 77 columns.
+The final model uses 41 predictors before one-hot encoding: 14 continuous/count numeric predictors, 18 binary indicator predictors, and 9 multi-level categorical predictors. The multi-level categorical predictors are `client_contract`, `service_region`, `program`, `case_manager_name`, `gender`, `county`, `plan_type`, `language`, and `risk_tier`. Binary indicators remain as 0/1 model columns, while multi-level categorical predictors are expanded during one-hot encoding. After encoding, the modeling matrix contains 77 columns.
 
 The predictor data dictionary provides each variable's category, description, data type, missingness, number of unique values, example values, and value range where applicable. The numeric and categorical summary tables provide descriptive statistics that can be used in the written report.
 
@@ -134,6 +134,9 @@ The observed ED rate is 4.1% among treated members and 7.3% among control member
 | Treated observed ED rate | 4.1% |
 | Control observed ED rate | 7.3% |
 | Final predictors before one-hot encoding | 41 |
+| Continuous/count numeric predictors | 14 |
+| Binary indicator predictors | 18 |
+| Multi-level categorical predictors | 9 |
 | Model matrix columns after one-hot encoding | 77 |
 <!-- AUTO_TABLE:data_review_summary END -->
 

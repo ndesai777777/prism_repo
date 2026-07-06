@@ -1,10 +1,28 @@
-variable,category,n,missing_count,missing_pct,unique_values,mode,mode_count,mode_pct,top_values
-case_manager_name,Demographics,1000,0,0.0,15,CM_04,79,0.079,CM_04 (79); CM_12 (76); CM_01 (73); CM_08 (73); CM_03 (70)
-client_contract,Demographics,1000,0,0.0,3,Contract_A,436,0.436,Contract_A (436); Contract_B (360); Contract_C (204)
-county,Demographics,1000,0,0.0,6,County_E,180,0.18,County_E (180); County_C (171); County_A (170); County_D (167); County_B (161)
-gender,Demographics,1000,0,0.0,2,Female,550,0.55,Female (550); Male (450)
-language,Demographics,1000,0,0.0,3,English,750,0.75,English (750); Spanish (194); Other (56)
-plan_type,Demographics,1000,0,0.0,4,Medicaid,482,0.482,Medicaid (482); Medicare (233); Dual (201); Commercial (84)
-program,Demographics,1000,0,0.0,3,CM,543,0.543,CM (543); BH_CM (254); Complex_CM (203)
-service_region,Demographics,1000,0,0.0,5,East,208,0.208,East (208); North (206); South (205); West (196); Central (185)
-risk_tier,Risk Scores,1000,0,0.0,4,Medium,720,0.72,Medium (720); Low (161); High (117); Very High (2)
+variable,category,predictor_type,n,missing_count,missing_pct,unique_values,mode,mode_count,mode_pct,top_values
+anxiety_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+asthma_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,1,,,1; 0
+behavioral_health_risk_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+chf_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+ckd_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+copd_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+depression_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+diabetes_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+substance_use_flag,Clinical Conditions,Binary indicator,1000,0,0.0,2,0,,,0; 1
+case_manager_name,Demographics,Multi-level categorical,1000,0,0.0,15,CM_01,,,CM_01; CM_02; CM_03; CM_05; CM_04
+client_contract,Demographics,Multi-level categorical,1000,0,0.0,3,Contract_B,,,Contract_B; Contract_A; Contract_C
+county,Demographics,Multi-level categorical,1000,0,0.0,6,County_C,,,County_C; County_A; County_D; County_E; County_F
+dual_eligible,Demographics,Binary indicator,1000,0,0.0,2,1,,,1; 0
+gender,Demographics,Multi-level categorical,1000,0,0.0,2,Male,,,Male; Female
+language,Demographics,Multi-level categorical,1000,0,0.0,3,Spanish,,,Spanish; English; Other
+living_alone_flag,Demographics,Binary indicator,1000,0,0.0,2,0,,,0; 1
+plan_type,Demographics,Multi-level categorical,1000,0,0.0,4,Medicaid,,,Medicaid; Dual; Medicare; Commercial
+program,Demographics,Multi-level categorical,1000,0,0.0,3,CM,,,CM; BH_CM; Complex_CM
+service_region,Demographics,Multi-level categorical,1000,0,0.0,5,West,,,West; North; East; South; Central
+high_cost_drug_flag,Pharmacy,Binary indicator,1000,0,0.0,2,0,,,0; 1
+opioid_flag,Pharmacy,Binary indicator,1000,0,0.0,2,0,,,0; 1
+polypharmacy_flag,Pharmacy,Binary indicator,1000,0,0.0,2,0,,,0; 1
+risk_tier,Risk Scores,Multi-level categorical,1000,0,0.0,4,Medium,,,Medium; Low; High; Very High
+food_insecurity_flag,SDOH,Binary indicator,1000,0,0.0,2,0,,,0; 1
+housing_instability_flag,SDOH,Binary indicator,1000,0,0.0,2,0,,,0; 1
+transportation_barrier_flag,SDOH,Binary indicator,1000,0,0.0,2,0,,,0; 1
+utilities_insecurity_flag,SDOH,Binary indicator,1000,0,0.0,2,0,,,0; 1

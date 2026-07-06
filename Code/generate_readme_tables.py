@@ -128,8 +128,16 @@ def data_review_table() -> str:
         ["Treated observed ED rate", pct(row["treated_outcome_rate"])],
         ["Control observed ED rate", pct(row["control_outcome_rate"])],
         ["Final predictors before one-hot encoding", int(float(row["number_of_predictors"]))],
-        ["Model matrix columns after one-hot encoding", int(float(row["number_of_model_matrix_columns"]))],
     ]
+    if "number_of_continuous_count_predictors" in row:
+        rows.extend(
+            [
+                ["Continuous/count numeric predictors", int(float(row["number_of_continuous_count_predictors"]))],
+                ["Binary indicator predictors", int(float(row["number_of_binary_indicator_predictors"]))],
+                ["Multi-level categorical predictors", int(float(row["number_of_multilevel_categorical_predictors"]))],
+            ]
+        )
+    rows.append(["Model matrix columns after one-hot encoding", int(float(row["number_of_model_matrix_columns"]))])
     return markdown_table(["Metric", "Current value"], rows)
 
 
