@@ -422,7 +422,9 @@ Supporting files:
 
 ## Analytical Task 7: Business Value Assessment
 
-The ROI analysis estimates the financial value of targeting members by uplift decile. It also compares uplift-based targeting with the prior-style approach of targeting members strictly by highest `current_risk_score`. The current calculation assumes:
+The business value analysis estimates how much gross savings would be captured when members are targeted by predicted uplift versus the prior-style approach of targeting members strictly by highest `current_risk_score`. The main visual is a cumulative targeting chart: top 10%, top 20%, top 30%, and so on. This makes the comparison easier to interpret because it answers the operational question: if outreach capacity is limited, which ranking method captures more estimated savings first?
+
+The current calculation assumes:
 
 ```text
 expected_ed_rate_reduction = avg_benefit_score
@@ -433,31 +435,35 @@ net_savings = gross_savings - intervention_cost
 roi = net_savings / intervention_cost
 ```
 
-The current cost assumptions are $1,200 per ED visit and $250 per intervention.
+The current cost assumptions are $1,200 per ED visit and $250 per intervention. The primary comparison below focuses on gross savings because the goal is to compare targeting quality before layering in intervention-cost assumptions.
 
 <!-- AUTO_TABLE:roi_summary START -->
-| Targeting approach | Top decile n | Avg predicted benefit | Estimated ED visits avoided | Gross savings | Intervention cost | Net savings | ROI |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| GLMNet uplift score | 30 | 0.0440 | 1.3207 | $1,584.79 | $7,500.00 | -$5,915.21 | -0.7887 |
-| Current risk score | 30 | 0.0272 | 0.8161 | $979.31 | $7,500.00 | -$6,520.69 | -0.8694 |
+| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
+| --- | --- | --- | --- | --- | --- | --- |
+| Top 10% | 30 | $1,584.79 | $979.31 | $605.47 | 1.3207 | 0.8161 |
+| Top 20% | 60 | $3,034.54 | $2,230.93 | $803.61 | 2.5288 | 1.8591 |
+| Top 30% | 90 | $4,408.92 | $3,509.56 | $899.36 | 3.6741 | 2.9246 |
+| Top 40% | 120 | $5,723.57 | $4,856.15 | $867.42 | 4.7696 | 4.0468 |
+| Top 50% | 150 | $6,998.17 | $6,164.20 | $833.97 | 5.8318 | 5.1368 |
 <!-- AUTO_TABLE:roi_summary END -->
 
 <!-- AUTO_TEXT:roi_interpretation START -->
-GLMNet uplift targeting estimates 1.3207 avoided ED visits in the top benefit decile. Targeting the top decile by current risk score instead estimates 0.8161 avoided ED visits. Under the current assumptions, the estimated gross savings do not exceed intervention costs in either approach, so ROI remains negative. However, uplift-based targeting produces a less negative ROI than current-risk targeting because it selects members with higher average predicted intervention benefit (-0.7887 versus -0.8694).
+This view compares two targeting policies on the same held-out test population: ranking members by GLMNet predicted uplift versus ranking members by current risk score. Through the top 30% of targeted members, uplift targeting captures $4,408.92 in estimated gross savings, compared with $3,509.56 from current-risk targeting, an uplift advantage of $899.36. Gross savings are estimated from the GLMNet predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
 <!-- AUTO_TEXT:roi_interpretation END -->
 
 The current-risk comparison uses the same held-out test population and the same cost assumptions. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using the GLMNet predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
 
 <!-- AUTO_CHART:glmnet_roi_by_decile START -->
-![GLMNet ROI net savings by uplift decile](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_roi_net_savings_by_decile.png)
+![GLMNet cumulative gross savings by targeting approach](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:glmnet_roi_by_decile END -->
 
-These ROI results are directional rather than definitive. ROI is sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
+These savings results are directional rather than definitive. They are sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
 Supporting files:
 
 - [`GLMNet/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_roi_by_decile.csv)
-- [`GLMNet/dashboard_roi_net_savings_by_decile.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_roi_net_savings_by_decile.png)
+- [`GLMNet/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv)
+- [`GLMNet/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 
 ## Analytical Task 8: Client Perspective
 

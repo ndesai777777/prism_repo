@@ -802,15 +802,24 @@ def ensure_glmnet_benefit_driver_chart() -> Path:
 
 
 def ensure_glmnet_roi_chart() -> Path:
-    path = GLMNET_ROOT / "uplift_roi_by_decile.csv"
-    chart_path = GLMNET_ROOT / "dashboard_roi_net_savings_by_decile.png"
-    df = pd.read_csv(path).sort_values("uplift_decile")
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.bar(df["uplift_decile"].astype(str), df["net_savings"])
-    ax.axhline(0, color="#333333", linewidth=1)
-    ax.set_title("GLMNet Net Savings By Uplift Decile")
-    ax.set_xlabel("Uplift decile")
-    ax.set_ylabel("Net savings")
+    chart_path = GLMNET_ROOT / "dashboard_cumulative_gross_savings_targeting.png"
+    df = cumulative_gross_savings_by_targeting()
+    chart_df = df[df["population_fraction_targeted"] <= 0.50]
+    fig, ax = plt.subplots(figsize=(8.5, 5.25))
+    for approach, group_df in chart_df.groupby("targeting_approach"):
+        ax.plot(
+            group_df["population_fraction_targeted"] * 100,
+            group_df["cumulative_gross_savings"],
+            marker="o",
+            linewidth=2,
+            label=approach,
+        )
+    ax.set_title("GLMNet Cumulative Gross Savings Through Top Targeted Deciles")
+    ax.set_xlabel("Population targeted (%)")
+    ax.set_ylabel("Cumulative gross savings")
+    ax.yaxis.set_major_formatter("${x:,.0f}")
+    ax.legend()
+    ax.grid(axis="y", alpha=0.25)
     fig.tight_layout()
     fig.savefig(chart_path, dpi=150)
     plt.close(fig)
@@ -885,77 +894,44 @@ def top_decile_comparison_table() -> str:
 
 
 def roi_table() -> str:
-    glmnet_row = read_csv(GLMNET_ROOT / "top_benefit_decile_summary.csv")[0]
-    scored = pd.read_csv(GLMNET_ROOT / "uplift_scored_output.csv")
-    _, test_df = split_train_test(
-        scored,
-        train_fraction=0.70,
-        seed=123,
-        stratify_columns=["intervention_flag", "outcome_ed_90d"],
-    )
-    risk_top = test_df.sort_values("current_risk_score", ascending=False).head(
-        int(float(glmnet_row["top_decile_n"]))
-    )
-
-    def roi_values(frame: pd.DataFrame) -> dict[str, float]:
-        n = len(frame)
-        avg_benefit = float(frame["benefit_score"].mean())
-        avoided = n * avg_benefit
-        gross = avoided * 1200
-        intervention_cost = n * 250
-        net = gross - intervention_cost
-        roi = net / intervention_cost
-        return {
-            "n": n,
-            "avg_benefit": avg_benefit,
-            "avoided": avoided,
-            "gross": gross,
-            "intervention_cost": intervention_cost,
-            "net": net,
-            "roi": roi,
-        }
-
-    risk_roi = roi_values(risk_top)
-    rows = [
-        [
-            "GLMNet uplift score",
-            int(float(glmnet_row["top_decile_n"])),
-            fnum(glmnet_row["top_decile_avg_predicted_benefit"]),
-            fnum(glmnet_row["top_decile_estimated_ed_visits_avoided"]),
-            money(glmnet_row["top_decile_gross_savings"]),
-            money(glmnet_row["top_decile_intervention_cost"]),
-            money(glmnet_row["top_decile_net_savings"]),
-            fnum(glmnet_row["top_decile_roi"]),
-        ],
-        [
-            "Current risk score",
-            risk_roi["n"],
-            fnum(risk_roi["avg_benefit"]),
-            fnum(risk_roi["avoided"]),
-            money(risk_roi["gross"]),
-            money(risk_roi["intervention_cost"]),
-            money(risk_roi["net"]),
-            fnum(risk_roi["roi"]),
-        ],
-    ]
+    df = cumulative_gross_savings_by_targeting()
+    cutoff_rows = []
+    for cutoff in [0.10, 0.20, 0.30, 0.40, 0.50]:
+        uplift = df[
+            (df["targeting_approach"] == "Uplift score")
+            & (df["population_fraction_targeted"].round(2) == cutoff)
+        ].iloc[0]
+        risk = df[
+            (df["targeting_approach"] == "Current risk score")
+            & (df["population_fraction_targeted"].round(2) == cutoff)
+        ].iloc[0]
+        cutoff_rows.append(
+            [
+                f"Top {int(cutoff * 100)}%",
+                int(uplift["n"]),
+                money(uplift["cumulative_gross_savings"]),
+                money(risk["cumulative_gross_savings"]),
+                money(uplift["cumulative_gross_savings"] - risk["cumulative_gross_savings"]),
+                fnum(uplift["cumulative_estimated_ed_visits_avoided"]),
+                fnum(risk["cumulative_estimated_ed_visits_avoided"]),
+            ]
+        )
     return markdown_table(
         [
-            "Targeting approach",
-            "Top decile n",
-            "Avg predicted benefit",
-            "Estimated ED visits avoided",
-            "Gross savings",
-            "Intervention cost",
-            "Net savings",
-            "ROI",
+            "Targeted group",
+            "Members targeted",
+            "Uplift gross savings",
+            "Current-risk gross savings",
+            "Uplift advantage",
+            "Uplift ED visits avoided",
+            "Current-risk ED visits avoided",
         ],
-        rows,
+        cutoff_rows,
         align_right=False,
     )
 
 
-def roi_interpretation() -> str:
-    glmnet_row = read_csv(GLMNET_ROOT / "top_benefit_decile_summary.csv")[0]
+def cumulative_gross_savings_by_targeting() -> pd.DataFrame:
     scored = pd.read_csv(GLMNET_ROOT / "uplift_scored_output.csv")
     _, test_df = split_train_test(
         scored,
@@ -963,24 +939,56 @@ def roi_interpretation() -> str:
         seed=123,
         stratify_columns=["intervention_flag", "outcome_ed_90d"],
     )
-    n = int(float(glmnet_row["top_decile_n"]))
-    risk_top = test_df.sort_values("current_risk_score", ascending=False).head(n)
-    risk_avg_benefit = float(risk_top["benefit_score"].mean())
-    risk_avoided = n * risk_avg_benefit
-    risk_gross = risk_avoided * 1200
-    risk_cost = n * 250
-    risk_net = risk_gross - risk_cost
-    risk_roi = risk_net / risk_cost
 
+    n_total = len(test_df)
+    decile_size = max(1, n_total // 10)
+
+    ranking_specs = [
+        ("Uplift score", "benefit_score", False),
+        ("Current risk score", "current_risk_score", False),
+    ]
+    rows = []
+    for approach, sort_col, ascending in ranking_specs:
+        ranked = test_df.sort_values(sort_col, ascending=ascending).reset_index(drop=True)
+        for decile in range(1, 11):
+            top_n = n_total if decile == 10 else decile * decile_size
+            selected = ranked.head(top_n)
+            avoided = float(selected["benefit_score"].sum())
+            rows.append(
+                {
+                    "targeting_approach": approach,
+                    "through_decile": decile,
+                    "population_fraction_targeted": top_n / n_total,
+                    "n": top_n,
+                    "cumulative_estimated_ed_visits_avoided": avoided,
+                    "cumulative_gross_savings": avoided * 1200,
+                }
+            )
+
+    out = pd.DataFrame(rows)
+    out.to_csv(GLMNET_ROOT / "cumulative_gross_savings_by_targeting.csv", index=False)
+    return out
+
+
+def roi_interpretation() -> str:
+    df = cumulative_gross_savings_by_targeting()
+    top_30_uplift = df[
+        (df["targeting_approach"] == "Uplift score")
+        & (df["population_fraction_targeted"].round(2) == 0.30)
+    ].iloc[0]
+    top_30_risk = df[
+        (df["targeting_approach"] == "Current risk score")
+        & (df["population_fraction_targeted"].round(2) == 0.30)
+    ].iloc[0]
+    advantage = top_30_uplift["cumulative_gross_savings"] - top_30_risk["cumulative_gross_savings"]
     return (
-        "GLMNet uplift targeting estimates "
-        f"{fnum(glmnet_row['top_decile_estimated_ed_visits_avoided'])} avoided ED visits "
-        "in the top benefit decile. Targeting the top decile by current risk score instead "
-        f"estimates {fnum(risk_avoided)} avoided ED visits. Under the current assumptions, "
-        "the estimated gross savings do not exceed intervention costs in either approach, "
-        "so ROI remains negative. However, uplift-based targeting produces a less negative "
-        "ROI than current-risk targeting because it selects members with higher average "
-        f"predicted intervention benefit ({fnum(glmnet_row['top_decile_roi'])} versus {fnum(risk_roi)})."
+        "This view compares two targeting policies on the same held-out test population: "
+        "ranking members by GLMNet predicted uplift versus ranking members by current risk score. "
+        f"Through the top 30% of targeted members, uplift targeting captures "
+        f"{money(top_30_uplift['cumulative_gross_savings'])} in estimated gross savings, compared with "
+        f"{money(top_30_risk['cumulative_gross_savings'])} from current-risk targeting, an uplift advantage "
+        f"of {money(advantage)}. Gross savings are estimated from the GLMNet predicted benefit score, so "
+        "this is a targeting-policy comparison rather than a claim of realized savings."
     )
 
 
@@ -1055,7 +1063,7 @@ CHART_GENERATORS: dict[str, Callable[[], str]] = {
     "glmnet_t_vs_x_avg_benefit_charts": glmnet_t_vs_x_chart_block,
     "glmnet_benefit_driver_chart": glmnet_benefit_driver_chart_block,
     "glmnet_roi_by_decile": lambda: chart_image(
-        "GLMNet ROI net savings by uplift decile",
+        "GLMNet cumulative gross savings by targeting approach",
         ensure_glmnet_roi_chart(),
     ),
 }
