@@ -1,6 +1,6 @@
 comparison,benchmark_role,benchmark_framework,benchmark_model,comparison_basis,n_compared,pearson_corr,spearman_corr,top_decile_overlap,top_20pct_overlap
-Causal forest vs GLMNet T-learner full output,Primary selected uplift benchmark,T-Learner,GLMNet,member_id_merge,1000,0.03946485337166112,0.12325346725346727,0.25,0.4
-Causal forest vs GLMNet X-learner test output,Primary selected uplift benchmark,X-Learner,GLMNet,member_id_merge,300,0.574084765060582,0.5336539294881053,0.5333333333333333,0.6333333333333333
-Causal forest vs XGBoost T-learner full output,Secondary tree-based sensitivity check,T-Learner,XGBoost,member_id_merge,1000,0.8005332234030219,0.7308105296277815,0.71,0.785
-Causal forest vs XGBoost X-learner test output,Secondary tree-based sensitivity check,X-Learner,XGBoost,member_id_merge,300,0.4653514031544595,0.48538717096856626,0.4,0.5833333333333334
-Causal forest vs current risk score test output,Operational baseline context,Current Risk,Current risk score,test_set_direct_columns,300,0.5389981937103682,0.4371758283604256,0.5666666666666667,0.65
+Causal forest vs GLMNet T-learner full output,Primary selected uplift benchmark,T-Learner,GLMNet,member_id_merge,1000,0.08680524134065445,0.13794611394611397,0.25,0.335
+Causal forest vs GLMNet X-learner test output,Primary selected uplift benchmark,X-Learner,GLMNet,member_id_merge,300,0.5024782188254866,0.4841898243313814,0.5,0.5
+Causal forest vs XGBoost T-learner full output,Secondary tree-based sensitivity check,T-Learner,XGBoost,member_id_merge,1000,0.7132801828659202,0.6729874804476065,0.59,0.64
+Causal forest vs XGBoost X-learner test output,Secondary tree-based sensitivity check,X-Learner,XGBoost,member_id_merge,300,0.4744268078342345,0.5011517905754508,0.36666666666666664,0.5333333333333333
+Causal forest vs current risk score test output,Operational baseline context,Current Risk,Current risk score,test_set_direct_columns,300,0.4337297993698104,0.35096239705331383,0.4666666666666667,0.55
