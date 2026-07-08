@@ -7,7 +7,7 @@ ckd_flag,Clinical Conditions,int64,float64,Indicator for chronic kidney disease 
 copd_flag,Clinical Conditions,int64,float64,Indicator for COPD diagnosis/history.,Binary indicator,True,True,copd_flag,0,0.0,2,0; 1,0.0,1.0
 depression_flag,Clinical Conditions,int64,float64,Indicator for depression diagnosis/history.,Binary indicator,True,True,depression_flag,0,0.0,2,0; 1,0.0,1.0
 diabetes_flag,Clinical Conditions,int64,float64,Indicator for diabetes diagnosis/history.,Binary indicator,True,True,diabetes_flag,0,0.0,2,0; 1,0.0,1.0
-pregnancy_flag,Clinical Conditions,int64,int64,Indicator for pregnancy status/history.,Excluded / constant,False,False,,0,0.0,1,0,0.0,0.0
+pregnancy_flag,Clinical Conditions,int64,int64,Indicator for pregnancy status/history.,Multi-level categorical,False,False,,0,0.0,1,0,0.0,0.0
 substance_use_flag,Clinical Conditions,int64,float64,Indicator for substance use-related risk or diagnosis.,Binary indicator,True,True,substance_use_flag,0,0.0,2,0; 1,0.0,1.0
 age,Demographics,int64,int64,Member age at the index point.,Continuous/count numeric,True,True,age,0,0.0,72,42; 73; 62; 35; 49,18.0,90.0
 case_manager_name,Demographics,object,category,Assigned case manager identifier/name.,Multi-level categorical,True,True,case_manager_name_CM_01; case_manager_name_CM_02; case_manager_name_CM_03; case_manager_name_CM_04; case_manager_name_CM_05; case_manager_name_CM_06; case_manager_name_CM_07; case_manager_name_CM_08; case_manager_name_CM_09; case_manager_name_CM_10; case_manager_name_CM_11; case_manager_name_CM_12; case_manager_name_CM_13; case_manager_name_CM_14; case_manager_name_CM_15,0,0.0,15,CM_01; CM_02; CM_03; CM_05; CM_04,,
