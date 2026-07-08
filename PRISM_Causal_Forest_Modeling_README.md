@@ -213,28 +213,27 @@ Supporting file:
 
 ### Treatment Effect Distribution
 
-The treatment-effect distribution summarizes the range of estimated `tau_hat` and `benefit_score` values. This helps show whether the causal forest estimates meaningful heterogeneity or whether treatment effects are tightly clustered around a single average value.
+The treatment-effect distribution is shown using `benefit_score`, where `benefit_score = -tau_hat`. Higher benefit scores indicate larger estimated ED risk reductions from intervention. This keeps the table focused on the business interpretation while preserving the causal forest sign convention explained earlier.
 
 <!-- AUTO_TABLE:causal_forest_ate_summary START -->
 | Metric | Value |
 |---|---:|
-| Average `tau_hat` | -0.041 |
-| Average `benefit_score` | 0.041 |
+| Average benefit score | 0.041 |
 | Test members | 300 |
 <!-- AUTO_TABLE:causal_forest_ate_summary END -->
 
 <!-- AUTO_TABLE:causal_forest_effect_distribution_summary START -->
-| Metric | `tau_hat` | `benefit_score` |
-|---|---:|---:|
-| Minimum | -0.101 | 0.001 |
-| 10th percentile | -0.071 | 0.015 |
-| 25th percentile | -0.056 | 0.025 |
-| Median | -0.036 | 0.036 |
-| Mean | -0.041 | 0.041 |
-| 75th percentile | -0.025 | 0.056 |
-| 90th percentile | -0.015 | 0.071 |
-| Maximum | -0.001 | 0.101 |
-| Standard deviation | 0.021 | 0.021 |
+| Metric | Benefit score |
+|---|---:|
+| Minimum | 0.001 |
+| 10th percentile | 0.015 |
+| 25th percentile | 0.025 |
+| Median | 0.036 |
+| Mean | 0.041 |
+| 75th percentile | 0.056 |
+| 90th percentile | 0.071 |
+| Maximum | 0.101 |
+| Standard deviation | 0.021 |
 <!-- AUTO_TABLE:causal_forest_effect_distribution_summary END -->
 
 <!-- AUTO_CHART:causal_forest_effect_distribution START -->
