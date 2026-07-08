@@ -1,0 +1,4 @@
+member_profile,member_id,actual_outcome,treatment_flag,current_risk_score,tau_hat,tau_se,benefit_score,hte_decile,outreach_interpretation
+Highest benefit,620,0.0,0.0,60.5,-0.10066482669202173,0.04376598974040336,0.10066482669202173,1,Strong outreach candidate based on estimated ED risk reduction.
+Lowest benefit,71,0.0,0.0,46.4,-0.0007017300347412755,0.011857915228746775,0.0007017300347412755,10,Lowest priority by causal forest benefit score.
+"Low risk, high benefit",238,0.0,1.0,41.0,-0.07669561938183853,0.029415021746399473,0.07669561938183853,1,May be missed by risk-only targeting but appears impactable.

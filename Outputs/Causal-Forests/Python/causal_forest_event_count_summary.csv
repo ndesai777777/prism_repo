@@ -1,0 +1,5 @@
+split,group,n,positive_ed_events,negative_ed_events,event_rate
+Train,Treated,276,11,265,0.03985507246376811
+Train,Control,424,31,393,0.07311320754716981
+Test,Treated,118,5,113,0.0423728813559322
+Test,Control,182,13,169,0.07142857142857142
