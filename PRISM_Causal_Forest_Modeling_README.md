@@ -91,22 +91,22 @@ In plain language, causal forest does not simply compare all treated members aga
 
 ```mermaid
 flowchart TD
-    A["Modeling dataset with member features"] --> B["Train/test split using seed 123"]
+    A["Modeling dataset<br/>with member features"] --> B["Train/test split<br/>using seed 123"]
     B --> C["Training members"]
-    B --> D["Held-out test members"]
-    C --> E["Outcome model component estimates ED risk patterns"]
-    C --> F["Treatment model component estimates treatment assignment patterns"]
-    C --> G["Causal forest builds local neighborhoods of similar members"]
-    E --> H["Causal forest treatment-effect estimation"]
+    B --> D["Held-out<br/>test members"]
+    C --> E["Outcome component:<br/>ED risk patterns"]
+    C --> F["Treatment component:<br/>assignment patterns"]
+    C --> G["Local neighborhoods<br/>of similar members"]
+    E --> H["Causal forest<br/>effect estimation"]
     F --> H
     G --> H
-    D --> I["Score each test member"]
+    D --> I["Score each<br/>test member"]
     H --> I
-    I --> J["tau_hat = estimated intervention effect on ED risk"]
-    J --> K["benefit_score = -tau_hat"]
-    K --> L["Rank members by estimated benefit"]
-    L --> M["Assign HTE deciles"]
-    M --> N["Compare against T-learner, X-learner, and current risk"]
+    I --> J["tau_hat:<br/>estimated ED effect"]
+    J --> K["benefit_score<br/>= -tau_hat"]
+    K --> L["Rank by estimated<br/>intervention benefit"]
+    L --> M["Assign<br/>HTE deciles"]
+    M --> N["Compare with uplift<br/>and current risk"]
 ```
 
 ### Propensity Alignment With Uplift Models

@@ -91,16 +91,16 @@ flowchart TD
     A["Modeling dataset"] --> B["Split members by actual treatment status"]
     B --> C["Treated members"]
     B --> D["Control members"]
-    C --> E["Train treated outcome model"]
-    D --> F["Train control outcome model"]
-    E --> G["Predict ED risk if treated for every test member"]
-    F --> H["Predict ED risk if untreated for every test member"]
+    C --> E["Train treated<br/>outcome model"]
+    D --> F["Train control<br/>outcome model"]
+    E --> G["Predict ED risk<br/>if treated"]
+    F --> H["Predict ED risk<br/>if untreated"]
     G --> I["pred_ed_if_treated"]
     H --> J["pred_ed_if_control"]
-    I --> K["Benefit score = pred_ed_if_control - pred_ed_if_treated"]
+    I --> K["Benefit score<br/>control risk - treated risk"]
     J --> K
-    K --> L["Rank members by predicted intervention benefit"]
-    L --> M["Assign uplift deciles"]
+    K --> L["Rank by predicted<br/>intervention benefit"]
+    L --> M["Assign<br/>uplift deciles"]
 ```
 
 ### X-Learner Framework
@@ -114,21 +114,21 @@ In this report, the X-learner is not used to replace the T-learner. It is used a
 ```mermaid
 flowchart TD
     A["Modeling dataset"] --> B["Train treated and control outcome models"]
-    B --> C["For treated members: predict untreated ED risk"]
-    B --> D["For control members: predict treated ED risk"]
-    C --> E["Imputed treated-member effect"]
-    D --> F["Imputed control-member effect"]
-    E --> G["Train treatment-effect model on treated members"]
-    F --> H["Train treatment-effect model on control members"]
-    A --> I["Train propensity model"]
-    G --> J["Predict treated-side effect for test members"]
-    H --> K["Predict control-side effect for test members"]
-    I --> L["Estimate propensity score for each member"]
-    J --> M["Weighted X-learner benefit estimate"]
+    B --> C["Treated members:<br/>predict untreated risk"]
+    B --> D["Control members:<br/>predict treated risk"]
+    C --> E["Imputed effect<br/>for treated members"]
+    D --> F["Imputed effect<br/>for control members"]
+    E --> G["Train treated-side<br/>effect model"]
+    F --> H["Train control-side<br/>effect model"]
+    A --> I["Train<br/>propensity model"]
+    G --> J["Predict treated-side<br/>effect"]
+    H --> K["Predict control-side<br/>effect"]
+    I --> L["Estimate member<br/>propensity score"]
+    J --> M["Weighted X-learner<br/>benefit estimate"]
     K --> M
     L --> M
-    M --> N["Rank members by predicted intervention benefit"]
-    N --> O["Assign uplift deciles"]
+    M --> N["Rank by predicted<br/>intervention benefit"]
+    N --> O["Assign<br/>uplift deciles"]
 ```
 
 ### How The Analytical Tasks Fit Together
