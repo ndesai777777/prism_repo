@@ -743,10 +743,10 @@ The notebook should be improved into a report-ready workflow with stronger diagn
 
 Implementation note added during build-out:
 
-- The report-ready causal forest workflow has been implemented as `Code/causal_forest_modeling_workflow.py`.
-- The existing notebook should call this workflow once the notebook file can be edited or opened in a compatible Jupyter environment.
+- The report-ready causal forest workflow has been implemented as `Code/PRISM_Causal_Forest_Modeling_Workflow.ipynb`.
+- This notebook follows the section order in this plan and is intended to be the primary causal forest modeling artifact.
 - The workflow keeps `SEED = 123`, uses `econml.dml.CausalForestDML`, writes the planned CSV/chart outputs, and preserves the causal forest sign convention `benefit_score = -tau_hat`.
-- Local execution currently requires a Python environment compatible with `econml`. The available Python 3.14 environment could not install `econml` because its scikit-learn dependency requires an older compatible wheel or a local C/C++ build toolchain.
+- Local execution requires a Python environment compatible with `econml`. The previously available Python 3.14 environment could not install `econml` because its scikit-learn dependency requires an older compatible wheel or a local C/C++ build toolchain.
 
 ## Notebook Section Plan
 
