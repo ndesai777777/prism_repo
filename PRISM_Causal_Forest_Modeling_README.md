@@ -194,9 +194,14 @@ This does not make the estimates equivalent to a randomized experiment, but it i
 
 ### Hyperparameter Tuning
 
-The causal forest notebook now performs a small hyperparameter search inside the training data. The held-out test set is not used for tuning. Instead, the training set is split into a tuning-training subset and a tuning-validation subset. Each candidate causal forest is fit on the tuning-training subset and evaluated on the tuning-validation subset.
+The causal forest notebook performs a small hyperparameter search inside the training data. The held-out test set is not used for tuning. Instead, the training set is split into a tuning-training subset and a tuning-validation subset.
 
-The grid is intentionally small:
+Because true member-level treatment effects are not directly observed, the model cannot be tuned the same way a standard supervised prediction model would be tuned. The goal is not to maximize prediction accuracy against a known `tau_hat` label. Instead, the tuning step asks two practical questions:
+
+1. Does the model create useful separation between high-benefit and low-benefit HTE deciles?
+2. Are the member rankings reasonably stable across similar causal forest specifications?
+
+The grid is intentionally small and focused on the main complexity controls:
 
 | Parameter | Candidate values |
 |---|---|
@@ -204,37 +209,22 @@ The grid is intentionally small:
 | `min_samples_leaf` | 5, 10, 20 |
 | `max_depth` | `None`, 8 |
 
-The implemented candidate combinations are evaluated using both separation and stability:
+The candidate results were:
 
-| Candidate | `n_estimators` | `min_samples_leaf` | `max_depth` | Validation top-bottom benefit gap | Avg Spearman stability | Avg top-decile overlap | Selection score | Selected |
-|---:|---:|---:|---|---:|---:|---:|---:|---|
-| 2 | 800 | 10 | `None` | 0.091 | 0.956 | 69.0% | 1.8 | Yes |
-| 4 | 800 | 10 | 8 | 0.091 | 0.956 | 65.9% | 2.2 | No |
-| 1 | 400 | 5 | `None` | 0.110 | 0.904 | 52.8% | 2.5 | No |
-| 3 | 800 | 20 | `None` | 0.069 | 0.911 | 55.9% | 3.5 | No |
+| Candidate | Trees | Min leaf size | Max depth | Benefit gap | Rank stability | Top-decile overlap | Selected |
+|---:|---:|---:|---|---:|---:|---:|---|
+| 1 | 400 | 5 | `None` | 0.110 | 0.904 | 52.8% | No |
+| 2 | 800 | 10 | `None` | 0.091 | 0.956 | 69.0% | Yes |
+| 3 | 800 | 20 | `None` | 0.069 | 0.911 | 55.9% | No |
+| 4 | 800 | 10 | 8 | 0.091 | 0.956 | 65.9% | No |
 
-The separation metric is the validation top-to-bottom benefit gap:
+`Benefit gap` is the average benefit score in validation HTE decile 1 minus the average benefit score in validation HTE decile 10. `Rank stability` is the average Spearman correlation between that candidate's benefit-score ranking and the rankings from the other candidate models. `Top-decile overlap` measures whether the same members tend to appear in the highest-benefit group across candidate models.
 
-```text
-validation_top_bottom_benefit_gap =
-    average benefit score in validation HTE decile 1
-    - average benefit score in validation HTE decile 10
-```
-
-Because true individual treatment effects are not directly observed, the notebook does not select the model from separation alone. It also checks whether candidate models produce similar member rankings and similar top-benefit groups. The combined selection score uses validation separation rank, average Spearman rank-correlation stability, and average top-decile overlap stability:
-
-```text
-selection_score =
-    0.50 * separation_rank
-    + 0.30 * stability_rank
-    + 0.20 * top_decile_stability_rank
-```
-
-This is intentionally conservative. Candidate 1 produced the largest raw top-to-bottom gap, but it was less stable across candidate specifications. Candidate 2 was selected because it preserved strong separation while producing more stable rankings and stronger top-decile agreement with the other candidate models.
-
-The pairwise stability checks show that the selected candidate is especially close to candidate 4, with a Spearman benefit-score correlation of 1.000 and top-decile overlap of 86.7%. Its average Spearman stability across all other candidates is 0.956, and its average top-decile overlap is 69.0%.
+Candidate 1 produced the largest raw benefit gap, but its rankings were less stable. Candidate 2 was selected because it preserved strong decile separation while producing more stable member rankings and stronger top-decile agreement across candidate models.
 
 Candidate 2 was selected. The final model was refit on the full training set using 800 causal forest trees, `min_samples_leaf = 10`, and `max_depth = None`, then scored on the held-out test set.
+
+The selected model leaves `max_depth` unrestricted, but this is not the same as fitting one unlimited-depth decision tree. Overfitting is controlled through the minimum leaf size, ensemble averaging across 800 trees, cross-fitting, and the stability comparison against a depth-limited candidate. Candidate 4 used the same tree count and leaf size with `max_depth = 8`, and it produced nearly identical rankings to candidate 2. That reduces concern that the selected model is driven by unstable deep-tree splits.
 
 Supporting output:
 
