@@ -1,6 +1,6 @@
 # PRISM Causal Forest Modeling README And Notebook Plan
 
-This planning document describes what should go into the separate causal forest README and how the existing causal forest notebook should be improved before final results are written up. It is intended as a review document before editing `Code/Causal Forests Model Code.ipynb` or generating the final causal forest modeling README.
+This planning document describes what should go into the separate causal forest README and how the causal forest workflow notebook should be maintained before final results are written up. The active notebook is `Code/PRISM_Causal_Forest_Modeling_Workflow.ipynb`.
 
 The causal forest analysis should be treated as a companion to `PRISM_Intervention_Benefit_Modeling_README.md`. The project background, business question, outcome variable, treatment variable, and broad predictor set remain the same. The new README should focus specifically on the causal forest workflow, how it estimates heterogeneous treatment effects, and how its results compare with the existing T-learner and X-learner uplift modeling work.
 
@@ -668,7 +668,7 @@ The final README should list:
 - Primary notebook:
 
 ```text
-Code/Causal Forests Model Code.ipynb
+Code/PRISM_Causal_Forest_Modeling_Workflow.ipynb
 ```
 
 - Optional R comparison script:
@@ -719,7 +719,7 @@ python Code/generate_readme_tables.py
 
 ## Existing Notebook Improvement Plan
 
-The current `Code/Causal Forests Model Code.ipynb` already has a useful starting structure:
+The active `Code/PRISM_Causal_Forest_Modeling_Workflow.ipynb` contains the report-ready causal forest workflow:
 
 - Package loading
 - File paths
