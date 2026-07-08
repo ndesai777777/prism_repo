@@ -89,6 +89,26 @@ The T-learner trains separate treated and control outcome models, then subtracts
 
 In plain language, causal forest does not simply compare all treated members against all untreated members. It builds local neighborhoods of members with similar baseline characteristics, compares treated versus untreated outcomes within those neighborhoods, and adjusts for treatment assignment patterns. This allows it to estimate which kinds of members appear more or less impactable.
 
+```mermaid
+flowchart TD
+    A["Modeling dataset with member features"] --> B["Train/test split using seed 123"]
+    B --> C["Training members"]
+    B --> D["Held-out test members"]
+    C --> E["Outcome model component estimates ED risk patterns"]
+    C --> F["Treatment model component estimates treatment assignment patterns"]
+    C --> G["Causal forest builds local neighborhoods of similar members"]
+    E --> H["Causal forest treatment-effect estimation"]
+    F --> H
+    G --> H
+    D --> I["Score each test member"]
+    H --> I
+    I --> J["tau_hat = estimated intervention effect on ED risk"]
+    J --> K["benefit_score = -tau_hat"]
+    K --> L["Rank members by estimated benefit"]
+    L --> M["Assign HTE deciles"]
+    M --> N["Compare against T-learner, X-learner, and current risk"]
+```
+
 ### Propensity Alignment With Uplift Models
 
 To strengthen comparability, the uplift notebook now writes a shared member-level propensity file:

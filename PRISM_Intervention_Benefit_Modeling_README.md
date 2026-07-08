@@ -86,6 +86,23 @@ A higher benefit score means the model predicts a larger reduction in ED risk if
 
 Separate treated and control models are useful because the relationship between member features and ED risk may differ depending on whether a member receives the intervention. A single risk model can identify members who are likely to have an ED visit, but it does not directly estimate whether the intervention changes that risk.
 
+```mermaid
+flowchart TD
+    A["Modeling dataset"] --> B["Split members by actual treatment status"]
+    B --> C["Treated members"]
+    B --> D["Control members"]
+    C --> E["Train treated outcome model"]
+    D --> F["Train control outcome model"]
+    E --> G["Predict ED risk if treated for every test member"]
+    F --> H["Predict ED risk if untreated for every test member"]
+    G --> I["pred_ed_if_treated"]
+    H --> J["pred_ed_if_control"]
+    I --> K["Benefit score = pred_ed_if_control - pred_ed_if_treated"]
+    J --> K
+    K --> L["Rank members by predicted intervention benefit"]
+    L --> M["Assign uplift deciles"]
+```
+
 ### X-Learner Framework
 
 The X-learner is used as a second treatment-effect framework to check whether the uplift ranking is directionally consistent with the T-learner. It starts with the same basic counterfactual idea: estimate what would have happened to treated members without treatment and what would have happened to control members with treatment. It then converts those counterfactual comparisons into imputed treatment-effect targets and trains separate treatment-effect models.
@@ -93,6 +110,26 @@ The X-learner is used as a second treatment-effect framework to check whether th
 For treated members, the X-learner compares the observed outcome with the predicted untreated outcome. For control members, it compares the predicted treated outcome with the observed outcome. These imputed effects are then modeled as functions of member features. At scoring time, a propensity model estimates each member's probability of receiving treatment, and the final X-learner benefit estimate is a weighted combination of the treated-effect and control-effect model predictions.
 
 In this report, the X-learner is not used to replace the T-learner. It is used as a consistency check: if the T-learner and X-learner identify similar high-benefit members and show similar decile patterns, that increases confidence that the benefit ranking is not purely an artifact of one modeling framework.
+
+```mermaid
+flowchart TD
+    A["Modeling dataset"] --> B["Train treated and control outcome models"]
+    B --> C["For treated members: predict untreated ED risk"]
+    B --> D["For control members: predict treated ED risk"]
+    C --> E["Imputed treated-member effect"]
+    D --> F["Imputed control-member effect"]
+    E --> G["Train treatment-effect model on treated members"]
+    F --> H["Train treatment-effect model on control members"]
+    A --> I["Train propensity model"]
+    G --> J["Predict treated-side effect for test members"]
+    H --> K["Predict control-side effect for test members"]
+    I --> L["Estimate propensity score for each member"]
+    J --> M["Weighted X-learner benefit estimate"]
+    K --> M
+    L --> M
+    M --> N["Rank members by predicted intervention benefit"]
+    N --> O["Assign uplift deciles"]
+```
 
 ### How The Analytical Tasks Fit Together
 
