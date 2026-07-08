@@ -83,6 +83,26 @@ benefit_score = -tau_hat
 
 A higher `benefit_score` means the causal forest estimates a larger reduction in ED risk under intervention.
 
+### Model Specification And Hyperparameter Strategy
+
+The causal forest workflow uses `econml.dml.CausalForestDML`. This is a causal forest model, not an XGBoost model. XGBoost is used in the uplift workflow as one benchmark family, but the causal forest notebook uses a forest-based heterogeneous treatment-effect estimator from `econml`.
+
+The Python causal forest notebook uses the following model family:
+
+```text
+Estimator: CausalForestDML
+Library: econml.dml
+Outcome nuisance model: RandomForestRegressor
+Treatment nuisance model: elastic-net LogisticRegressionCV
+Treatment type: discrete treatment
+Cross-fitting: 5-fold StratifiedKFold
+Random seed: 123
+```
+
+This is not an XGBoost model. XGBoost is used as one benchmark family in the uplift workflow, but the causal forest model itself is a forest-based heterogeneous treatment-effect estimator from `econml`.
+
+The treatment nuisance model tunes regularization strength through `LogisticRegressionCV`. The causal forest also uses a small hyperparameter grid, described in Analytical Task 3, to choose among a few reasonable forest settings before final test-set scoring.
+
 ### How Causal Forest Differs From T-Learner And X-Learner
 
 The T-learner trains separate treated and control outcome models, then subtracts counterfactual predictions. The X-learner imputes treatment-effect labels and trains second-stage treatment-effect models. Causal forest instead uses a forest-based heterogeneous treatment-effect model to estimate where treatment effects vary across members.
@@ -160,7 +180,56 @@ Supporting file:
 
 In the uplift README, Analytical Task 3 evaluates factual outcome-model performance because the T-learner and X-learner depend on treated and control outcome models. Causal forest does not have the same report focus. Instead, this section evaluates whether treatment-effect estimation is credible enough to interpret.
 
-The main diagnostics are event counts, propensity overlap, treatment-effect distribution, and uncertainty.
+The core question for this section is:
+
+> What evidence suggests that the causal forest `tau_hat` estimates are reasonable treatment-effect estimates?
+
+Unlike factual outcome prediction, individual treatment effects cannot be directly observed for every member because each member is only observed under one condition: treated or untreated. Therefore, this section does not try to prove that each member-level `tau_hat` is correct. Instead, it evaluates whether the estimates are credible enough for exploratory prioritization and subgroup discovery.
+
+The main evidence comes from event counts, propensity overlap, cross-fitting, treatment-effect distribution, uncertainty, HTE decile behavior, and consistency against independent uplift benchmarks.
+
+### Cross-Fitting And Nuisance Model Controls
+
+The causal forest uses a double machine learning structure. In plain language, the model first learns nuisance patterns related to baseline ED risk and treatment assignment, then estimates treatment-effect heterogeneity after accounting for those patterns. The 5-fold cross-fitting setup helps reduce overfitting because treatment effects for one fold are estimated using nuisance models trained on other folds.
+
+This does not make the estimates equivalent to a randomized experiment, but it is stronger than a simple treated-versus-control comparison. The credibility of the resulting `tau_hat` values depends on having adequate treated/control overlap, enough outcome events to learn from, plausible effect gradients, and reasonable uncertainty.
+
+### Hyperparameter Tuning
+
+The causal forest notebook now performs a small hyperparameter search inside the training data. The held-out test set is not used for tuning. Instead, the training set is split into a tuning-training subset and a tuning-validation subset. Each candidate causal forest is fit on the tuning-training subset and evaluated on the tuning-validation subset.
+
+The grid is intentionally small:
+
+| Parameter | Candidate values |
+|---|---|
+| `n_estimators` | 400, 800 |
+| `min_samples_leaf` | 5, 10, 20 |
+| `max_depth` | `None`, 8 |
+
+The implemented candidate combinations are:
+
+| Candidate | `n_estimators` | `min_samples_leaf` | `max_depth` |
+|---:|---:|---:|---|
+| 1 | 400 | 5 | `None` |
+| 2 | 800 | 10 | `None` |
+| 3 | 800 | 20 | `None` |
+| 4 | 800 | 10 | 8 |
+
+The selection criterion is the validation top-to-bottom benefit separation:
+
+```text
+validation_top_bottom_benefit_gap =
+    average benefit score in validation HTE decile 1
+    - average benefit score in validation HTE decile 10
+```
+
+This criterion is appropriate for this project because the goal is not to predict an observed individual treatment-effect label. Individual treatment effects are not directly observed. Instead, the goal is to produce a stable and useful ranking of members by estimated intervention benefit. A larger validation decile separation suggests that the model is finding clearer heterogeneity across member subgroups.
+
+After the best candidate is selected, the notebook refits `CausalForestDML` on the full training set using the selected hyperparameters and then scores the held-out test set.
+
+Supporting output:
+
+- [`causal_forest_hyperparameter_tuning_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_hyperparameter_tuning_summary.csv)
 
 ### Event Counts And Modeling Constraints
 
@@ -263,6 +332,20 @@ When standard errors are available, the notebook summarizes uncertainty around m
 Supporting file:
 
 - [`causal_forest_uncertainty_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_uncertainty_summary.csv)
+
+### Treatment-Effect Credibility Summary
+
+The current causal forest estimates are credible enough for exploratory prioritization and subgroup discovery, but they should not be presented as definitive individual-level causal truth. The strongest evidence in support of the estimates is:
+
+1. Propensity overlap is acceptable. No members have estimated propensity below 0.05 or above 0.95, which means the model is not relying on extreme extrapolation for members who were almost always treated or almost never treated.
+2. Treatment assignment is only modestly predictable in the test set. The test treatment-model AUC is 0.593, suggesting treated and control members are not cleanly separated by measured predictors.
+3. Cross-fitting is used. The `CausalForestDML` setup uses 5-fold cross-fitting, which helps reduce overfitting in the nuisance model components used to estimate treatment effects.
+4. The HTE deciles show a smooth benefit gradient. The highest-benefit decile has an average estimated benefit of 0.084, while the lowest-benefit decile has an average estimated benefit of 0.012.
+5. The top-decile profile is clinically plausible. The highest-benefit group has higher current risk, clinical risk, recent cost, and utilization markers than other deciles.
+6. Some estimates are statistically separated from zero. Eighty-seven members have confidence intervals entirely below zero for `tau_hat`, while none have confidence intervals entirely above zero.
+7. The causal forest ranking is directionally consistent with several benchmarks, especially the XGBoost T-learner and GLMNet X-learner comparisons shown later in this README.
+
+The main limitation is that most member-level confidence intervals still cross zero. Therefore, the best interpretation is directional: the causal forest appears to identify plausible high-benefit subgroups, but live-data validation and sensitivity testing would be needed before using the estimates for production decision-making.
 
 ## Analytical Task 4: Treatment Effect Analysis
 
@@ -469,6 +552,7 @@ Key causal forest output files:
 - [`causal_forest_data_review_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_data_review_summary.csv)
 - [`causal_forest_event_count_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_event_count_summary.csv)
 - [`causal_forest_propensity_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_propensity_summary.csv)
+- [`causal_forest_hyperparameter_tuning_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_hyperparameter_tuning_summary.csv)
 - [`causal_forest_ate_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_ate_summary.csv)
 - [`causal_forest_effect_distribution_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_effect_distribution_summary.csv)
 - [`causal_forest_uncertainty_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_uncertainty_summary.csv)
