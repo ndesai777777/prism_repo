@@ -97,6 +97,8 @@ To strengthen comparability, the uplift notebook now writes a shared member-leve
 
 The causal forest notebook reads this file and merges propensity scores by `member_id` using one-to-one validation. This ensures the same member receives the same propensity score across the X-learner and causal forest outputs when the uplift outputs have been regenerated.
 
+This setup deliberately separates model ownership from diagnostic reporting. The uplift workflow owns the shared propensity calculation because propensity is first needed for the X-learner workflow. The causal forest workflow reuses those exact member-level values rather than fitting an unrelated propensity model. That design keeps the uplift and causal forest comparisons cleaner because differences in results are less likely to be caused by different propensity estimates.
+
 The shared propensity model uses the same GLMNet-style specification as the X-learner workflow:
 
 ```text
@@ -160,6 +162,8 @@ Supporting file:
 ### Propensity And Overlap Checks
 
 The causal forest workflow uses the shared propensity scores from the uplift workflow when available. This allows the same member-level treatment-assignment estimate to be used across the X-learner and causal forest analysis.
+
+Although the propensity values are calculated upstream in the uplift notebook, overlap is still reported in the causal forest README because overlap is a causal forest credibility diagnostic. Causal forest estimates treatment effects by comparing treated and untreated members with similar baseline characteristics. If there is poor overlap, then the model has less evidence for estimating counterfactual outcomes in parts of the member population.
 
 Overlap matters because treatment-effect estimates are less reliable when similar members are not represented in both treatment groups. If certain types of members are almost always treated or almost never treated, then the model has limited evidence for estimating what would have happened under the opposite treatment condition.
 
