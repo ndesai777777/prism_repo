@@ -83,23 +83,19 @@ benefit_score = -tau_hat
 
 A higher `benefit_score` means the causal forest estimates a larger reduction in ED risk under intervention.
 
-### Model Specification And Hyperparameter Strategy
+### Model Specification And Nuisance Models
 
-The causal forest workflow uses `econml.dml.CausalForestDML`. This is a causal forest model, not an XGBoost model. XGBoost is used in the uplift workflow as one benchmark family, but the causal forest notebook uses a forest-based heterogeneous treatment-effect estimator from `econml`.
+The causal forest model is implemented using `econml.dml.CausalForestDML`. This is not an XGBoost model. XGBoost is used as one benchmark family in the uplift workflow, but the causal forest model itself is a tree-based heterogeneous treatment-effect estimator from `econml`.
 
-The Python causal forest notebook uses the following model family:
+`CausalForestDML` has three conceptual pieces: two supporting nuisance models and one final causal forest treatment-effect estimator. The nuisance models are not the final outputs of interest. They help adjust for baseline ED risk and treatment-selection patterns before estimating member-level `tau_hat`.
 
-```text
-Estimator: CausalForestDML
-Library: econml.dml
-Outcome nuisance model: RandomForestRegressor
-Treatment nuisance model: elastic-net LogisticRegressionCV
-Treatment type: discrete treatment
-Cross-fitting: 5-fold StratifiedKFold
-Random seed: 123
-```
+| Component | Model used | Purpose |
+|---|---|---|
+| Final treatment-effect estimator | `CausalForestDML` internal causal forest | Estimates member-level `tau_hat` |
+| Outcome nuisance model | `RandomForestRegressor` | Learns baseline ED risk patterns |
+| Treatment nuisance model | `LogisticRegressionCV`, elastic net | Learns treatment assignment / propensity |
 
-This is not an XGBoost model. XGBoost is used as one benchmark family in the uplift workflow, but the causal forest model itself is a forest-based heterogeneous treatment-effect estimator from `econml`.
+The final causal forest is random-forest-like, but it is not a standard random forest classifier or regressor. A standard random forest tries to predict an outcome. A causal forest tries to estimate how the treatment effect varies across members.
 
 The treatment nuisance model tunes regularization strength through `LogisticRegressionCV`. The causal forest also uses a small hyperparameter grid, described in Analytical Task 3, to choose among a few reasonable forest settings before final test-set scoring.
 
@@ -190,7 +186,9 @@ The main evidence comes from event counts, propensity overlap, cross-fitting, tr
 
 ### Cross-Fitting And Nuisance Model Controls
 
-The causal forest uses a double machine learning structure. In plain language, the model first learns nuisance patterns related to baseline ED risk and treatment assignment, then estimates treatment-effect heterogeneity after accounting for those patterns. The 5-fold cross-fitting setup helps reduce overfitting because treatment effects for one fold are estimated using nuisance models trained on other folds.
+The causal forest uses a double machine learning structure. In plain language, the model first learns nuisance patterns related to baseline ED risk and treatment assignment, then estimates treatment-effect heterogeneity after accounting for those patterns.
+
+The outcome nuisance model helps separate baseline ED risk from intervention benefit. The treatment nuisance model helps adjust for the fact that intervention was not randomly assigned. Cross-fitting reduces overfitting by estimating nuisance patterns on folds separate from the fold where treatment effects are evaluated.
 
 This does not make the estimates equivalent to a randomized experiment, but it is stronger than a simple treated-versus-control comparison. The credibility of the resulting `tau_hat` values depends on having adequate treated/control overlap, enough outcome events to learn from, plausible effect gradients, and reasonable uncertainty.
 
@@ -208,12 +206,12 @@ The grid is intentionally small:
 
 The implemented candidate combinations are:
 
-| Candidate | `n_estimators` | `min_samples_leaf` | `max_depth` |
-|---:|---:|---:|---|
-| 1 | 400 | 5 | `None` |
-| 2 | 800 | 10 | `None` |
-| 3 | 800 | 20 | `None` |
-| 4 | 800 | 10 | 8 |
+| Candidate | `n_estimators` | `min_samples_leaf` | `max_depth` | Validation top-bottom benefit gap | Selected |
+|---:|---:|---:|---|---:|---|
+| 1 | 400 | 5 | `None` | 0.110 | Yes |
+| 4 | 800 | 10 | 8 | 0.091 | No |
+| 2 | 800 | 10 | `None` | 0.091 | No |
+| 3 | 800 | 20 | `None` | 0.069 | No |
 
 The selection criterion is the validation top-to-bottom benefit separation:
 
@@ -225,7 +223,7 @@ validation_top_bottom_benefit_gap =
 
 This criterion is appropriate for this project because the goal is not to predict an observed individual treatment-effect label. Individual treatment effects are not directly observed. Instead, the goal is to produce a stable and useful ranking of members by estimated intervention benefit. A larger validation decile separation suggests that the model is finding clearer heterogeneity across member subgroups.
 
-After the best candidate is selected, the notebook refits `CausalForestDML` on the full training set using the selected hyperparameters and then scores the held-out test set.
+Candidate 1 was selected. The final model was refit on the full training set using 400 causal forest trees, `min_samples_leaf = 5`, and `max_depth = None`, then scored on the held-out test set.
 
 Supporting output:
 
@@ -287,22 +285,22 @@ The treatment-effect distribution is shown using `benefit_score`, where `benefit
 <!-- AUTO_TABLE:causal_forest_ate_summary START -->
 | Metric | Value |
 |---|---:|
-| Average benefit score | 0.041 |
+| Average benefit score | 0.043 |
 | Test members | 300 |
 <!-- AUTO_TABLE:causal_forest_ate_summary END -->
 
 <!-- AUTO_TABLE:causal_forest_effect_distribution_summary START -->
 | Metric | Benefit score |
 |---|---:|
-| Minimum | 0.001 |
-| 10th percentile | 0.015 |
-| 25th percentile | 0.025 |
-| Median | 0.036 |
-| Mean | 0.041 |
-| 75th percentile | 0.056 |
-| 90th percentile | 0.071 |
-| Maximum | 0.101 |
-| Standard deviation | 0.021 |
+| Minimum | -0.007 |
+| 10th percentile | 0.008 |
+| 25th percentile | 0.019 |
+| Median | 0.038 |
+| Mean | 0.043 |
+| 75th percentile | 0.067 |
+| 90th percentile | 0.087 |
+| Maximum | 0.117 |
+| Standard deviation | 0.030 |
 <!-- AUTO_TABLE:causal_forest_effect_distribution_summary END -->
 
 <!-- AUTO_CHART:causal_forest_effect_distribution START -->
@@ -321,12 +319,12 @@ When standard errors are available, the notebook summarizes uncertainty around m
 <!-- AUTO_TABLE:causal_forest_uncertainty_summary START -->
 | Metric | Value |
 |---|---:|
-| Mean tau standard error | 0.026 |
-| Median tau standard error | 0.024 |
-| Members with tau CI entirely below zero | 87 |
-| Members with tau CI crossing zero | 213 |
+| Mean tau standard error | 0.036 |
+| Median tau standard error | 0.032 |
+| Members with tau CI entirely below zero | 54 |
+| Members with tau CI crossing zero | 246 |
 | Members with tau CI entirely above zero | 0 |
-| Top HTE decile mean tau standard error | 0.038 |
+| Top HTE decile mean tau standard error | 0.054 |
 <!-- AUTO_TABLE:causal_forest_uncertainty_summary END -->
 
 Supporting file:
@@ -340,9 +338,9 @@ The current causal forest estimates are credible enough for exploratory prioriti
 1. Propensity overlap is acceptable. No members have estimated propensity below 0.05 or above 0.95, which means the model is not relying on extreme extrapolation for members who were almost always treated or almost never treated.
 2. Treatment assignment is only modestly predictable in the test set. The test treatment-model AUC is 0.593, suggesting treated and control members are not cleanly separated by measured predictors.
 3. Cross-fitting is used. The `CausalForestDML` setup uses 5-fold cross-fitting, which helps reduce overfitting in the nuisance model components used to estimate treatment effects.
-4. The HTE deciles show a smooth benefit gradient. The highest-benefit decile has an average estimated benefit of 0.084, while the lowest-benefit decile has an average estimated benefit of 0.012.
+4. The HTE deciles show a smooth benefit gradient. The highest-benefit decile has an average estimated benefit of 0.101, while the lowest-benefit decile has an average estimated benefit of 0.002.
 5. The top-decile profile is clinically plausible. The highest-benefit group has higher current risk, clinical risk, recent cost, and utilization markers than other deciles.
-6. Some estimates are statistically separated from zero. Eighty-seven members have confidence intervals entirely below zero for `tau_hat`, while none have confidence intervals entirely above zero.
+6. Some estimates are statistically separated from zero. Fifty-four members have confidence intervals entirely below zero for `tau_hat`, while none have confidence intervals entirely above zero.
 7. The causal forest ranking is directionally consistent with several benchmarks, especially the XGBoost T-learner and GLMNet X-learner comparisons shown later in this README.
 
 The main limitation is that most member-level confidence intervals still cross zero. Therefore, the best interpretation is directional: the causal forest appears to identify plausible high-benefit subgroups, but live-data validation and sensitivity testing would be needed before using the estimates for production decision-making.
@@ -363,9 +361,10 @@ The member-level examples below are intended to illustrate how causal forest sep
 <!-- AUTO_TABLE:causal_forest_top_benefit_examples START -->
 | Member profile | Member ID | Actual outcome | Treatment flag | Current risk score | `tau_hat` | `tau_se` | Benefit score | HTE decile | Interpretation |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| Highest benefit | 620 | 0 | 0 | 60.5 | -0.101 | 0.044 | 0.101 | 1 | Strong outreach candidate based on estimated ED risk reduction. |
-| Lowest benefit | 71 | 0 | 0 | 46.4 | -0.001 | 0.012 | 0.001 | 10 | Lowest priority by causal forest benefit score. |
-| Low risk, high benefit | 238 | 0 | 1 | 41.0 | -0.077 | 0.029 | 0.077 | 1 | May be missed by risk-only targeting but appears impactable. |
+| Highest benefit | 569 | 1 | 0 | 56.1 | -0.117 | 0.053 | 0.117 | 1 | Strong outreach candidate based on estimated ED risk reduction. |
+| Lowest benefit | 628 | 0 | 1 | 46.8 | 0.007 | 0.024 | -0.007 | 10 | Lowest priority by causal forest benefit score. |
+| High risk, low benefit | 719 | 0 | 0 | 50.8 | -0.018 | 0.030 | 0.018 | 8 | High baseline risk but limited estimated impactability. |
+| Low risk, high benefit | 238 | 0 | 1 | 41.0 | -0.108 | 0.030 | 0.108 | 1 | May be missed by risk-only targeting but appears impactable. |
 <!-- AUTO_TABLE:causal_forest_top_benefit_examples END -->
 
 Supporting files:
@@ -380,19 +379,19 @@ Members are ranked by `benefit_score` and assigned to HTE deciles. Decile 1 is t
 <!-- AUTO_TABLE:causal_forest_decile_summary START -->
 | HTE decile | N | Avg `tau_hat` | Avg benefit score | Avg tau SE | Observed ED rate | Treatment pct | Avg propensity | Avg current risk |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 30 | -0.084 | 0.084 | 0.038 | 20.0% | 40.0% | 0.511 | 58.5 |
-| 2 | 30 | -0.065 | 0.065 | 0.033 | 3.3% | 40.0% | 0.448 | 50.2 |
-| 3 | 30 | -0.055 | 0.055 | 0.029 | 6.7% | 23.3% | 0.393 | 44.3 |
-| 4 | 30 | -0.047 | 0.047 | 0.026 | 3.3% | 46.7% | 0.408 | 42.4 |
-| 5 | 30 | -0.041 | 0.041 | 0.024 | 10.0% | 40.0% | 0.348 | 41.9 |
-| 6 | 30 | -0.034 | 0.034 | 0.024 | 3.3% | 46.7% | 0.384 | 39.5 |
-| 7 | 30 | -0.030 | 0.030 | 0.024 | 3.3% | 40.0% | 0.392 | 40.9 |
-| 8 | 30 | -0.025 | 0.025 | 0.023 | 3.3% | 33.3% | 0.381 | 42.0 |
-| 9 | 30 | -0.018 | 0.018 | 0.019 | 3.3% | 40.0% | 0.375 | 37.4 |
-| 10 | 30 | -0.012 | 0.012 | 0.017 | 3.3% | 43.3% | 0.384 | 41.0 |
+| 1 | 30 | -0.101 | 0.101 | 0.054 | 16.7% | 33.3% | 0.479 | 55.5 |
+| 2 | 30 | -0.077 | 0.077 | 0.045 | 10.0% | 26.7% | 0.431 | 47.2 |
+| 3 | 30 | -0.066 | 0.066 | 0.044 | 0.0% | 46.7% | 0.380 | 44.4 |
+| 4 | 30 | -0.054 | 0.054 | 0.039 | 6.7% | 46.7% | 0.396 | 45.3 |
+| 5 | 30 | -0.042 | 0.042 | 0.030 | 6.7% | 40.0% | 0.404 | 41.8 |
+| 6 | 30 | -0.034 | 0.034 | 0.032 | 6.7% | 46.7% | 0.375 | 42.1 |
+| 7 | 30 | -0.027 | 0.027 | 0.030 | 0.0% | 36.7% | 0.395 | 40.5 |
+| 8 | 30 | -0.019 | 0.019 | 0.031 | 6.7% | 36.7% | 0.383 | 40.8 |
+| 9 | 30 | -0.011 | 0.011 | 0.028 | 6.7% | 40.0% | 0.395 | 39.8 |
+| 10 | 30 | -0.002 | 0.002 | 0.030 | 0.0% | 40.0% | 0.387 | 40.7 |
 <!-- AUTO_TABLE:causal_forest_decile_summary END -->
 
-The decile pattern shows a clear estimated benefit gradient. The average benefit score is 8.4 percentage points in HTE decile 1 compared with 1.2 percentage points in HTE decile 10.
+The decile pattern shows a clear estimated benefit gradient. The average benefit score is 10.1 percentage points in HTE decile 1 compared with 0.2 percentage points in HTE decile 10.
 
 <!-- AUTO_CHART:causal_forest_avg_benefit_by_decile START -->
 ![Causal forest average estimated benefit by HTE decile](Outputs/Causal-Forests/Python/dashboard_causal_forest_avg_benefit_by_decile.png)
@@ -425,14 +424,14 @@ All model-to-model comparisons use `member_id` merges when the uplift outputs ha
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary START -->
 | Comparison | Role | N compared | Pearson corr | Spearman corr | Top decile overlap | Top 20% overlap |
 |---|---|---:|---:|---:|---:|---:|
-| Causal forest vs GLMNet T-learner | Primary selected uplift benchmark | 1,000 | 0.039 | 0.123 | 25.0% | 40.0% |
-| Causal forest vs GLMNet X-learner | Primary selected uplift benchmark | 300 | 0.574 | 0.534 | 53.3% | 63.3% |
-| Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check | 1,000 | 0.801 | 0.731 | 71.0% | 78.5% |
-| Causal forest vs XGBoost X-learner | Secondary tree-based sensitivity check | 300 | 0.465 | 0.485 | 40.0% | 58.3% |
-| Causal forest vs current risk score | Operational baseline context | 300 | 0.539 | 0.437 | 56.7% | 65.0% |
+| Causal forest vs GLMNet T-learner | Primary selected uplift benchmark | 1,000 | 0.087 | 0.138 | 25.0% | 33.5% |
+| Causal forest vs GLMNet X-learner | Primary selected uplift benchmark | 300 | 0.502 | 0.484 | 50.0% | 50.0% |
+| Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check | 1,000 | 0.713 | 0.673 | 59.0% | 64.0% |
+| Causal forest vs XGBoost X-learner | Secondary tree-based sensitivity check | 300 | 0.474 | 0.501 | 36.7% | 53.3% |
+| Causal forest vs current risk score | Operational baseline context | 300 | 0.434 | 0.351 | 46.7% | 55.0% |
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary END -->
 
-The causal forest rankings are most aligned with the XGBoost T-learner and moderately aligned with the GLMNet X-learner. The weaker alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
+The causal forest rankings are most aligned with the XGBoost T-learner and moderately aligned with the GLMNet X-learner and XGBoost X-learner. The weaker alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
 
 Supporting file:
 
@@ -445,16 +444,16 @@ Causal forest variable importance is a partial explainability layer. It identifi
 <!-- AUTO_TABLE:causal_forest_variable_importance START -->
 | Rank | Feature | Importance |
 |---:|---|---:|
-| 1 | current_risk_score | 0.173 |
+| 1 | current_risk_score | 0.182 |
 | 2 | percolator_clinical_score | 0.138 |
-| 3 | age | 0.101 |
-| 4 | med_adherence_pdc | 0.072 |
-| 5 | pcp_visits_last_6m | 0.068 |
-| 6 | percolator_utilization_score | 0.064 |
-| 7 | total_cost_last_6m | 0.062 |
+| 3 | age | 0.081 |
+| 4 | pcp_visits_last_6m | 0.077 |
+| 5 | total_cost_last_6m | 0.068 |
+| 6 | med_adherence_pdc | 0.066 |
+| 7 | percolator_utilization_score | 0.058 |
 | 8 | percolator_sdoh_score | 0.049 |
-| 9 | rx_count_last_6m | 0.028 |
-| 10 | chf_flag | 0.025 |
+| 9 | specialist_visits_last_6m | 0.022 |
+| 10 | rx_count_last_6m | 0.022 |
 <!-- AUTO_TABLE:causal_forest_variable_importance END -->
 
 <!-- AUTO_CHART:causal_forest_variable_importance START -->
@@ -466,19 +465,19 @@ The top-decile profile compares members in HTE decile 1 against members in the o
 <!-- AUTO_TABLE:causal_forest_top_decile_profile START -->
 | Feature | Top HTE decile | Other deciles | Difference |
 |---|---:|---:|---:|
-| total_cost_last_6m | 5,973.5 | 4,036.7 | 1,936.8 |
-| percolator_clinical_score | 68.6 | 43.8 | 24.8 |
-| current_risk_score | 58.5 | 42.2 | 16.4 |
-| percolator_utilization_score | 56.1 | 44.4 | 11.7 |
-| percolator_sdoh_score | 38.4 | 35.0 | 3.3 |
-| ed_visits_last_6m | 1.6 | 0.8 | 0.7 |
-| admits_last_6m | 0.7 | 0.3 | 0.4 |
-| utilities_insecurity_flag | 26.7% | 17.0% | 9.6 pp |
-| transportation_barrier_flag | 33.3% | 25.2% | 8.1 pp |
+| total_cost_last_6m | 5,034.3 | 4,141.1 | 893.2 |
+| percolator_clinical_score | 64.0 | 44.3 | 19.7 |
+| current_risk_score | 55.5 | 42.5 | 13.0 |
+| percolator_utilization_score | 53.0 | 44.7 | 8.3 |
+| ed_visits_last_6m | 1.6 | 0.8 | 0.8 |
+| percolator_sdoh_score | 36.1 | 35.3 | 0.7 |
+| behavioral_health_risk_flag | 26.7% | 40.0% | -13.3 pp |
+| dual_eligible | 23.3% | 30.0% | -6.7 pp |
 | food_insecurity_flag | 26.7% | 20.7% | 5.9 pp |
+| admits_last_6m | 0.4 | 0.4 | 0.0 |
 <!-- AUTO_TABLE:causal_forest_top_decile_profile END -->
 
-The highest-benefit decile appears more clinically complex, more costly, and somewhat more socially vulnerable than the rest of the test sample.
+The highest-benefit decile appears more clinically complex, more costly, and higher utilization than the rest of the test sample. The SDOH profile is more mixed, so these variables should be interpreted as subgroup descriptors rather than definitive causal drivers.
 
 Supporting files:
 
@@ -492,19 +491,19 @@ The causal forest business value assessment is narrower than the ROI section in 
 <!-- AUTO_TABLE:causal_forest_targeting_summary START -->
 | HTE decile | N | Avg benefit score | Observed ED rate | Treatment pct | Avg current risk | Cumulative members | Cumulative expected ED reductions |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 30 | 0.084 | 20.0% | 40.0% | 58.5 | 30 | 2.53 |
-| 2 | 30 | 0.065 | 3.3% | 40.0% | 50.2 | 60 | 4.47 |
-| 3 | 30 | 0.055 | 6.7% | 23.3% | 44.3 | 90 | 6.12 |
-| 4 | 30 | 0.047 | 3.3% | 46.7% | 42.4 | 120 | 7.53 |
-| 5 | 30 | 0.041 | 10.0% | 40.0% | 41.9 | 150 | 8.74 |
-| 6 | 30 | 0.034 | 3.3% | 46.7% | 39.5 | 180 | 9.78 |
-| 7 | 30 | 0.030 | 3.3% | 40.0% | 40.9 | 210 | 10.68 |
-| 8 | 30 | 0.025 | 3.3% | 33.3% | 42.0 | 240 | 11.42 |
-| 9 | 30 | 0.018 | 3.3% | 40.0% | 37.4 | 270 | 11.97 |
-| 10 | 30 | 0.012 | 3.3% | 43.3% | 41.0 | 300 | 12.32 |
+| 1 | 30 | 0.101 | 16.7% | 33.3% | 55.5 | 30 | 3.02 |
+| 2 | 30 | 0.077 | 10.0% | 26.7% | 47.2 | 60 | 5.35 |
+| 3 | 30 | 0.066 | 0.0% | 46.7% | 44.4 | 90 | 7.34 |
+| 4 | 30 | 0.054 | 6.7% | 46.7% | 45.3 | 120 | 8.95 |
+| 5 | 30 | 0.042 | 6.7% | 40.0% | 41.8 | 150 | 10.22 |
+| 6 | 30 | 0.034 | 6.7% | 46.7% | 42.1 | 180 | 11.23 |
+| 7 | 30 | 0.027 | 0.0% | 36.7% | 40.5 | 210 | 12.03 |
+| 8 | 30 | 0.019 | 6.7% | 36.7% | 40.8 | 240 | 12.60 |
+| 9 | 30 | 0.011 | 6.7% | 40.0% | 39.8 | 270 | 12.94 |
+| 10 | 30 | 0.002 | 0.0% | 40.0% | 40.7 | 300 | 12.99 |
 <!-- AUTO_TABLE:causal_forest_targeting_summary END -->
 
-Targeting only the top HTE decile would mean outreaching to 30 members with an expected 2.53 avoided ED events. Expanding to the top three HTE deciles would mean outreaching to 90 members with an expected 6.12 avoided ED events.
+Targeting only the top HTE decile would mean outreaching to 30 members with an expected 3.02 avoided ED events. Expanding to the top three HTE deciles would mean outreaching to 90 members with an expected 7.34 avoided ED events.
 
 Supporting file:
 
@@ -533,8 +532,8 @@ The strongest slide story is:
 1. The uplift workflow selected GLMNet as the primary benchmark.
 2. Causal forest is a challenger framework for direct HTE estimation.
 3. Shared `member_id` and shared propensity scores strengthen cross-model comparability.
-4. Causal forest estimates an average ED-risk reduction of about 4.1 percentage points in the test set.
-5. HTE decile 1 has an average benefit score of 8.4 percentage points, compared with 1.2 percentage points in decile 10.
+4. Causal forest estimates an average ED-risk reduction of about 4.3 percentage points in the test set.
+5. HTE decile 1 has an average benefit score of 10.1 percentage points, compared with 0.2 percentage points in decile 10.
 6. Framework consistency checks show where causal forest agrees with GLMNet T/X learners, XGBoost sensitivity models, and current risk.
 
 ## Reproducibility
