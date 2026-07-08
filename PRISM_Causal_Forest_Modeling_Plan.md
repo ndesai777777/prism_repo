@@ -50,7 +50,29 @@ The current uplift modeling notebook, T-learner notebook, doubly robust notebook
 
 The causal forest README should follow the same report-style structure as the existing intervention benefit modeling README, but the analytical tasks should be adapted to causal forest modeling.
 
-## 1. Title And Opening Summary
+Recommended final section order:
+
+```text
+# PRISM Causal Forest Modeling Report Draft
+## Background
+## Business Question
+## Project Objectives
+## Analytical Task 1: Understanding And Explaining The Causal Forest Framework
+## Analytical Task 2: Data Review
+## Analytical Task 3: Causal Forest Diagnostics And Estimation Credibility
+## Analytical Task 4: Treatment Effect Analysis
+## Analytical Task 5: HTE Decile And High-Value Subgroup Analysis
+## Analytical Task 6: Variable Importance And Explainability
+## Analytical Task 7: Business Value Assessment
+## Analytical Task 8: Client Perspective
+## Recommendation
+## Presentation Summary
+## Reproducibility
+```
+
+This keeps the same spine as `PRISM_Intervention_Benefit_Modeling_README.md`. The main intentional difference is Analytical Task 3. In the uplift README, Task 3 evaluates factual outcome-model performance because the T-learner and X-learner depend on outcome models. In the causal forest README, Task 3 should instead evaluate whether the causal forest treatment-effect estimates are credible enough to interpret.
+
+## Title And Opening Summary
 
 Suggested title:
 
@@ -77,7 +99,7 @@ If the R script remains part of the workflow, also mention:
 Outputs/Causal-Forests/R
 ```
 
-## 2. Background
+## Background
 
 Reuse most of the existing background from `PRISM_Intervention_Benefit_Modeling_README.md`.
 
@@ -93,7 +115,7 @@ The causal forest-specific addition should be:
 - Causal forest is used to estimate whether treatment benefit varies across members.
 - This member-level variation is called heterogeneous treatment effect, or HTE.
 
-## 3. Business Question
+## Business Question
 
 Use the same core business question, adapted slightly for causal forest:
 
@@ -110,7 +132,7 @@ Supporting questions:
 - Can causal forest help identify high-value subgroups for care management review?
 - What limitations should be considered before operational use?
 
-## 4. Project Objectives
+## Project Objectives
 
 This section should explain that the causal forest analysis is meant to:
 
@@ -121,7 +143,7 @@ This section should explain that the causal forest analysis is meant to:
 - Provide a partial explainability layer through variable importance and subgroup patterns.
 - Document limitations around synthetic data, small sample size, rare outcomes, treatment assignment, and overlap.
 
-## 5. Analytical Task 1: Understanding And Explaining The Causal Forest Framework
+## Analytical Task 1: Understanding And Explaining The Causal Forest Framework
 
 This should be the most important setup section. It should explain causal forest in plain language before showing results.
 
@@ -234,7 +256,7 @@ If using `CausalForestDML`, explain:
 
 Avoid overclaiming. The README should say the model estimates treatment effects under causal assumptions; it does not prove causality from synthetic observational data.
 
-## 6. Analytical Task 2: Data Review
+## Analytical Task 2: Data Review
 
 This section should mirror the existing data review section.
 
@@ -266,9 +288,17 @@ Expected notebook output:
 causal_forest_data_review_summary.csv
 ```
 
-## 7. Analytical Task 3: Causal Forest Model Diagnostics
+## Analytical Task 3: Causal Forest Diagnostics And Estimation Credibility
 
-This section should not simply copy the T-learner model performance section. Causal forest diagnostics should focus on whether treatment-effect estimation is credible.
+This section should sit in the same location as "Analytical Task 3: Model Performance" in the uplift README, but it should not be written as an outcome-prediction performance section. Causal forest does not primarily produce two factual ED risk models for report interpretation the way the T-learner does. Instead, this section should answer:
+
+- Is there enough treated/control and outcome information to support HTE estimation?
+- Is there adequate treatment overlap/common support?
+- What is the distribution of estimated treatment effects?
+- How uncertain are the treatment-effect estimates?
+- Are the estimates stable enough to support decile and subgroup interpretation?
+
+Use this section as the causal forest equivalent of "can we trust the modeling foundation enough to continue?"
 
 Recommended diagnostics:
 
@@ -362,7 +392,7 @@ Expected notebook output:
 causal_forest_uncertainty_summary.csv
 ```
 
-## 8. Analytical Task 4: Treatment Effect Analysis
+## Analytical Task 4: Treatment Effect Analysis
 
 This should be the core causal forest results section.
 
@@ -394,7 +424,7 @@ Optional chart:
 dashboard_causal_forest_member_effect_examples.png
 ```
 
-## 9. Analytical Task 5: HTE Decile And High-Value Subgroup Analysis
+## Analytical Task 5: HTE Decile And High-Value Subgroup Analysis
 
 This section maps directly to the methodology coverage plan: causal forest covers high-value subgroup identification through deciles and HTE.
 
@@ -447,9 +477,11 @@ Expected notebook output:
 causal_forest_decile_summary.csv
 ```
 
-## 10. Analytical Task 6: Comparison With T-Learner And X-Learner
+### Framework Consistency Check
 
-This is an important bridge section. The causal forest README should not exist in isolation from the prior uplift modeling work.
+This should be included inside Analytical Task 5 rather than becoming its own analytical task. That keeps the causal forest README aligned with the current uplift README, where Task 5 is also the decile/uplift-ranking section.
+
+The causal forest README should not exist in isolation from the prior uplift modeling work. After the causal forest decile results are shown, compare the causal forest ranking with the GLMNet T-learner and GLMNet X-learner rankings.
 
 Compare causal forest benefit scores with:
 
@@ -493,7 +525,7 @@ Interpretation guidance:
 - Weak correlation does not automatically mean causal forest is wrong; it may mean the frameworks are learning different kinds of heterogeneity.
 - Low top-decile overlap should be discussed carefully because operational targeting would differ by model.
 
-## 11. Analytical Task 7: Variable Importance And Explainability
+## Analytical Task 6: Variable Importance And Explainability
 
 The methodology coverage sheet marks causal forest explainability as partial. The README should be careful and not overstate what variable importance means.
 
@@ -546,9 +578,11 @@ Expected notebook output:
 causal_forest_top_decile_profile.csv
 ```
 
-## 12. Analytical Task 8: Business Use, Limitations, And Client Perspective
+## Analytical Task 7: Business Value Assessment
 
-Because the methodology coverage sheet marks causal forest as not currently covering alternative strategy simulation, the causal forest README should not make ROI the main story unless ROI logic is added later.
+This section should occupy the same position as "Analytical Task 7: Business Value Assessment" in the uplift README, but it should be narrower unless ROI simulation is added to the causal forest workflow.
+
+Because the methodology coverage sheet marks causal forest as not currently covering alternative strategy simulation, the causal forest README should not make ROI the main story unless that logic is added later. Instead, this section should assess business value in terms of targeting usefulness and subgroup discovery.
 
 Focus instead on:
 
@@ -556,6 +590,19 @@ Focus instead on:
 - How the top HTE decile could be reviewed by care management leaders.
 - How causal forest can serve as a challenger model to T-learner and X-learner prioritization.
 - Why the results should be treated as exploratory.
+
+Recommended business-value outputs:
+
+```text
+causal_forest_targeting_summary.csv
+causal_forest_top_decile_profile.csv
+```
+
+If ROI is added later, this section can be expanded to mirror the uplift README more closely by comparing causal forest targeting against current-risk targeting. Until then, keep the language as "potential operational value" rather than estimated savings.
+
+## Analytical Task 8: Client Perspective
+
+This section should mirror the role of the client perspective section in the uplift README. It should translate the causal forest findings into stakeholder language and clearly separate promising insight from operational proof.
 
 Core limitations:
 
@@ -579,7 +626,7 @@ Suggested operational workflow:
 6. Compare with T-learner and X-learner high-benefit members.
 7. Validate prospectively or on live historical data before operational deployment.
 
-## 13. Recommendation
+## Recommendation
 
 The recommendation should say whether causal forest should be used as:
 
@@ -599,22 +646,22 @@ stronger validation on live data, overlap checks, treatment-effect uncertainty
 review, and comparison against existing uplift rankings.
 ```
 
-## 14. Presentation Summary
+## Presentation Summary
 
 Suggested slide flow:
 
 1. Business problem: high risk is not always high benefit.
 2. Why causal forest: direct HTE estimation.
 3. Data review and modeling constraints.
-4. Causal forest methodology and sign convention.
-5. Treatment-effect distribution.
-6. HTE decile results.
-7. High-value subgroup findings.
-8. Comparison with T-learner and X-learner.
-9. Variable importance and explainability.
-10. Limitations and recommendation.
+4. Causal forest diagnostics and estimation credibility.
+5. Treatment-effect analysis.
+6. HTE decile and high-value subgroup findings.
+7. Comparison with T-learner and X-learner rankings.
+8. Variable importance and explainability.
+9. Business value and operational use.
+10. Client perspective, limitations, and recommendation.
 
-## 15. Reproducibility
+## Reproducibility
 
 The final README should list:
 
@@ -693,6 +740,13 @@ The current `Code/Causal Forests Model Code.ipynb` already has a useful starting
 - Basic interpretation
 
 The notebook should be improved into a report-ready workflow with stronger diagnostics, cleaner outputs, and README-ready tables/charts.
+
+Implementation note added during build-out:
+
+- The report-ready causal forest workflow has been implemented as `Code/causal_forest_modeling_workflow.py`.
+- The existing notebook should call this workflow once the notebook file can be edited or opened in a compatible Jupyter environment.
+- The workflow keeps `SEED = 123`, uses `econml.dml.CausalForestDML`, writes the planned CSV/chart outputs, and preserves the causal forest sign convention `benefit_score = -tau_hat`.
+- Local execution currently requires a Python environment compatible with `econml`. The available Python 3.14 environment could not install `econml` because its scikit-learn dependency requires an older compatible wheel or a local C/C++ build toolchain.
 
 ## Notebook Section Plan
 
@@ -1111,4 +1165,3 @@ Use a separate causal forest README and treat causal forest as a companion model
 - The causal forest README explains direct heterogeneous treatment-effect modeling.
 - Both analyses answer the same business question, but from different modeling frameworks.
 - The causal forest model should initially be positioned as a challenger and subgroup-discovery tool, not as a replacement for the existing uplift modeling workflow.
-
