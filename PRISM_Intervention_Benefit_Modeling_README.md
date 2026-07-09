@@ -378,7 +378,7 @@ Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, H
 | ![GLMNet T-learner risk tier by benefit group](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png) | ![GLMNet X-learner risk tier by benefit group](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png) |
 <!-- AUTO_CHART:risk_tier_by_benefit_group END -->
 
-In the T-learner output, High and Very High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner test output, a larger share of High risk members are placed in the high-benefit group. The X-learner chart is based on the held-out test output, so no Very High members appear in that panel for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
+Both panels are based on the same held-out test members. In the T-learner output, High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner output, a larger share of High risk members are placed in the high-benefit group. No Very High members appear in the held-out test set for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
 
 <!-- AUTO_CHART:glmnet_predicted_treated_vs_control START -->
 ![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png)
