@@ -425,7 +425,7 @@ Supporting file:
 
 The main benchmark is the selected GLMNet uplift workflow, because the uplift README identified GLMNet as the stronger factual outcome-model family. XGBoost T-learner and XGBoost X-learner outputs are included as secondary sensitivity checks because they are flexible tree-based uplift alternatives, but they are not the primary benchmark carried forward in the uplift report.
 
-The causal forest notebook compares against:
+The causal forest notebook compares against the uplift model outputs on the held-out test set:
 
 | Comparison | Benchmark role |
 |---|---|
@@ -433,21 +433,19 @@ The causal forest notebook compares against:
 | Causal forest vs GLMNet X-learner | Primary selected uplift benchmark |
 | Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check |
 | Causal forest vs XGBoost X-learner | Secondary tree-based sensitivity check |
-| Causal forest vs current risk score | Operational baseline context |
 
-All model-to-model comparisons use `member_id` merges when the uplift outputs have been rerun with the member-id update.
+All model-to-model comparisons use `member_id` merges and are limited to the same 300 held-out test members. T-learner outputs are filtered to the causal forest test `member_id`s before correlation and overlap are calculated. The current risk score is not included in this framework-consistency table because the risk-tier-versus-benefit-group section above already evaluates how causal forest benefit ranking relates to baseline risk.
 
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary START -->
 | Comparison | Role | N compared | Pearson corr | Spearman corr | Top decile overlap | Top 20% overlap |
 |---|---|---:|---:|---:|---:|---:|
-| Causal forest vs GLMNet T-learner | Primary selected uplift benchmark | 1,000 | 0.039 | 0.123 | 25.0% | 40.0% |
+| Causal forest vs GLMNet T-learner | Primary selected uplift benchmark | 300 | -0.014 | 0.041 | 20.0% | 35.0% |
 | Causal forest vs GLMNet X-learner | Primary selected uplift benchmark | 300 | 0.574 | 0.534 | 53.3% | 63.3% |
-| Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check | 1,000 | 0.801 | 0.731 | 71.0% | 78.5% |
+| Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check | 300 | 0.785 | 0.717 | 70.0% | 73.3% |
 | Causal forest vs XGBoost X-learner | Secondary tree-based sensitivity check | 300 | 0.465 | 0.485 | 40.0% | 58.3% |
-| Causal forest vs current risk score | Operational baseline context | 300 | 0.539 | 0.437 | 56.7% | 65.0% |
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary END -->
 
-The causal forest rankings are most aligned with the XGBoost T-learner and moderately aligned with the GLMNet X-learner and XGBoost X-learner. The weaker alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
+On the held-out test set, the causal forest ranking is most aligned with the XGBoost T-learner and moderately aligned with the GLMNet X-learner and XGBoost X-learner. The weak alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
 
 Supporting file:
 
