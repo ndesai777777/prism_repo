@@ -398,13 +398,28 @@ The decile pattern shows a clear estimated benefit gradient. The average benefit
 ![Causal forest average estimated benefit by HTE decile](Outputs/Causal-Forests/Python/dashboard_causal_forest_avg_benefit_by_decile.png)
 <!-- AUTO_CHART:causal_forest_avg_benefit_by_decile END -->
 
-<!-- AUTO_CHART:causal_forest_tau_by_decile START -->
-![Causal forest average tau_hat by HTE decile](Outputs/Causal-Forests/Python/dashboard_causal_forest_tau_by_decile.png)
-<!-- AUTO_CHART:causal_forest_tau_by_decile END -->
+### Risk Tier Versus Benefit Group
+
+The chart below compares baseline risk tier against model-relative causal forest benefit group. Benefit groups are based on HTE deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed estimated benefits in this dataset are smaller than the idealized synthetic-data specification.
+
+| Benefit group | Definition |
+|---|---|
+| High benefit | HTE deciles 1-2, top 20% by estimated benefit |
+| Medium benefit | HTE deciles 3-7, middle 50% by estimated benefit |
+| Low benefit | HTE deciles 8-10, bottom 30% by estimated benefit |
+
+Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
+
+<!-- AUTO_CHART:causal_forest_risk_tier_by_benefit_group START -->
+![Causal forest benefit group distribution by risk tier](Outputs/Causal-Forests/Python/dashboard_causal_forest_risk_tier_by_benefit_group.png)
+<!-- AUTO_CHART:causal_forest_risk_tier_by_benefit_group END -->
+
+The causal forest places most High risk test members in the high-benefit group, while Low and Medium risk members are more concentrated in the medium- and low-benefit groups. No Very High members appear in the held-out test set for this run. This does not mean risk tier alone determines benefit, but it shows that the causal forest's high-benefit ranking is strongly associated with the High risk segment in the current test set.
 
 Supporting file:
 
 - [`causal_forest_decile_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_decile_summary.csv)
+- [`causal_forest_risk_tier_benefit_group_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_risk_tier_benefit_group_summary.csv)
 
 ### Framework Consistency Check
 
