@@ -360,25 +360,7 @@ The high-risk and low-risk examples are selected from low positive benefit membe
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
-### Risk Tier Versus Benefit Group
-
-The chart below compares baseline risk tier against model-relative benefit group. Benefit groups are based on uplift deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed model benefits in this dataset are smaller than the idealized synthetic-data specification.
-
-| Benefit group | Definition |
-|---|---|
-| High benefit | Uplift deciles 1-2, top 20% by predicted benefit |
-| Medium benefit | Uplift deciles 3-7, middle 50% by predicted benefit |
-| Low benefit | Uplift deciles 8-10, bottom 30% by predicted benefit |
-
-Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
-
-<!-- AUTO_CHART:risk_tier_by_benefit_group START -->
-| GLMNet T-learner | GLMNet X-learner |
-|---|---|
-| ![GLMNet T-learner risk tier by benefit group](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png) | ![GLMNet X-learner risk tier by benefit group](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png) |
-<!-- AUTO_CHART:risk_tier_by_benefit_group END -->
-
-Both panels are based on the same held-out test members. In the T-learner output, High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner output, a larger share of High risk members are placed in the high-benefit group. No Very High members appear in the held-out test set for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
+Analytical Task 5 extends this member-level idea to population segments by comparing risk tiers against model-relative benefit groups.
 
 <!-- AUTO_CHART:glmnet_predicted_treated_vs_control START -->
 ![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png)
@@ -418,6 +400,26 @@ _Note: In the T-learner table, benefit is the direct contrast between the contro
 |---|---|
 | ![GLMNet T-learner average predicted benefit by uplift decile](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png) | ![GLMNet X-learner average predicted benefit by uplift decile](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_avg_benefit_by_decile.png) |
 <!-- AUTO_CHART:glmnet_t_vs_x_avg_benefit_charts END -->
+
+### Risk Tier Versus Benefit Group
+
+The chart below compares baseline risk tier against model-relative benefit group. Benefit groups are based on uplift deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed model benefits in this dataset are smaller than the idealized synthetic-data specification.
+
+| Benefit group | Definition |
+|---|---|
+| High benefit | Uplift deciles 1-2, top 20% by predicted benefit |
+| Medium benefit | Uplift deciles 3-7, middle 50% by predicted benefit |
+| Low benefit | Uplift deciles 8-10, bottom 30% by predicted benefit |
+
+Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
+
+<!-- AUTO_CHART:risk_tier_by_benefit_group START -->
+| GLMNet T-learner | GLMNet X-learner |
+|---|---|
+| ![GLMNet T-learner risk tier by benefit group](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png) | ![GLMNet X-learner risk tier by benefit group](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png) |
+<!-- AUTO_CHART:risk_tier_by_benefit_group END -->
+
+Both panels are based on the same held-out test members. In the T-learner output, High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner output, a larger share of High risk members are placed in the high-benefit group. No Very High members appear in the held-out test set for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
 
 The consistency summary below is limited to GLMNet because GLMNet is the model carried forward for interpretation. The correlations compare member-level T-learner and X-learner benefit scores on the held-out test set, while top-decile overlap shows how many members appear in both high-benefit groups.
 
