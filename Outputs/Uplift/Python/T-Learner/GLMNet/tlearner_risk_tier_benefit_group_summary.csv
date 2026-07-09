@@ -1,0 +1,13 @@
+risk_tier,benefit_group,members,risk_tier_members,pct_within_risk_tier,benefit_group_definition
+Low,High benefit,7,161,0.043478260869565216,uplift_decile 1-2 (top 20%)
+Low,Medium benefit,99,161,0.6149068322981367,uplift_decile 3-7 (middle 50%)
+Low,Low benefit,55,161,0.3416149068322981,uplift_decile 8-10 (bottom 30%)
+Medium,High benefit,176,720,0.24444444444444444,uplift_decile 1-2 (top 20%)
+Medium,Medium benefit,366,720,0.5083333333333333,uplift_decile 3-7 (middle 50%)
+Medium,Low benefit,178,720,0.24722222222222223,uplift_decile 8-10 (bottom 30%)
+High,High benefit,17,117,0.1452991452991453,uplift_decile 1-2 (top 20%)
+High,Medium benefit,35,117,0.29914529914529914,uplift_decile 3-7 (middle 50%)
+High,Low benefit,65,117,0.5555555555555556,uplift_decile 8-10 (bottom 30%)
+Very High,High benefit,0,2,0.0,uplift_decile 1-2 (top 20%)
+Very High,Medium benefit,0,2,0.0,uplift_decile 3-7 (middle 50%)
+Very High,Low benefit,2,2,1.0,uplift_decile 8-10 (bottom 30%)

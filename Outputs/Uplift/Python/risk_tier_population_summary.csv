@@ -1,0 +1,5 @@
+risk_tier,members,pct_population,min_current_risk_score,max_current_risk_score,avg_current_risk_score
+Low,161,0.161,14.5,34.9,30.464596273291928
+Medium,720,0.72,35.0,54.9,43.67180555555556
+High,117,0.117,55.1,73.9,60.8017094017094
+Very High,2,0.002,76.2,79.8,78.0

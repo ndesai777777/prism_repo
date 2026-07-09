@@ -1,0 +1,5 @@
+risk_tier,current_risk_score_rule,lower_bound_inclusive,upper_bound_exclusive
+Low,< 35,,35.0
+Medium,35 to < 55,35.0,55.0
+High,55 to < 75,55.0,75.0
+Very High,>= 75,75.0,

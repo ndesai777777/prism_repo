@@ -179,9 +179,39 @@ The observed ED rate is 4.1% among treated members and 7.3% among control member
 
 The dataset is synthetic and may not fully represent live client data. The low ED outcome prevalence also means predicted probabilities are expected to cluster closer to zero, which makes calibration and probability magnitude especially important. Future production use would require validation on live data, ongoing monitoring, and recalibration over time.
 
+### Risk Tier Definition
+
+`risk_tier` is a categorical version of `current_risk_score`. In the current modeling dataset, the tier assignment follows these thresholds:
+
+<!-- AUTO_TABLE:risk_tier_thresholds START -->
+| Risk tier | Current risk score rule |
+|---|---|
+| Low | `< 35` |
+| Medium | `35` to `< 55` |
+| High | `55` to `< 75` |
+| Very High | `>= 75` |
+<!-- AUTO_TABLE:risk_tier_thresholds END -->
+
+The risk tier distribution is concentrated in the Medium tier, with very few Very High members:
+
+<!-- AUTO_TABLE:risk_tier_population_summary START -->
+| Risk tier | Members | Percent of population | Current risk score range | Avg current risk score |
+|---|---:|---:|---:|---:|
+| Low | 161 | 16.1% | 14.5 to 34.9 | 30.5 |
+| Medium | 720 | 72.0% | 35.0 to 54.9 | 43.7 |
+| High | 117 | 11.7% | 55.1 to 73.9 | 60.8 |
+| Very High | 2 | 0.2% | 76.2 to 79.8 | 78.0 |
+<!-- AUTO_TABLE:risk_tier_population_summary END -->
+
+<!-- AUTO_CHART:risk_tier_distribution START -->
+![Risk tier distribution](Outputs/Uplift/Python/Predictor_Distributions/Categorical/risk_tier_bar_chart.png)
+<!-- AUTO_CHART:risk_tier_distribution END -->
+
 Supporting file:
 
 - [`data_review_summary.csv`](Outputs/Uplift/Python/data_review_summary.csv)
+- [`risk_tier_thresholds.csv`](Outputs/Uplift/Python/risk_tier_thresholds.csv)
+- [`risk_tier_population_summary.csv`](Outputs/Uplift/Python/risk_tier_population_summary.csv)
 
 ## Analytical Task 3: Model Performance
 
@@ -330,6 +360,26 @@ The high-risk and low-risk examples are selected from low positive benefit membe
 
 This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
 
+### Risk Tier Versus Benefit Group
+
+The chart below compares baseline risk tier against model-relative benefit group. Benefit groups are based on uplift deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed model benefits in this dataset are smaller than the idealized synthetic-data specification.
+
+| Benefit group | Definition |
+|---|---|
+| High benefit | Uplift deciles 1-2, top 20% by predicted benefit |
+| Medium benefit | Uplift deciles 3-7, middle 50% by predicted benefit |
+| Low benefit | Uplift deciles 8-10, bottom 30% by predicted benefit |
+
+Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
+
+<!-- AUTO_CHART:risk_tier_by_benefit_group START -->
+| GLMNet T-learner | GLMNet X-learner |
+|---|---|
+| ![GLMNet T-learner risk tier by benefit group](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png) | ![GLMNet X-learner risk tier by benefit group](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png) |
+<!-- AUTO_CHART:risk_tier_by_benefit_group END -->
+
+In the T-learner output, High and Very High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner test output, a larger share of High risk members are placed in the high-benefit group. The X-learner chart is based on the held-out test output, so no Very High members appear in that panel for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
+
 <!-- AUTO_CHART:glmnet_predicted_treated_vs_control START -->
 ![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png)
 <!-- AUTO_CHART:glmnet_predicted_treated_vs_control END -->
@@ -341,6 +391,8 @@ This chart shows why uplift targeting is different from risk-based targeting. A 
 Supporting files:
 
 - [`GLMNet/uplift_scored_output.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_scored_output.csv)
+- [`GLMNet T-learner risk tier benefit group summary`](Outputs/Uplift/Python/T-Learner/GLMNet/tlearner_risk_tier_benefit_group_summary.csv)
+- [`GLMNet X-learner risk tier benefit group summary`](Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_risk_tier_benefit_group_summary.csv)
 
 ## Analytical Task 5: Uplift Decile Analysis
 
