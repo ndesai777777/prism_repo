@@ -494,13 +494,7 @@ Before interpreting benefit drivers, it is useful to separate baseline ED-risk d
 
 ### Benefit Drivers
 
-For GLMNet, benefit-driver importance is compared across the T-learner and X-learner frameworks. The T-learner benefit-driver calculation is based on:
-
-```text
-benefit_contribution = control_contribution - treated_contribution
-```
-
-The X-learner benefit-driver calculation uses the propensity-weighted contributions from the second-stage treated-effect and control-effect models. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
+For GLMNet, benefit-driver importance is compared across the T-learner and X-learner frameworks. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
 
 Two contribution methods are shown:
 
