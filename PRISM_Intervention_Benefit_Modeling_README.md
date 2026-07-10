@@ -584,16 +584,7 @@ This means each SHAP value answers:
 
 > How much did this feature move the model's predicted benefit score up or down relative to the model baseline benefit?
 
-The SHAP outputs support both global explanation and future member-level dashboard explanation:
-
-| Output concept | Meaning | Use |
-|---|---|---|
-| Mean absolute SHAP | Average magnitude of a feature's effect on predicted benefit | Global SHAP feature-importance ranking |
-| Mean signed SHAP | Average directional effect on predicted benefit | Shows whether the feature tends to increase or decrease benefit |
-| Mean positive SHAP | Average positive contribution, with negative values set to zero | Identifies features that often push benefit upward |
-| Mean negative SHAP | Average negative contribution, with positive values set to zero | Identifies features that often push benefit downward |
-| Percent positive SHAP | Share of members where the feature increases predicted benefit | Helps distinguish broad positive drivers from subgroup-specific drivers |
-| Member-level SHAP values | Feature contributions for each scored member | Future dashboard and LLM explanation input |
+The SHAP outputs are used in two ways: mean absolute SHAP ranks global feature importance, while signed and member-level SHAP values support directionality, additive reconciliation, and future member-level dashboard explanations.
 
 SHAP also provides an additive reconciliation check:
 
