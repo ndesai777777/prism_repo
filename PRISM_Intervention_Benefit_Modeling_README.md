@@ -572,6 +572,72 @@ Mean absolute SHAP is used for global importance ranking, but it is not expected
 
 This SHAP layer does not prove true causal mechanisms. It explains the model's predicted benefit score. It is still affected by the quality of the underlying uplift models, the chosen background/reference population, and correlation among predictors. However, it is better aligned with the future dashboard question: "Why did this member receive this predicted benefit score?" The X-learner and T-learner SHAP explanations should therefore be used as prediction explanations and model-comparison evidence, not as standalone causal proof.
 
+The current top SHAP benefit drivers by magnitude are:
+
+<!-- AUTO_TABLE:glmnet_benefit_shap_magnitude START -->
+<table><tr>
+<td valign="top" width="50%"><strong>GLMNet T-learner</strong>
+<table><thead><tr><th>Feature</th><th>Mean absolute SHAP</th></tr></thead><tbody>
+<tr><td>`percolator_clinical_score`</td><td>0.0020</td></tr>
+<tr><td>`percolator_utilization_score`</td><td>0.0014</td></tr>
+<tr><td>`total_cost_last_6m`</td><td>0.0014</td></tr>
+<tr><td>`current_risk_score`</td><td>0.0012</td></tr>
+<tr><td>`behavioral_health_risk_flag`</td><td>0.0009</td></tr>
+</tbody></table>
+</td>
+<td valign="top" width="50%"><strong>GLMNet X-learner</strong>
+<table><thead><tr><th>Feature</th><th>Mean absolute SHAP</th></tr></thead><tbody>
+<tr><td>`anxiety_flag`</td><td>0.0022</td></tr>
+<tr><td>`program_Complex_CM`</td><td>0.0021</td></tr>
+<tr><td>`admits_last_6m`</td><td>0.0020</td></tr>
+<tr><td>`case_manager_name_CM_04`</td><td>0.0019</td></tr>
+<tr><td>`ed_visits_last_6m`</td><td>0.0018</td></tr>
+</tbody></table>
+</td>
+</tr></table>
+<!-- AUTO_TABLE:glmnet_benefit_shap_magnitude END -->
+
+<!-- AUTO_CHART:glmnet_benefit_shap_driver_charts START -->
+| GLMNet T-learner SHAP | GLMNet X-learner SHAP |
+|---|---|
+| ![GLMNet T-learner global SHAP drivers of predicted treatment benefit](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_glmnet_tlearner_global_benefit_shap.png) | ![GLMNet X-learner global SHAP drivers of predicted treatment benefit](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_glmnet_xlearner_global_benefit_shap.png) |
+<!-- AUTO_CHART:glmnet_benefit_shap_driver_charts END -->
+
+The current top SHAP benefit drivers by signed value are:
+
+<!-- AUTO_TABLE:glmnet_benefit_shap_signed START -->
+<table><tr>
+<td valign="top" width="50%"><strong>GLMNet T-learner</strong>
+<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed SHAP</th></tr></thead><tbody>
+<tr><td>Increase predicted benefit</td><td>`risk_tier_Very_High`</td><td>0.0006</td></tr>
+<tr><td>Increase predicted benefit</td><td>`ckd_flag`</td><td>0.0001</td></tr>
+<tr><td>Increase predicted benefit</td><td>`percolator_utilization_score`</td><td>0.0001</td></tr>
+<tr><td>Increase predicted benefit</td><td>`client_contract_Contract_B`</td><td>0.0001</td></tr>
+<tr><td>Increase predicted benefit</td><td>`specialist_visits_last_6m`</td><td>0.0001</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`case_manager_name_CM_09`</td><td>-0.0002</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`current_risk_score`</td><td>-0.0002</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`percolator_clinical_score`</td><td>-0.0002</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`case_manager_name_CM_04`</td><td>-0.0002</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`service_region_Central`</td><td>-0.0002</td></tr>
+</tbody></table>
+</td>
+<td valign="top" width="50%"><strong>GLMNet X-learner</strong>
+<table><thead><tr><th>Direction</th><th>Feature</th><th>Mean signed SHAP</th></tr></thead><tbody>
+<tr><td>Increase predicted benefit</td><td>`service_region_West`</td><td>0.0002</td></tr>
+<tr><td>Increase predicted benefit</td><td>`copd_flag`</td><td>0.0002</td></tr>
+<tr><td>Increase predicted benefit</td><td>`anxiety_flag`</td><td>0.0002</td></tr>
+<tr><td>Increase predicted benefit</td><td>`ed_visits_last_6m`</td><td>0.0002</td></tr>
+<tr><td>Increase predicted benefit</td><td>`risk_tier_Medium`</td><td>0.0002</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`case_manager_name_CM_04`</td><td>-0.0007</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`program_Complex_CM`</td><td>-0.0004</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`specialist_visits_last_6m`</td><td>-0.0004</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`risk_tier_Very_High`</td><td>-0.0004</td></tr>
+<tr><td>Decrease predicted benefit</td><td>`chf_flag`</td><td>-0.0003</td></tr>
+</tbody></table>
+</td>
+</tr></table>
+<!-- AUTO_TABLE:glmnet_benefit_shap_signed END -->
+
 Supporting files:
 
 - [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/shap_importance_treated_control_models.csv)
