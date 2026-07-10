@@ -485,14 +485,12 @@ The true synthetic benefit formula is especially useful here because the real tr
 
 ### Risk Drivers
 
-The current top risk drivers are:
+Before interpreting benefit drivers, it is useful to separate baseline ED-risk drivers from treatment-benefit drivers. The GLMNet treated and control outcome models identify expected risk-related variables, but these variables should not automatically be interpreted as evidence that they drive intervention benefit.
 
 | Group | Top current drivers |
 |---|---|
 | Treated model | `current_risk_score`, `percolator_utilization_score`, `ed_visits_last_6m`, `total_cost_last_6m`, `risk_tier_High` |
 | Control model | `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
-
-GLMNet identifies risk-related variables such as `current_risk_score`, recent utilization, and percolator scores as important ED risk drivers. This is clinically reasonable because prior utilization and composite risk scores are expected to be strongly related to future ED risk. In the control model, risk is also strongly influenced by `utilities_insecurity_flag`, `dual_eligible`, and recent ED utilization.
 
 ### Benefit Drivers
 
