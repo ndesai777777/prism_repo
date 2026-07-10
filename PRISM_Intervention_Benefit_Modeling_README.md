@@ -460,6 +460,58 @@ benefit_contribution = control_contribution - treated_contribution
 
 The X-learner benefit-driver calculation uses the propensity-weighted contributions from the second-stage treated-effect and control-effect models. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
 
+### SHAP Benefit-Score Contribution Plan
+
+The notebook now adds a SHAP-based benefit explanation layer for the GLMNet T-learner and GLMNet X-learner. This is intended to become the preferred dashboard explanation layer because it explains the final predicted benefit score directly rather than relying only on coefficient differences.
+
+For the GLMNet T-learner, SHAP is applied to the final benefit function:
+
+```text
+benefit_score(X) = pred_ed_if_control(X) - pred_ed_if_treated(X)
+```
+
+For the GLMNet X-learner, SHAP is applied to the final X-learner benefit function:
+
+```text
+benefit_score(X) = (1 - propensity(X)) * tau_treated_model(X)
+                 + propensity(X) * tau_control_model(X)
+```
+
+This means each SHAP value answers:
+
+> How much did this feature move the model's predicted benefit score up or down relative to the model baseline benefit?
+
+The SHAP outputs are designed to support both global explanation and future member-level dashboard explanation:
+
+| Output concept | Meaning | Use |
+|---|---|---|
+| Mean absolute SHAP | Average magnitude of a feature's effect on predicted benefit | Global feature-importance ranking |
+| Mean signed SHAP | Average directional effect on predicted benefit | Shows whether the feature tends to increase or decrease benefit |
+| Mean positive SHAP | Average positive contribution, with negative values set to zero | Identifies features that often push benefit upward |
+| Mean negative SHAP | Average negative contribution, with positive values set to zero | Identifies features that often push benefit downward |
+| Percent positive SHAP | Share of members where the feature increases predicted benefit | Helps distinguish broad positive drivers from subgroup-specific drivers |
+| Member-level SHAP values | Feature contributions for each scored member | Future dashboard and LLM explanation input |
+
+SHAP also provides an additive reconciliation check:
+
+```text
+model baseline benefit
++ sum(member feature SHAP values)
+= member benefit score
+```
+
+Across the population, the analogous check is:
+
+```text
+model baseline benefit
++ sum(mean signed feature SHAP values)
+= average predicted benefit
+```
+
+Mean absolute SHAP is used for global importance ranking, but it is not expected to sum to average benefit because it measures magnitude regardless of direction. Signed SHAP values are used for reconciliation and direction.
+
+This SHAP layer does not prove true causal mechanisms. It explains the model's predicted benefit score. It is still affected by the quality of the underlying uplift models, the chosen background/reference population, and correlation among predictors. However, it is better aligned with the future dashboard question: "Why did this member receive this predicted benefit score?"
+
 The current top benefit drivers by magnitude are:
 
 <!-- AUTO_TABLE:glmnet_benefit_magnitude START -->
@@ -492,9 +544,9 @@ For GLMNet, `percolator_utilization_score`, `total_cost_last_6m`, `percolator_cl
 
 The absolute benefit-driver value measures how strongly a feature changes predicted benefit, regardless of direction. The signed benefit contribution shows whether the feature tends to increase or decrease predicted benefit, and the percent-positive column shows the share of members where the feature increased predicted benefit. Therefore, the benefit-driver tables are interpreted using both magnitude and direction.
 
-GLMNet provides coefficient-based interpretability, but coefficient interpretation can still be affected by correlation among predictors.
+The existing GLMNet contribution tables are coefficient-based explanations. They are useful because they are transparent and reproducible, but they should be treated as model-specific contribution summaries rather than definitive causal drivers.
 
-Collinearity can affect coefficient interpretation in GLMNet, so correlated predictors merit review before live deployment. The X-learner driver comparison should be treated as a consistency check rather than a separate causal explanation.
+Collinearity can affect coefficient interpretation in GLMNet, and lasso or elastic-net regularization can shrink correlated features unevenly. This is especially relevant for the T-learner because the benefit contribution is calculated from two separately fitted outcome models. The SHAP benefit-score layer is therefore the preferred future dashboard explanation because it explains the final benefit function directly. The X-learner driver comparison should still be treated as a consistency check rather than as a separate causal proof.
 
 <!-- AUTO_CHART:glmnet_benefit_driver_chart START -->
 ![GLMNet T-learner versus X-learner top drivers of predicted treatment benefit](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png)
@@ -507,8 +559,16 @@ Supporting files:
 - [`GLMNet/dashboard_shap_treated_model.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_treated_model.png)
 - [`GLMNet/dashboard_shap_control_model.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_control_model.png)
 - [`GLMNet/dashboard_shap_benefit_score.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_shap_benefit_score.png)
+- [`GLMNet/glmnet_tlearner_global_benefit_shap_importance.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/glmnet_tlearner_global_benefit_shap_importance.csv)
+- [`GLMNet/glmnet_tlearner_global_benefit_shap_reconciliation.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/glmnet_tlearner_global_benefit_shap_reconciliation.csv)
+- [`GLMNet/glmnet_tlearner_member_benefit_shap_values.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/glmnet_tlearner_member_benefit_shap_values.csv)
+- [`GLMNet/dashboard_glmnet_tlearner_global_benefit_shap.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_glmnet_tlearner_global_benefit_shap.png)
 - [`GLMNet X-learner/xlearner_benefit_driver_importance.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_benefit_driver_importance.csv)
 - [`GLMNet X-learner/dashboard_xlearner_benefit_drivers.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png)
+- [`GLMNet X-learner/glmnet_xlearner_global_benefit_shap_importance.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/glmnet_xlearner_global_benefit_shap_importance.csv)
+- [`GLMNet X-learner/glmnet_xlearner_global_benefit_shap_reconciliation.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/glmnet_xlearner_global_benefit_shap_reconciliation.csv)
+- [`GLMNet X-learner/glmnet_xlearner_member_benefit_shap_values.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/glmnet_xlearner_member_benefit_shap_values.csv)
+- [`GLMNet X-learner/dashboard_glmnet_xlearner_global_benefit_shap.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_glmnet_xlearner_global_benefit_shap.png)
 - [`GLMNet T-vs-X benefit-driver comparison chart`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png)
 
 ## Analytical Task 7: Business Value Assessment
