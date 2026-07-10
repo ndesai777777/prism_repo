@@ -498,10 +498,10 @@ For GLMNet, benefit-driver importance is compared across the T-learner and X-lea
 
 Two contribution methods are shown:
 
-| Method | What it answers | Main limitation |
-|---|---|---|
-| Coefficient-based contribution | Which standardized GLMNet terms contribute most under the model equation? | Sensitive to correlated features and coefficient shrinkage. |
-| SHAP benefit contribution | Which variables most affect the fitted benefit-score function? | Still explains the fitted model, not necessarily the true data-generating formula. |
+| Method | Approach | What it answers | Advantage | Main limitation |
+|---|---|---|---|---|
+| Coefficient-based contribution | Builds contribution from the GLMNet equation using standardized feature values and fitted coefficients. | Which standardized GLMNet terms contribute most under the model equation? | Transparent and easy to trace back to the fitted model coefficients. | Sensitive to correlated features, coefficient shrinkage, and differences between the treated and control model fits. |
+| SHAP benefit contribution | Explains the final fitted benefit-score function by attributing changes in predicted benefit to each feature. | Which variables most affect the fitted benefit-score function? | Works directly on the final benefit score and provides additive member-level reconciliation. | Still explains the fitted model, not necessarily the true data-generating formula; correlated predictors can split attribution. |
 
 ### Coefficient-Based Benefit Contributions
 
