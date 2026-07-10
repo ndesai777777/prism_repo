@@ -471,9 +471,17 @@ Supporting files:
 
 ## Analytical Task 6: Variable Importance And Explainability
 
-The explainability analysis separates risk drivers from benefit drivers. Risk drivers explain what predicts ED utilization in the treated and control outcome models. Benefit drivers explain what contributes to the predicted treatment benefit score, `pred_ed_if_control - pred_ed_if_treated`.
+The explainability analysis separates risk drivers from benefit drivers. Risk drivers explain what predicts ED utilization in the treated and control outcome models. Benefit drivers explain what contributes to predicted treatment benefit.
 
-Because synthetic true benefit is known in this dataset, the feature-importance results should be interpreted alongside the Task 4 and Task 5 true-benefit validation checks. Feature explanations are most credible when the model first demonstrates reasonable treatment-effect recovery and targeting performance.
+Because synthetic true benefit is known in this dataset, Task 6 is organized around three levels of evidence:
+
+| Level | Question answered | Main caution |
+|---|---|---|
+| Model-learned feature contributions | Which variables does the fitted GLMNet model use to explain predicted benefit? | Correlated predictors can split, absorb, or swap attribution. |
+| Known true-driver alignment | Do the model explanations recover the known synthetic treatment-effect drivers? | Alignment is evaluated against true contribution terms, not raw coefficients. |
+| Interpretation | Which explanation should be emphasized? | The X-learner explanations deserve more weight because Tasks 4-5 showed stronger treatment-effect recovery, but attribution is still directional rather than definitive. |
+
+The true synthetic benefit formula is especially useful here because the real treatment-effect drivers are known: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score` above 50. This makes it possible to evaluate whether feature explanations are recovering the known signal rather than only describing the fitted model.
 
 ### Risk Drivers
 
@@ -495,6 +503,13 @@ benefit_contribution = control_contribution - treated_contribution
 ```
 
 The X-learner benefit-driver calculation uses the propensity-weighted contributions from the second-stage treated-effect and control-effect models. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
+
+Two contribution methods are shown:
+
+| Method | What it answers | Main limitation |
+|---|---|---|
+| Coefficient-based contribution | Which standardized GLMNet terms contribute most under the model equation? | Sensitive to correlated features and coefficient shrinkage. |
+| SHAP benefit contribution | Which variables most affect the fitted benefit-score function? | Still explains the fitted model, not necessarily the true data-generating formula. |
 
 ### Coefficient-Based Benefit Contributions
 
@@ -674,6 +689,45 @@ The current top SHAP benefit drivers by signed value are:
 </tr></table>
 <!-- AUTO_TABLE:glmnet_benefit_shap_signed END -->
 
+### Known Synthetic Driver Alignment
+
+The known true contribution terms are compared against SHAP benefit contributions rather than coefficient-based contributions. SHAP values and true contribution terms are both expressed in benefit-probability units, while coefficient-based contributions are more sensitive to GLMNet scaling, shrinkage, and correlated predictors.
+
+This comparison does **not** compare raw simulation coefficients against model importance. Raw coefficients are not directly comparable across variables because the features have different units and ranges. Instead, the validation uses member-level true contribution terms such as:
+
+```text
+true_ed_visits_contribution = 0.018 * ed_visits_last_6m
+true_risk_score_contribution = 0.0006 * max(current_risk_score - 50, 0)
+```
+
+The first check asks whether each explanation method surfaces known true drivers among its top 10 global benefit drivers.
+
+<!-- AUTO_TABLE:glmnet_true_driver_recovery START -->
+| Model | Explainability method | True drivers recovered in top 10 | Recovered true drivers |
+|---|---|---:|---|
+| GLMNet T-learner | Coefficient contribution | 2 of 6 | `behavioral_health_risk_flag`, `food_insecurity_flag` |
+| GLMNet T-learner | SHAP benefit contribution | 3 of 6 | `current_risk_score`, `behavioral_health_risk_flag`, `food_insecurity_flag` |
+| GLMNet X-learner | Coefficient contribution | 2 of 6 | `admits_last_6m`, `ed_visits_last_6m` |
+| GLMNet X-learner | SHAP benefit contribution | 2 of 6 | `admits_last_6m`, `ed_visits_last_6m` |
+<!-- AUTO_TABLE:glmnet_true_driver_recovery END -->
+
+The second check uses SHAP's member-level additive contributions. For each true driver, the member-level SHAP contribution is compared against that same member's known true contribution term. Spearman correlation is emphasized because it evaluates whether members with larger true contribution from a feature also tend to receive larger SHAP contribution for that feature. Direction is marked as recovered only when the SHAP contribution has positive rank alignment and positive average signed contribution, because all true synthetic contribution terms increase benefit.
+
+<!-- AUTO_TABLE:glmnet_shap_true_driver_alignment START -->
+| Feature | True contribution formula | Mean true contribution | T-learner SHAP Spearman | X-learner SHAP Spearman | Direction recovered? |
+|---|---|---:|---:|---:|---|
+| `ed_visits_last_6m` | `0.018 * ed_visits_last_6m` | 0.0163 | 0.931 | 0.934 | T: Yes; X: Yes |
+| `admits_last_6m` | `0.015 * admits_last_6m` | 0.0054 | 0.793 | 0.793 | T: Yes; X: No |
+| `food_insecurity_flag` | `0.018 * food_insecurity_flag` | 0.0038 | -0.710 | -0.006 | T: No; X: No |
+| `transportation_barrier_flag` | `0.014 * transportation_barrier_flag` | 0.0036 | 0.760 | -0.752 | T: Yes; X: No |
+| `behavioral_health_risk_flag` | `0.012 * behavioral_health_risk_flag` | 0.0046 | -0.843 | 0.843 | T: No; X: No |
+| `current_risk_score` | `0.0006 * max(current_risk_score - 50, 0)` | 0.0010 | 0.753 | 0.749 | T: No; X: No |
+<!-- AUTO_TABLE:glmnet_shap_true_driver_alignment END -->
+
+This alignment check shows why feature attribution should be interpreted cautiously. The X-learner was stronger in Tasks 4-5 for treatment-effect recovery and top-benefit targeting, but its SHAP explanations still do not perfectly recover every known synthetic driver. Some true drivers are recovered clearly, especially recent ED visits and admits, while others are likely affected by correlated proxy features, limited sample size, and the fact that SHAP explains the fitted benefit model rather than the true data-generating equation.
+
+Overall, the GLMNet X-learner appears stronger for treatment-effect ranking, but feature attribution remains less definitive because correlated predictors can split or absorb importance. Therefore, feature importance should be interpreted as directional model evidence. The strongest evidence comes from features that are both known true drivers and consistently surfaced across explainability methods.
+
 Supporting files:
 
 - [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/shap_importance_treated_control_models.csv)
@@ -692,6 +746,8 @@ Supporting files:
 - [`GLMNet X-learner/glmnet_xlearner_member_benefit_shap_values.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/glmnet_xlearner_member_benefit_shap_values.csv)
 - [`GLMNet X-learner/dashboard_glmnet_xlearner_global_benefit_shap.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_glmnet_xlearner_global_benefit_shap.png)
 - [`GLMNet T-vs-X benefit-driver comparison chart`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png)
+- [`GLMNet true-driver recovery summary`](Outputs/Uplift/Python/glmnet_true_driver_recovery_summary.csv)
+- [`GLMNet SHAP true-driver alignment`](Outputs/Uplift/Python/glmnet_shap_true_driver_alignment.csv)
 
 ## Analytical Task 7: Business Value Assessment
 
