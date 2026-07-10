@@ -345,6 +345,21 @@ A higher benefit score means the model predicts a larger reduction in ED risk un
 
 The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
+The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
+
+<!-- AUTO_TABLE:top_benefit_examples START -->
+| Member profile | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Highest benefit | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
+| High risk, low benefit | 1 | 1 | 0.0868 | 0.0874 | 0.0006 | 10 | Clinically higher risk, but the predicted intervention benefit is small. |
+| Low risk, low benefit | 0 | 0 | 0.0491 | 0.0665 | 0.0174 | 10 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
+| Sleeping dog / lowest benefit | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
+<!-- AUTO_TABLE:top_benefit_examples END -->
+
+The high-risk and low-risk examples are selected from low positive benefit members when available, so the table separates baseline risk from impactability. The sleeping-dog row is selected separately as the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
+
+This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
+
 ### Synthetic True-Benefit Validation
 
 Because this project uses synthetic data, the known treatment-benefit formula can be used to validate treatment-effect estimates directly. The synthetic true benefit is:
@@ -371,30 +386,7 @@ This validation uses the same 300 held-out test members for the GLMNet T-learner
 
 Both GLMNet methods underestimate the average true synthetic benefit, but the X-learner is closer on bias, MAE, and RMSE. More importantly, the X-learner has positive Pearson and Spearman correlation with true benefit, while the T-learner has negative correlation in this run. This suggests the GLMNet X-learner is the stronger of the two GLMNet methods for recovering the synthetic treatment-effect pattern.
 
-The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
-
-<!-- AUTO_TABLE:top_benefit_examples START -->
-| Member profile | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Highest benefit | 0 | 1 | 0.0301 | 0.0839 | 0.0538 | 1 | Strong outreach candidate because predicted ED risk is much lower under treatment. |
-| High risk, low benefit | 1 | 1 | 0.0868 | 0.0874 | 0.0006 | 10 | Clinically higher risk, but the predicted intervention benefit is small. |
-| Low risk, low benefit | 0 | 0 | 0.0491 | 0.0665 | 0.0174 | 10 | Lower outreach priority because baseline ED risk and predicted benefit are both low. |
-| Sleeping dog / lowest benefit | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
-<!-- AUTO_TABLE:top_benefit_examples END -->
-
-The high-risk and low-risk examples are selected from low positive benefit members when available, so the table separates baseline risk from impactability. The sleeping-dog row is selected separately as the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
-
-This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
-
 Analytical Task 5 extends this member-level idea to population segments by comparing risk tiers against model-relative benefit groups.
-
-<!-- AUTO_CHART:glmnet_predicted_treated_vs_control START -->
-![GLMNet predicted ED risk if treated versus control](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png)
-<!-- AUTO_CHART:glmnet_predicted_treated_vs_control END -->
-
-<!-- AUTO_TEXT:predicted_risk_by_decile_interpretation START -->
-This chart shows why uplift targeting is different from risk-based targeting. A historical risk-ranking approach would mostly look at the orange bars, which represent predicted ED risk without treatment. In the current GLMNet output, decile 10 has the highest average predicted ED risk without treatment (0.0815), but its predicted treatment benefit is 0.0230. Decile 1 is prioritized because its treatment-versus-control gap is larger: predicted ED risk falls from 0.0797 without treatment to 0.0357 with treatment, for an average predicted benefit of 0.0440. In other words, the orange bar reflects baseline risk, while the gap between the orange and blue bars reflects expected impactability.
-<!-- AUTO_TEXT:predicted_risk_by_decile_interpretation END -->
 
 Supporting files:
 
