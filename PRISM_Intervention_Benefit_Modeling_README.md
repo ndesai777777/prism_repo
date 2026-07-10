@@ -747,7 +747,9 @@ net_savings = gross_savings - intervention_cost
 roi = net_savings / intervention_cost
 ```
 
-The current cost assumptions are $1,200 per ED visit and $250 per intervention. The primary comparison below focuses on gross savings because the goal is to compare targeting quality before layering in intervention-cost assumptions.
+The current cost assumptions are $1,200 per ED visit and $250 per intervention. The primary comparison below focuses on gross savings because the goal is to compare targeting quality before layering in intervention-cost assumptions. Because Tasks 4 and 5 showed that the GLMNet X-learner better recovered true synthetic treatment benefit, Task 7 reports business-value estimates for both GLMNet frameworks.
+
+### GLMNet T-Learner Targeting
 
 <!-- AUTO_TABLE:roi_summary START -->
 | Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
@@ -760,22 +762,46 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention. 
 <!-- AUTO_TABLE:roi_summary END -->
 
 <!-- AUTO_TEXT:roi_interpretation START -->
-This view compares two targeting policies on the same held-out test population: ranking members by GLMNet predicted uplift versus ranking members by current risk score. Through the top 30% of targeted members, uplift targeting captures $4,408.92 in estimated gross savings, compared with $3,509.56 from current-risk targeting, an uplift advantage of $899.36. Gross savings are estimated from the GLMNet predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
+This view compares two targeting policies on the same held-out test population: ranking members by GLMNet T-learner predicted benefit versus ranking members by current risk score. Through the top 30% of targeted members, T-learner benefit targeting captures $4,408.92 in estimated gross savings, compared with $3,509.56 from current-risk targeting, an advantage of $899.36. Gross savings are estimated from the GLMNet T-learner predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
 <!-- AUTO_TEXT:roi_interpretation END -->
 
-The current-risk comparison uses the same held-out test population and the same cost assumptions. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using the GLMNet predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
-
 <!-- AUTO_CHART:glmnet_roi_by_decile START -->
-![GLMNet cumulative gross savings by targeting approach](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
+![GLMNet T-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:glmnet_roi_by_decile END -->
+
+### GLMNet X-Learner Targeting
+
+<!-- AUTO_TABLE:xlearner_roi_summary START -->
+| Targeted group | Members targeted | X-learner gross savings | Current-risk gross savings | X-learner advantage | X-learner ED visits avoided | Current-risk ED visits avoided |
+|---|---:|---:|---:|---:|---:|---:|
+| Top 10% | 30 | $2,503.95 | $2,288.56 | $215.39 | 2.0866 | 1.9071 |
+| Top 20% | 60 | $4,311.28 | $3,839.89 | $471.38 | 3.5927 | 3.1999 |
+| Top 30% | 90 | $5,920.10 | $5,189.50 | $730.61 | 4.9334 | 4.3246 |
+| Top 40% | 120 | $7,400.14 | $6,392.43 | $1,007.71 | 6.1668 | 5.3270 |
+| Top 50% | 150 | $8,746.05 | $7,600.75 | $1,145.30 | 7.2884 | 6.3340 |
+<!-- AUTO_TABLE:xlearner_roi_summary END -->
+
+<!-- AUTO_TEXT:xlearner_roi_interpretation START -->
+The X-learner view uses the same held-out test population and the same cost assumptions, but members are ranked by GLMNet X-learner predicted benefit. Through the top 30% of targeted members, X-learner benefit targeting captures $5,920.10 in estimated gross savings, compared with $5,189.50 from current-risk targeting, an advantage of $730.61. The X-learner savings estimates are larger in absolute dollars because its predicted benefit scores are larger on average than the T-learner scores.
+<!-- AUTO_TEXT:xlearner_roi_interpretation END -->
+
+<!-- AUTO_CHART:xlearner_roi_by_decile START -->
+![GLMNet X-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
+<!-- AUTO_CHART:xlearner_roi_by_decile END -->
+
+The current-risk comparison uses the same held-out test population and the same cost assumptions within each model framework. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using that framework's predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
 
 These savings results are directional rather than definitive. They are sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
 
 Supporting files:
 
 - [`GLMNet/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_roi_by_decile.csv)
-- [`GLMNet/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv)
-- [`GLMNet/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
+- [`GLMNet T-learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv)
+- [`GLMNet T-learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv)
+- [`GLMNet T-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
+- [`GLMNet X-learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv)
+- [`GLMNet X-learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv)
+- [`GLMNet X-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 
 ## Analytical Task 8: Client Perspective
 
