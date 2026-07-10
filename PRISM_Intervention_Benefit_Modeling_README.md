@@ -345,6 +345,32 @@ A higher benefit score means the model predicts a larger reduction in ED risk un
 
 The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
 
+### Synthetic True-Benefit Validation
+
+Because this project uses synthetic data, the known treatment-benefit formula can be used to validate treatment-effect estimates directly. The synthetic true benefit is:
+
+```text
+true_benefit =
+    0.020
+  + 0.018 * ed_visits_last_6m
+  + 0.015 * admits_last_6m
+  + 0.018 * food_insecurity_flag
+  + 0.014 * transportation_barrier_flag
+  + 0.012 * behavioral_health_risk_flag
+  + 0.0006 * max(current_risk_score - 50, 0)
+```
+
+This validation uses the same 300 held-out test members for the GLMNet T-learner and GLMNet X-learner. The goal is to evaluate whether each model estimates the size and member-level pattern of treatment benefit, not just whether it predicts factual ED risk.
+
+<!-- AUTO_TABLE:glmnet_true_benefit_validation START -->
+| Model | N | Mean predicted benefit | Mean true benefit | Bias | MAE | RMSE | Pearson corr | Spearman corr |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| GLMNet T-learner | 300 | 0.034 | 0.055 | -0.020 | 0.026 | 0.037 | -0.467 | -0.368 |
+| GLMNet X-learner | 300 | 0.038 | 0.055 | -0.017 | 0.024 | 0.031 | 0.391 | 0.168 |
+<!-- AUTO_TABLE:glmnet_true_benefit_validation END -->
+
+Both GLMNet methods underestimate the average true synthetic benefit, but the X-learner is closer on bias, MAE, and RMSE. More importantly, the X-learner has positive Pearson and Spearman correlation with true benefit, while the T-learner has negative correlation in this run. This suggests the GLMNet X-learner is the stronger of the two GLMNet methods for recovering the synthetic treatment-effect pattern.
+
 The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
@@ -373,6 +399,8 @@ This chart shows why uplift targeting is different from risk-based targeting. A 
 Supporting files:
 
 - [`GLMNet/uplift_scored_output.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_scored_output.csv)
+- [`GLMNet true-benefit validation summary`](Outputs/Uplift/Python/glmnet_true_benefit_validation_summary.csv)
+- [`GLMNet true-benefit scored test comparison`](Outputs/Uplift/Python/glmnet_true_benefit_scored_test_comparison.csv)
 - [`GLMNet T-learner risk tier benefit group summary`](Outputs/Uplift/Python/T-Learner/GLMNet/tlearner_risk_tier_benefit_group_summary.csv)
 - [`GLMNet X-learner risk tier benefit group summary`](Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_risk_tier_benefit_group_summary.csv)
 
@@ -400,6 +428,19 @@ _Note: In the T-learner table, benefit is the direct contrast between the contro
 |---|---|
 | ![GLMNet T-learner average predicted benefit by uplift decile](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png) | ![GLMNet X-learner average predicted benefit by uplift decile](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_avg_benefit_by_decile.png) |
 <!-- AUTO_CHART:glmnet_t_vs_x_avg_benefit_charts END -->
+
+### True-Benefit Top-Decile Overlap
+
+Because the synthetic true-benefit formula is known, the model top decile can be compared against the true top-benefit decile. This evaluates targeting quality: if outreach capacity is limited to the top 10% of members, does the model select the members who truly have the highest synthetic treatment benefit?
+
+<!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap START -->
+| Model | Test members | Model top-decile members | True top-decile members | Overlap members | Top-decile overlap |
+|---|---:|---:|---:|---:|---:|
+| GLMNet T-learner | 300 | 30 | 30 | 2 | 6.7% |
+| GLMNet X-learner | 300 | 30 | 30 | 14 | 46.7% |
+<!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap END -->
+
+The GLMNet X-learner recovers substantially more of the true top-benefit decile than the GLMNet T-learner in this run. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
 
 ### Risk Tier Versus Benefit Group
 
@@ -433,11 +474,14 @@ Supporting files:
 
 - [`GLMNet/uplift_decile_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_decile_summary.csv)
 - [`GLMNet X-learner/xlearner_decile_summary.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_decile_summary.csv)
+- [`GLMNet true-benefit decile overlap summary`](Outputs/Uplift/Python/glmnet_true_benefit_decile_overlap_summary.csv)
 - [`X-learner consistency summary`](Outputs/Uplift/Python/X-Learner/xlearner_vs_tlearner_consistency_summary.csv)
 
 ## Analytical Task 6: Variable Importance And Explainability
 
 The explainability analysis separates risk drivers from benefit drivers. Risk drivers explain what predicts ED utilization in the treated and control outcome models. Benefit drivers explain what contributes to the predicted treatment benefit score, `pred_ed_if_control - pred_ed_if_treated`.
+
+Because synthetic true benefit is known in this dataset, the feature-importance results should be interpreted alongside the Task 4 and Task 5 true-benefit validation checks. Feature explanations are most credible when the model first demonstrates reasonable treatment-effect recovery and targeting performance.
 
 ### Risk Drivers
 
