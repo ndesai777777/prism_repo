@@ -421,19 +421,6 @@ _Note: In the T-learner table, benefit is the direct contrast between the contro
 | ![GLMNet T-learner average predicted benefit by uplift decile](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png) | ![GLMNet X-learner average predicted benefit by uplift decile](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_avg_benefit_by_decile.png) |
 <!-- AUTO_CHART:glmnet_t_vs_x_avg_benefit_charts END -->
 
-### True-Benefit Top-Decile Overlap
-
-Because the synthetic true-benefit formula is known, the model top decile can be compared against the true top-benefit decile. This evaluates targeting quality: if outreach capacity is limited to the top 10% of members, does the model select the members who truly have the highest synthetic treatment benefit?
-
-<!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap START -->
-| Model | Test members | Model top-decile members | True top-decile members | Overlap members | Top-decile overlap |
-|---|---:|---:|---:|---:|---:|
-| GLMNet T-learner | 300 | 30 | 30 | 2 | 6.7% |
-| GLMNet X-learner | 300 | 30 | 30 | 14 | 46.7% |
-<!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap END -->
-
-The GLMNet X-learner recovers substantially more of the true top-benefit decile than the GLMNet T-learner in this run. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
-
 ### Risk Tier Versus Benefit Group
 
 The chart below compares baseline risk tier against model-relative benefit group. Benefit groups are based on uplift deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed model benefits in this dataset are smaller than the idealized synthetic-data specification.
@@ -461,6 +448,19 @@ The consistency summary below is limited to GLMNet because GLMNet is the model c
 | ---: | ---: | ---: | ---: | ---: | ---: |
 | GLMNet | -0.0761 | 0.1608 | 16.7% | 0.0344 | 0.0377 |
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary END -->
+
+### True-Benefit Top-Decile Overlap
+
+Because the synthetic true-benefit formula is known, the model top decile can be compared against the true top-benefit decile. This evaluates targeting quality: if outreach capacity is limited to the top 10% of members, does the model select the members who truly have the highest synthetic treatment benefit?
+
+<!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap START -->
+| Model | Test members | Model top-decile members | True top-decile members | Overlap members | Top-decile overlap |
+|---|---:|---:|---:|---:|---:|
+| GLMNet T-learner | 300 | 30 | 30 | 2 | 6.7% |
+| GLMNet X-learner | 300 | 30 | 30 | 14 | 46.7% |
+<!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap END -->
+
+The GLMNet X-learner recovers substantially more of the true top-benefit decile than the GLMNet T-learner in this run. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
 
 Supporting files:
 
