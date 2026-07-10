@@ -449,18 +449,18 @@ The consistency summary below is limited to GLMNet because GLMNet is the model c
 | GLMNet | -0.0761 | 0.1608 | 16.7% | 0.0344 | 0.0377 |
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary END -->
 
-### True-Benefit Top-Decile Overlap
+### True-Benefit Top-Group Overlap
 
-Because the synthetic true-benefit formula is known, the model top decile can be compared against the true top-benefit decile. This evaluates targeting quality: if outreach capacity is limited to the top 10% of members, does the model select the members who truly have the highest synthetic treatment benefit?
+Because the synthetic true-benefit formula is known, the model's highest-benefit groups can be compared against the true highest-benefit groups. The top 10% overlap is the strictest targeting check, while the top 20% overlap aligns with the project definition of **High benefit** as uplift deciles 1-2.
 
 <!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap START -->
-| Model | Test members | Model top-decile members | True top-decile members | Overlap members | Top-decile overlap |
-|---|---:|---:|---:|---:|---:|
-| GLMNet T-learner | 300 | 30 | 30 | 2 | 6.7% |
-| GLMNet X-learner | 300 | 30 | 30 | 14 | 46.7% |
+| Model | Test members | Top 10% overlap | Top 20% overlap |
+|---|---:|---:|---:|
+| GLMNet T-learner | 300 | 2 of 30 (6.7%) | 4 of 60 (6.7%) |
+| GLMNet X-learner | 300 | 14 of 30 (46.7%) | 29 of 60 (48.3%) |
 <!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap END -->
 
-The GLMNet X-learner recovers substantially more of the true top-benefit decile than the GLMNet T-learner in this run. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
+The GLMNet X-learner recovers substantially more of the true highest-benefit members than the GLMNet T-learner in this run. This pattern holds for both the strict top-decile check and the broader top-20% high-benefit group. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
 
 Supporting files:
 
