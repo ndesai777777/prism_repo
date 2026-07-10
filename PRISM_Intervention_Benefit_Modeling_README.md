@@ -460,57 +460,29 @@ benefit_contribution = control_contribution - treated_contribution
 
 The X-learner benefit-driver calculation uses the propensity-weighted contributions from the second-stage treated-effect and control-effect models. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
 
-### SHAP Benefit-Score Contribution Plan
+### Coefficient-Based Benefit Contributions
 
-The notebook now adds a SHAP-based benefit explanation layer for the GLMNet T-learner and GLMNet X-learner. This is intended to become the preferred dashboard explanation layer because it explains the final predicted benefit score directly rather than relying only on coefficient differences.
+This section keeps the original GLMNet feature-contribution approach. These contribution tables are useful because they are transparent and reproducible. They show how the fitted GLMNet models construct predicted treatment benefit from standardized feature values and fitted coefficients.
 
-For the GLMNet T-learner, SHAP is applied to the final benefit function:
-
-```text
-benefit_score(X) = pred_ed_if_control(X) - pred_ed_if_treated(X)
-```
-
-For the GLMNet X-learner, SHAP is applied to the final X-learner benefit function:
+For the GLMNet T-learner, benefit contributions are calculated from the two outcome models:
 
 ```text
-benefit_score(X) = (1 - propensity(X)) * tau_treated_model(X)
-                 + propensity(X) * tau_control_model(X)
+benefit_contribution = control_model_contribution - treated_model_contribution
 ```
 
-This means each SHAP value answers:
-
-> How much did this feature move the model's predicted benefit score up or down relative to the model baseline benefit?
-
-The SHAP outputs are designed to support both global explanation and future member-level dashboard explanation:
-
-| Output concept | Meaning | Use |
-|---|---|---|
-| Mean absolute SHAP | Average magnitude of a feature's effect on predicted benefit | Global feature-importance ranking |
-| Mean signed SHAP | Average directional effect on predicted benefit | Shows whether the feature tends to increase or decrease benefit |
-| Mean positive SHAP | Average positive contribution, with negative values set to zero | Identifies features that often push benefit upward |
-| Mean negative SHAP | Average negative contribution, with positive values set to zero | Identifies features that often push benefit downward |
-| Percent positive SHAP | Share of members where the feature increases predicted benefit | Helps distinguish broad positive drivers from subgroup-specific drivers |
-| Member-level SHAP values | Feature contributions for each scored member | Future dashboard and LLM explanation input |
-
-SHAP also provides an additive reconciliation check:
+For the GLMNet X-learner, benefit contributions are calculated from the propensity-weighted second-stage effect models:
 
 ```text
-model baseline benefit
-+ sum(member feature SHAP values)
-= member benefit score
+xlearner_benefit_contribution =
+    (1 - propensity) * treated_effect_model_contribution
+  + propensity * control_effect_model_contribution
 ```
 
-Across the population, the analogous check is:
+These tables answer:
 
-```text
-model baseline benefit
-+ sum(mean signed feature SHAP values)
-= average predicted benefit
-```
+> Which features have the largest model-derived contribution to predicted treatment benefit under the current GLMNet coefficient structure?
 
-Mean absolute SHAP is used for global importance ranking, but it is not expected to sum to average benefit because it measures magnitude regardless of direction. Signed SHAP values are used for reconciliation and direction.
-
-This SHAP layer does not prove true causal mechanisms. It explains the model's predicted benefit score. It is still affected by the quality of the underlying uplift models, the chosen background/reference population, and correlation among predictors. However, it is better aligned with the future dashboard question: "Why did this member receive this predicted benefit score?"
+The values should be interpreted as model-specific contribution summaries, not definitive causal drivers. Collinearity can affect coefficient interpretation in GLMNet, and lasso or elastic-net regularization can shrink correlated features unevenly. This is especially relevant for the T-learner because the benefit contribution is calculated from two separately fitted outcome models.
 
 The current top benefit drivers by magnitude are:
 
@@ -544,13 +516,61 @@ For GLMNet, `percolator_utilization_score`, `total_cost_last_6m`, `percolator_cl
 
 The absolute benefit-driver value measures how strongly a feature changes predicted benefit, regardless of direction. The signed benefit contribution shows whether the feature tends to increase or decrease predicted benefit, and the percent-positive column shows the share of members where the feature increased predicted benefit. Therefore, the benefit-driver tables are interpreted using both magnitude and direction.
 
-The existing GLMNet contribution tables are coefficient-based explanations. They are useful because they are transparent and reproducible, but they should be treated as model-specific contribution summaries rather than definitive causal drivers.
-
-Collinearity can affect coefficient interpretation in GLMNet, and lasso or elastic-net regularization can shrink correlated features unevenly. This is especially relevant for the T-learner because the benefit contribution is calculated from two separately fitted outcome models. The SHAP benefit-score layer is therefore the preferred future dashboard explanation because it explains the final benefit function directly. The X-learner driver comparison should still be treated as a consistency check rather than as a separate causal proof.
-
 <!-- AUTO_CHART:glmnet_benefit_driver_chart START -->
 ![GLMNet T-learner versus X-learner top drivers of predicted treatment benefit](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png)
 <!-- AUTO_CHART:glmnet_benefit_driver_chart END -->
+
+### SHAP Benefit-Score Contributions
+
+The notebook now also adds a SHAP-based benefit explanation layer for the GLMNet T-learner and GLMNet X-learner. This is intended to sit below the coefficient-based contribution tables, not replace them. The coefficient-based tables explain the GLMNet model through fitted coefficients, while the SHAP tables explain the final predicted benefit score directly.
+
+For the GLMNet T-learner, SHAP is applied to the final benefit function:
+
+```text
+benefit_score(X) = pred_ed_if_control(X) - pred_ed_if_treated(X)
+```
+
+For the GLMNet X-learner, SHAP is applied to the final X-learner benefit function:
+
+```text
+benefit_score(X) = (1 - propensity(X)) * tau_treated_model(X)
+                 + propensity(X) * tau_control_model(X)
+```
+
+This means each SHAP value answers:
+
+> How much did this feature move the model's predicted benefit score up or down relative to the model baseline benefit?
+
+The SHAP outputs support both global explanation and future member-level dashboard explanation:
+
+| Output concept | Meaning | Use |
+|---|---|---|
+| Mean absolute SHAP | Average magnitude of a feature's effect on predicted benefit | Global SHAP feature-importance ranking |
+| Mean signed SHAP | Average directional effect on predicted benefit | Shows whether the feature tends to increase or decrease benefit |
+| Mean positive SHAP | Average positive contribution, with negative values set to zero | Identifies features that often push benefit upward |
+| Mean negative SHAP | Average negative contribution, with positive values set to zero | Identifies features that often push benefit downward |
+| Percent positive SHAP | Share of members where the feature increases predicted benefit | Helps distinguish broad positive drivers from subgroup-specific drivers |
+| Member-level SHAP values | Feature contributions for each scored member | Future dashboard and LLM explanation input |
+
+SHAP also provides an additive reconciliation check:
+
+```text
+model baseline benefit
++ sum(member feature SHAP values)
+= member benefit score
+```
+
+Across the population, the analogous check is:
+
+```text
+model baseline benefit
++ sum(mean signed feature SHAP values)
+= average predicted benefit
+```
+
+Mean absolute SHAP is used for global importance ranking, but it is not expected to sum to average benefit because it measures magnitude regardless of direction. Signed SHAP values are used for reconciliation and direction.
+
+This SHAP layer does not prove true causal mechanisms. It explains the model's predicted benefit score. It is still affected by the quality of the underlying uplift models, the chosen background/reference population, and correlation among predictors. However, it is better aligned with the future dashboard question: "Why did this member receive this predicted benefit score?" The X-learner and T-learner SHAP explanations should therefore be used as prediction explanations and model-comparison evidence, not as standalone causal proof.
 
 Supporting files:
 
