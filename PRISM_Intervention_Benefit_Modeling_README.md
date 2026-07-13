@@ -30,7 +30,7 @@ The project evaluates whether uplift modeling can support care management priori
 
 The outcome variable is `outcome_ed_90d`. It is a binary indicator for whether a member had emergency department utilization within 90 days. A value of 1 means the member had a 90-day ED outcome, and a value of 0 means the member did not.
 
-The modeling goal is to estimate the probability of this outcome under two scenarios for each member: the probability of ED utilization if treated and the probability of ED utilization if untreated.
+The goal of the modeling framework is to estimate the expected benefit of intervention for each member. Different causal modeling approaches estimate this benefit in different ways. Some models estimate potential outcomes under treatment and control, while others estimate treatment effects directly..
 
 ### Treatment Variable
 
@@ -38,17 +38,20 @@ The treatment variable is `intervention_flag`. It indicates whether the member r
 
 ### Predictor Variables
 
-Predictors were grouped into six defined categories: demographics, clinical conditions, social determinants of health (SDOH), utilization, pharmacy, and risk scores. The variables listed below are examples from each category rather than a complete inventory. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
+### Predictor Variables
 
-Example demographic predictors include `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Example clinical condition predictors include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, and `behavioral_health_risk_flag`. Example SDOH predictors include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
+The model uses predictors available before intervention that may influence future emergency department (ED) utilization or the expected benefit of care management. Predictors are organized into six categories:
 
-Example utilization predictors include `pcp_visits_last_6m`, `specialist_visits_last_6m`, `ed_visits_last_30d`, `ed_visits_last_6m`, `admits_last_6m`, and `observation_stays_last_6m`. Example pharmacy predictors include `total_cost_last_6m`, `rx_count_last_6m`, `med_adherence_pdc`, `high_cost_drug_flag`, `opioid_flag`, and `polypharmacy_flag`. Example risk score predictors include the percolator utilization, clinical, and SDOH score fields, plus `current_risk_score` and `risk_tier`.
+- **Demographics:** Member characteristics such as age, gender, geographic region, and program enrollment.
+- **Clinical conditions:** Chronic disease indicators and behavioral health conditions.
+- **Social determinants of health (SDOH):** Measures of social and environmental barriers that may affect health outcomes.
+- **Healthcare utilization:** Prior ED visits, hospital admissions, outpatient visits, and other healthcare utilization.
+- **Pharmacy:** Medication use, prescription counts, adherence measures, and pharmacy-related risk indicators.
+- **Risk scores:** Composite utilization, clinical, and SDOH risk measures used for care management.
 
-The final model uses 41 predictors before one-hot encoding: 14 continuous/count numeric predictors, 18 binary indicator predictors, and 9 multi-level categorical predictors. The multi-level categorical predictors are `client_contract`, `service_region`, `program`, `case_manager_name`, `gender`, `county`, `plan_type`, `language`, and `risk_tier`. Binary indicators remain as 0/1 model columns, while multi-level categorical predictors are expanded during one-hot encoding. After encoding, the modeling matrix contains 77 columns.
+The final model uses **41 predictors** before one-hot encoding, consisting of **14 continuous/count variables**, **18 binary indicator variables**, and **9 categorical variables**. Categorical variables are expanded through one-hot encoding, resulting in a final modeling matrix with **77 features**.
 
-The predictor data dictionary provides each variable's category, description, data type, missingness, number of unique values, example values, and value range where applicable. The numeric and categorical summary tables provide descriptive statistics that can be used in the written report.
-
-Supporting files:
+Complete variable definitions, data types, missingness, summary statistics, and descriptive information are provided in the supporting documentation:
 
 - [`predictor_data_dictionary.csv`](Outputs/Uplift/Python/Predictor_Distributions/predictor_data_dictionary.csv)
 - [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/numeric_predictor_summary.csv)
