@@ -554,24 +554,34 @@ The causal forest SHAP correctly recovers the direction of 4 out of 6 true drive
 
 ## Analytical Task 7: Business Value Assessment
 
-The causal forest business value assessment is narrower than the ROI section in the uplift README. The current causal forest workflow does not simulate multiple alternative targeting policies or full ROI assumptions. Instead, it estimates potential targeting value by summarizing average benefit and cumulative expected ED reductions across HTE deciles.
+The business value analysis estimates how much gross savings would be captured when members are targeted by predicted causal forest benefit versus the prior-style approach of targeting members strictly by highest `current_risk_score`. The main visual is a cumulative targeting chart: top 10%, top 20%, top 30%, and so on. This makes the comparison easier to interpret because it answers the operational question: if outreach capacity is limited, which ranking method captures more estimated savings first?
 
-<!-- AUTO_TABLE:causal_forest_targeting_summary START -->
-| HTE decile | N | Avg benefit score | Observed ED rate | Treatment pct | Avg current risk | Cumulative members | Cumulative expected ED reductions |
-|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 30 | 0.084 | 20.0% | 40.0% | 58.5 | 30 | 2.53 |
-| 2 | 30 | 0.065 | 3.3% | 40.0% | 50.2 | 60 | 4.47 |
-| 3 | 30 | 0.055 | 6.7% | 23.3% | 44.3 | 90 | 6.12 |
-| 4 | 30 | 0.047 | 3.3% | 46.7% | 42.4 | 120 | 7.53 |
-| 5 | 30 | 0.041 | 10.0% | 40.0% | 41.9 | 150 | 8.74 |
-| 6 | 30 | 0.034 | 3.3% | 46.7% | 39.5 | 180 | 9.78 |
-| 7 | 30 | 0.030 | 3.3% | 40.0% | 40.9 | 210 | 10.68 |
-| 8 | 30 | 0.025 | 3.3% | 33.3% | 42.0 | 240 | 11.42 |
-| 9 | 30 | 0.018 | 3.3% | 40.0% | 37.4 | 270 | 11.97 |
-| 10 | 30 | 0.012 | 3.3% | 43.3% | 41.0 | 300 | 12.32 |
-<!-- AUTO_TABLE:causal_forest_targeting_summary END -->
+The current calculation assumes:
 
-Targeting only the top HTE decile would mean outreaching to 30 members with an expected 2.53 avoided ED events. Expanding to the top three HTE deciles would mean outreaching to 90 members with an expected 6.12 avoided ED events.
+```text
+expected_ed_rate_reduction = avg_benefit_score
+expected_ed_visits_avoided = n * expected_ed_rate_reduction
+gross_savings = expected_ed_visits_avoided * cost_per_ed_visit
+intervention_cost = n * cost_per_intervention
+net_savings = gross_savings - intervention_cost
+roi = net_savings / intervention_cost
+```
+
+The current cost assumptions are $1,200 per ED visit and $250 per intervention. The primary comparison below focuses on gross savings because the goal is to compare targeting quality before layering in intervention-cost assumptions.
+
+### Causal Forest Benefit Targeting
+
+<!-- AUTO_TABLE:causal_forest_targeting_comparison START -->
+| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
+|---|---:|---:|---:|---:|---:|---:|
+| Top 10% | 30 | $3,030.57 | $2,672.59 | $357.98 | 2.5255 | 2.2272 |
+| Top 20% | 60 | $5,358.93 | $4,841.90 | $517.03 | 4.4658 | 4.0349 |
+| Top 30% | 90 | $7,344.29 | $6,437.13 | $907.15 | 6.1202 | 5.3643 |
+| Top 40% | 120 | $9,030.23 | $7,743.29 | $1,286.94 | 7.5252 | 6.4527 |
+| Top 50% | 150 | $10,492.84 | $8,742.11 | $1,750.73 | 8.7440 | 7.2851 |
+<!-- AUTO_TABLE:causal_forest_targeting_comparison END -->
+
+This view compares two targeting policies on the same held-out test population: ranking members by causal forest predicted benefit versus ranking members by current risk score. Through the top 30% of targeted members, causal forest benefit targeting captures $7,344.29 in estimated gross savings, compared with $6,437.13 from current-risk targeting, an advantage of $907.15. Gross savings are estimated from the causal forest predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
 
 Supporting file:
 
