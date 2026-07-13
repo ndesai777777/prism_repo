@@ -24,135 +24,145 @@ The analysis also addresses what factors drive future ED utilization, what facto
 
 The project evaluates whether uplift modeling can support care management prioritization. The workflow explains the modeling framework for both technical and non-technical audiences, evaluates model performance, compares practical business usefulness, interprets model outputs, identifies limitations, and documents a reproducible process that could later be applied to live client data.
 
-## Analytical Task 1: Understanding And Explaining The Modeling Framework
+# Analytical Task 1: Understanding the Modeling Framework
 
-### Outcome Variable
+This project evaluates a causal machine learning framework for estimating which members are most likely to benefit from care management intervention. Rather than predicting only future emergency department (ED) utilization, the framework estimates the expected benefit of intervention for each member. Different causal modeling approaches estimate this benefit in different ways. Some estimate potential outcomes under treatment and control, while others estimate treatment effects directly.
 
-The outcome variable is `outcome_ed_90d`. It is a binary indicator for whether a member had emergency department utilization within 90 days. A value of 1 means the member had a 90-day ED outcome, and a value of 0 means the member did not.
+## Outcome Variable
 
-The goal of the modeling framework is to estimate the expected benefit of intervention for each member. Different causal modeling approaches estimate this benefit in different ways. Some models estimate potential outcomes under treatment and control, while others estimate treatment effects directly..
+The outcome variable is `outcome_ed_90d`, a binary indicator of whether a member experienced an emergency department visit within 90 days.
 
-### Treatment Variable
+- **1** = Member had a 90-day ED visit
+- **0** = Member did not have a 90-day ED visit
 
-The treatment variable is `intervention_flag`. It indicates whether the member received the care management intervention. A value of 1 indicates intervention, and a value of 0 indicates no intervention/control.
+## Treatment Variable
 
-### Predictor Variables
+The treatment variable is `intervention_flag`, indicating whether a member received care management intervention.
 
-The model uses predictors available before intervention that may influence future emergency department (ED) utilization or the expected benefit of care management. Predictors are organized into six categories:
+- **1** = Received intervention
+- **0** = No intervention (control)
 
-- **Demographics:** Member characteristics such as age, gender, geographic region, and program enrollment.
-- **Clinical conditions:** Chronic disease indicators and behavioral health conditions.
-- **Social determinants of health (SDOH):** Measures of social and environmental barriers that may affect health outcomes.
-- **Healthcare utilization:** Prior ED visits, hospital admissions, outpatient visits, and other healthcare utilization.
-- **Pharmacy:** Medication use, prescription counts, adherence measures, and pharmacy-related risk indicators.
-- **Risk scores:** Composite utilization, clinical, and SDOH risk measures used for care management.
+## Predictor Variables
 
-The final model uses **41 predictors** before one-hot encoding, consisting of **14 continuous/count variables**, **18 binary indicator variables**, and **9 categorical variables**. Categorical variables are expanded through one-hot encoding, resulting in a final modeling matrix with **77 features**.
+The model uses predictors available before intervention that may influence future ED utilization or the expected benefit of care management. Predictors are organized into six categories:
 
-Complete variable definitions, data types, missingness, summary statistics, and descriptive information are provided in the supporting documentation:
+- **Demographics**
+- **Clinical conditions**
+- **Social determinants of health (SDOH)**
+- **Healthcare utilization**
+- **Pharmacy**
+- **Risk scores**
+
+The final model includes **41 predictors** before one-hot encoding, consisting of **14 continuous/count variables**, **18 binary indicator variables**, and **9 categorical variables**. After one-hot encoding, the modeling matrix contains **77 features**.
+
+Complete variable definitions and descriptive summaries are provided in:
 
 - [`predictor_data_dictionary.csv`](Outputs/Uplift/Python/Predictor_Distributions/predictor_data_dictionary.csv)
 - [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/numeric_predictor_summary.csv)
 - [`categorical_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/categorical_predictor_summary.csv)
 
-### Train/Test Methodology
+## Overall Modeling Workflow
 
-The dataset is split into training and held-out test sets, with 700 data points used for training and 300 data points reserved for final evaluation. The split is stratified on the combination of treatment status and ED outcome so that the training and test sets preserve the treated-positive, treated-negative, control-positive, and control-negative proportions observed in the available dataset. This is important because the outcome is rare and the T-learner trains separate treated and control outcome models.
-
-Within the training set, treated and control members are separated so that two outcome models can be trained: one model for members who received the intervention and one model for members who did not. Five-fold cross-validation is used within the training data to support model tuning and assess model stability. Final model performance is then evaluated on the held-out test data.
-
-This setup is important because the uplift task is not only about predicting ED utilization. It is about comparing two counterfactual predictions for the same member: the expected ED risk if treated versus the expected ED risk if untreated.
-
-### T-Learner Framework
-
-The notebook uses a T-learner approach. A T-learner trains two separate outcome models:
-
-1. Treated model: estimates `P(ED | Treated, member features)`
-2. Control model: estimates `P(ED | Control, member features)`
-
-Each member in the test data then receives two predicted probabilities, regardless of their actual treatment status:
-
-```text
-pred_ed_if_treated = predicted probability of ED within 90 days if treated
-pred_ed_if_control = predicted probability of ED within 90 days if untreated
-```
-
-The predicted benefit score is calculated as:
-
-```text
-benefit_score = pred_ed_if_control - pred_ed_if_treated
-```
-
-A higher benefit score means the model predicts a larger reduction in ED risk if the member receives intervention. Members are then ranked by benefit score and assigned to uplift deciles, where decile 1 represents the highest predicted benefit group.
-
-Separate treated and control models are useful because the relationship between member features and ED risk may differ depending on whether a member receives the intervention. A single risk model can identify members who are likely to have an ED visit, but it does not directly estimate whether the intervention changes that risk.
+The dataset is divided into stratified training and test sets. Models are trained using cross-validation within the training data and evaluated on a held-out test set. Treatment-effect estimates are then used to rank members according to their predicted intervention benefit.
 
 ```mermaid
 flowchart TD
-    A["Modeling dataset"] --> B["Split members by actual treatment status"]
-    B --> C["Treated members"]
-    B --> D["Control members"]
-    C --> E["Train treated<br/>outcome model"]
-    D --> F["Train control<br/>outcome model"]
-    E --> G["Predict ED risk<br/>if treated"]
-    F --> H["Predict ED risk<br/>if untreated"]
-    G --> I["pred_ed_if_treated"]
-    H --> J["pred_ed_if_control"]
-    I --> K["Benefit score<br/>control risk - treated risk"]
-    J --> K
-    K --> L["Rank by predicted<br/>intervention benefit"]
-    L --> M["Assign<br/>uplift deciles"]
+    A["Modeling Dataset"] --> B["Stratified Train/Test Split"]
+    B --> C["5-Fold Cross Validation"]
+    C --> D["Train T-Learner"]
+    C --> E["Train X-Learner"]
+    D --> F["Estimate Treatment Benefit"]
+    E --> F
+    F --> G["Rank Members by Predicted Benefit"]
+    G --> H["Assign Uplift Deciles"]
+    H --> I["Business Value & Operational Evaluation"]
 ```
 
-### X-Learner Framework
+## Treatment-Effect Frameworks
 
-The X-learner is used as a second treatment-effect framework to check whether the uplift ranking is directionally consistent with the T-learner. It starts with the same basic counterfactual idea: estimate what would have happened to treated members without treatment and what would have happened to control members with treatment. It then converts those counterfactual comparisons into imputed treatment-effect targets and trains separate treatment-effect models.
+Two causal treatment-effect frameworks are evaluated in this project.
 
-For treated members, the X-learner compares the observed outcome with the predicted untreated outcome. For control members, it compares the predicted treated outcome with the observed outcome. These imputed effects are then modeled as functions of member features. At scoring time, a propensity model estimates each member's probability of receiving treatment, and the final X-learner benefit estimate is a weighted combination of the treated-effect and control-effect model predictions.
+### T-Learner
 
-In this report, the X-learner is not used to replace the T-learner. It is used as a consistency check: if the T-learner and X-learner identify similar high-benefit members and show similar decile patterns, that increases confidence that the benefit ranking is not purely an artifact of one modeling framework.
+The T-learner estimates treatment benefit by training separate outcome models for treated and untreated members. Each member receives predicted ED risk under both scenarios, and the treatment benefit is calculated as the difference between the two predicted risks.
+
+```text
+benefit_score =
+predicted ED risk if untreated
+−
+predicted ED risk if treated
+```
 
 ```mermaid
 flowchart TD
-    A["Modeling dataset"] --> B["Train treated and control outcome models"]
-    B --> C["Treated members:<br/>predict untreated risk"]
-    B --> D["Control members:<br/>predict treated risk"]
-    C --> E["Imputed effect<br/>for treated members"]
-    D --> F["Imputed effect<br/>for control members"]
-    E --> G["Train treated-side<br/>effect model"]
-    F --> H["Train control-side<br/>effect model"]
-    A --> I["Train<br/>propensity model"]
-    G --> J["Predict treated-side<br/>effect"]
-    H --> K["Predict control-side<br/>effect"]
-    I --> L["Estimate member<br/>propensity score"]
-    J --> M["Weighted X-learner<br/>benefit estimate"]
-    K --> M
-    L --> M
-    M --> N["Rank by predicted<br/>intervention benefit"]
-    N --> O["Assign<br/>uplift deciles"]
+    A["Training Data"] --> B["Split by Treatment Status"]
+
+    B --> C["Treated Members"]
+    B --> D["Control Members"]
+
+    C --> E["Train Treated Outcome Model"]
+    D --> F["Train Control Outcome Model"]
+
+    E --> G["Predict ED Risk if Treated"]
+    F --> H["Predict ED Risk if Untreated"]
+
+    G --> I["Estimated Benefit"]
+    H --> I
+
+    I["Benefit = Control Risk − Treated Risk"]
+    I --> J["Rank Members"]
+    J --> K["Assign Uplift Deciles"]
 ```
 
-### How The Analytical Tasks Fit Together
+### X-Learner
 
-Analytical Tasks 2 and 3 are intentionally upstream of the T-learner versus X-learner comparison. Task 2 describes the data, treatment rate, outcome prevalence, and modeling constraints. Task 3 evaluates whether the factual outcome models are credible enough to support treatment-effect analysis. Those checks matter regardless of whether the final benefit estimate is produced through a T-learner or an X-learner.
+The X-learner estimates treatment benefit by first constructing counterfactual outcomes and then learning treatment effects directly. A propensity model combines information from treated and untreated members to produce a final treatment-effect estimate.
 
-The later tasks use those foundations differently. Task 4 explains the member-level treatment-effect logic using the GLMNet T-learner because it is the most direct way to show `pred_ed_if_treated`, `pred_ed_if_control`, and their difference. Task 5 then compares GLMNet T-learner and GLMNet X-learner decile behavior side by side to assess consistency across treatment-effect frameworks.
+```mermaid
+flowchart TD
+    A["Training Data"] --> B["Train Outcome Models"]
 
-### Hyperparameter Tuning
+    B --> C["Estimate Missing Counterfactuals"]
 
-Model tuning was performed within the training data using cross-validation. For XGBoost, the notebook used 5-fold cross-validation over tree depth, learning rate, and minimum child weight, with early stopping up to 500 boosting rounds. For GLMNet, the notebook used `LogisticRegressionCV` with standardized predictors, elastic-net mixing values from 0.0 to 1.0, and a regularization-strength grid. The selected treated and control outcome models were chosen using cross-validated AUC within the training data.
+    C --> D["Impute Treatment Effects"]
 
-The current X-learner implementation uses fixed second-stage treatment-effect model settings as a framework comparison rather than a full tuning exercise. A future refinement would tune X-learner second-stage models separately and compare T-learner and X-learner results after both frameworks have been tuned.
+    D --> E["Train Treated Effect Model"]
+    D --> F["Train Control Effect Model"]
 
-### Modeling Techniques Used
+    A --> G["Train Propensity Model"]
 
-Two modeling techniques were used inside the treatment-effect workflow: XGBoost and GLMNet. Both techniques can be used inside the T-learner and X-learner frameworks. The modeling technique controls how the relationship between member features and outcomes or treatment effects is learned; the learner framework controls how treatment benefit is constructed from those models.
+    E --> H["Estimate Treated Effect"]
+    F --> I["Estimate Control Effect"]
 
-XGBoost is a tree-based machine learning method. It builds many small decision trees sequentially, where each new tree attempts to correct errors made by the previous trees. Each tree splits members into groups based on predictor values, such as risk scores, utilization history, diagnosis flags, or demographic variables. The final XGBoost prediction is the combined output of all trees. In this project, one XGBoost model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
+    G --> J["Combine Using Propensity Scores"]
 
-GLMNet is a regularized logistic regression approach. Logistic regression estimates the probability of a binary outcome by assigning weights, or coefficients, to predictor variables. GLMNet adds regularization, which shrinks coefficients and can reduce overfitting when there are many related predictors. In this project, GLMNet uses an elastic-net penalty, which combines ridge-style shrinkage and lasso-style feature selection. As with XGBoost, one GLMNet model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
+    H --> J
+    I --> J
 
-The two approaches provide different strengths. XGBoost can capture nonlinear relationships and interactions between features, while GLMNet is more linear and easier to interpret through coefficients and model contributions. Comparing both methods helps evaluate whether the uplift findings are stable across a flexible tree-based model and a more interpretable regularized regression model.
+    J --> K["Final Treatment Benefit"]
+    K --> L["Rank Members"]
+    L --> M["Assign Uplift Deciles"]
+```
+
+The T-learner provides a direct estimate of intervention benefit by comparing predicted risks under treatment and control. The X-learner provides an independent estimate of treatment effect and is used to evaluate whether the member rankings produced by the T-learner are consistent across causal modeling frameworks.
+
+## Modeling Techniques
+
+Two predictive modeling techniques are evaluated within each treatment-effect framework:
+
+- **GLMNet** – a regularized logistic regression approach that emphasizes interpretability while reducing overfitting through elastic-net regularization.
+- **XGBoost** – a gradient-boosted decision tree approach capable of modeling nonlinear relationships and feature interactions.
+
+Comparing both modeling techniques helps evaluate whether treatment-benefit rankings are consistent across different predictive models.
+
+## Relationship to Later Tasks
+
+This task introduces the overall modeling framework used throughout the project.
+
+- **Task 2** reviews the dataset and population characteristics.
+- **Task 3** evaluates the performance of the factual outcome models.
+- **Tasks 4–5** assess treatment-effect estimates and uplift rankings.
+- **Tasks 6–8** interpret model explanations, evaluate business value, and discuss operational recommendations.
 
 ## Analytical Task 2: Data Review
 
