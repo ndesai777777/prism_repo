@@ -324,17 +324,12 @@ Supporting files:
 
 ## Analytical Task 4: Treatment Effect Analysis
 
-This section applies the GLMNet T-learner outputs at the member level. GLMNet is used here because Analytical Task 3 identified it as the stronger candidate outcome-risk model. Each member receives two predicted ED probabilities: one assuming the member receives intervention and one assuming the member does not receive intervention. The benefit score is the difference between those two predicted probabilities:
+This section applies the GLMNet T-learner to estimate member-level treatment benefit. Each member receives predicted ED risk under treatment and control, and the difference between these predictions defines the benefit score.
 
 ```text
 benefit_score = pred_ed_if_control - pred_ed_if_treated
-```
 
-A higher benefit score means the model predicts a larger reduction in ED risk under intervention. A near-zero benefit score means the model predicts little difference between treatment and no treatment. A negative benefit score means the model predicts a higher ED probability under treatment than under no treatment; this should be interpreted cautiously, but operationally it means the member would not be prioritized based on predicted benefit. In uplift modeling, these negative-benefit cases are sometimes called **sleeping dogs**: cases where outreach may be unnecessary or potentially counterproductive. In this project, a sleeping-dog score should not be interpreted as proof that intervention causes harm, but it is useful as a prioritization warning.
-
-The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
-
-The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
+A higher benefit score indicates a larger predicted reduction in ED risk under intervention. The examples below illustrate how predicted risk and predicted treatment benefit can lead to different outreach priorities.
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
 | Member profile | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
@@ -345,9 +340,9 @@ The examples below are real members from the GLMNet T-learner scored output. The
 | Sleeping dog / lowest benefit | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
-The high-risk and low-risk examples are selected from low positive benefit members when available, so the table separates baseline risk from impactability. The sleeping-dog row is selected separately as the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
+The examples above illustrate why uplift modeling differs from traditional risk prediction. Members with the highest predicted ED risk are not necessarily those expected to benefit most from intervention. A member may remain high risk under both treatment and control, resulting in little predicted benefit, while another member with moderate baseline risk may experience a larger expected reduction in ED utilization and therefore receive a higher benefit score. Consequently, uplift modeling prioritizes members based on expected intervention benefit rather than baseline risk alone.
 
-This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
+The final example represents a sleeping dog: a member whose predicted ED risk is higher under treatment than under no treatment. In uplift modeling, these members are generally considered low-priority candidates because the model predicts little or no expected benefit. Within this synthetic demonstration, a sleeping-dog prediction should be interpreted as a prioritization signal rather than evidence that intervention causes harm.
 
 ### Synthetic True-Benefit Validation
 
@@ -387,9 +382,7 @@ Supporting files:
 
 ## Analytical Task 5: Uplift Decile Analysis
 
-Members are ranked by predicted benefit score and split into 10 uplift deciles. Decile 1 is the highest predicted benefit group.
-
-Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and predicted benefit separation, the decile review below focuses on GLMNet. This section compares the GLMNet T-learner and GLMNet X-learner decile patterns side by side so the two treatment-effect frameworks can be checked for consistency. Each decile contains 30 held-out test members.
+Members are ranked by predicted treatment benefit and divided into ten uplift deciles, where Decile 1 represents the highest predicted benefit. This section compares GLMNet T-learner and X-learner rankings to evaluate whether the two treatment-effect frameworks identify similar high-benefit members.
 
 <!-- AUTO_TABLE:glmnet_t_vs_x_decile_summary START -->
 <table><tr>
@@ -412,13 +405,13 @@ _Note: In the T-learner table, benefit is the direct contrast between the contro
 
 ### Risk Tier Versus Benefit Group
 
-The chart below compares baseline risk tier against model-relative benefit group. Benefit groups are based on uplift deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed model benefits in this dataset are smaller than the idealized synthetic-data specification.
+The chart below compares baseline risk tier with predicted benefit group. Benefit groups are defined using uplift deciles rather than fixed benefit thresholds because the predicted treatment effects in this dataset are relatively small. This comparison illustrates that members with the highest baseline risk are not necessarily those expected to benefit most from intervention.
 
 | Benefit group | Definition |
 |---|---|
-| High benefit | Uplift deciles 1-2, top 20% by predicted benefit |
-| Medium benefit | Uplift deciles 3-7, middle 50% by predicted benefit |
-| Low benefit | Uplift deciles 8-10, bottom 30% by predicted benefit |
+| High benefit | Uplift deciles 1–2 (top 20% by predicted benefit) |
+| Medium benefit | Uplift deciles 3–7 (middle 50% by predicted benefit) |
+| Low benefit | Uplift deciles 8–10 (bottom 30% by predicted benefit) |
 
 Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
 
@@ -428,9 +421,11 @@ Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, H
 | ![GLMNet T-learner risk tier by benefit group](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png) | ![GLMNet X-learner risk tier by benefit group](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png) |
 <!-- AUTO_CHART:risk_tier_by_benefit_group END -->
 
-Both panels are based on the same held-out test members. In the T-learner output, High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner output, a larger share of High risk members are placed in the high-benefit group. No Very High members appear in the held-out test set for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
+Both frameworks demonstrate that baseline risk and expected treatment benefit are related but not equivalent. In the T-learner, many High risk members remain in the low-benefit group, whereas the X-learner places a larger proportion of High risk members into the high-benefit group. These differences highlight how treatment-effect estimates can vary across causal modeling frameworks.
 
-The consistency summary below is limited to GLMNet because GLMNet is the model carried forward for interpretation. The correlations compare member-level T-learner and X-learner benefit scores on the held-out test set, while top-decile overlap shows how many members appear in both high-benefit groups.
+### Framework Consistency
+
+The table below compares member-level treatment-benefit estimates from the GLMNet T-learner and X-learner. Correlations measure agreement between benefit scores, while top-decile overlap measures how many members are identified as highest benefit by both frameworks.
 
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary START -->
 | Model | Pearson benefit score corr | Spearman benefit score corr | Top decile overlap | T-learner mean benefit score | X-learner mean benefit score |
@@ -438,9 +433,11 @@ The consistency summary below is limited to GLMNet because GLMNet is the model c
 | GLMNet | -0.0761 | 0.1608 | 16.7% | 0.0344 | 0.0377 |
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary END -->
 
+The modest correlations and limited top-decile overlap indicate that the two frameworks do not rank members identically, despite producing similar average predicted benefit. This motivates comparing both approaches against the known synthetic treatment benefit.
+
 ### True-Benefit Top-Group Overlap
 
-Because the synthetic true-benefit formula is known, the model's highest-benefit groups can be compared against the true highest-benefit groups. The top 10% overlap is the strictest targeting check, while the top 20% overlap aligns with the project definition of **High benefit** as uplift deciles 1-2.
+Because the synthetic treatment-benefit formula is known, each model's highest-ranked members can be compared directly with the true highest-benefit members. The top 10% overlap provides a strict evaluation of targeting accuracy, while the top 20% overlap corresponds to the project's **High benefit** group.
 
 <!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap START -->
 | Model | Test members | Top 10% overlap | Top 20% overlap |
@@ -449,7 +446,7 @@ Because the synthetic true-benefit formula is known, the model's highest-benefit
 | GLMNet X-learner | 300 | 14 of 30 (46.7%) | 29 of 60 (48.3%) |
 <!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap END -->
 
-The GLMNet X-learner recovers substantially more of the true highest-benefit members than the GLMNet T-learner in this run. This pattern holds for both the strict top-decile check and the broader top-20% high-benefit group. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
+The GLMNet X-learner recovers substantially more of the true highest-benefit members than the GLMNet T-learner. Combined with the true-benefit validation results presented in Task 4, these findings suggest that the X-learner provides a more accurate ranking of treatment benefit for this synthetic dataset.
 
 Supporting files:
 
