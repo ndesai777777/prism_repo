@@ -457,20 +457,12 @@ Supporting file:
 
 The main benchmark is the selected GLMNet uplift workflow, because the uplift README identified GLMNet as the stronger factual outcome-model family.
 
-The causal forest notebook compares against the GLMNet uplift model outputs on the held-out test set:
-
-| Comparison | Benchmark role |
-|---|---|
-| Causal forest vs GLMNet T-learner | Primary selected uplift benchmark |
-| Causal forest vs GLMNet X-learner | Primary selected uplift benchmark |
-
-All model-to-model comparisons use `member_id` merges and are limited to the same 300 held-out test members. T-learner outputs are filtered to the causal forest test `member_id`s before correlation and overlap are calculated. The current risk score is not included in this framework-consistency table because the risk-tier-versus-benefit-group section above already evaluates how causal forest benefit ranking relates to baseline risk.
+The consistency summary below compares causal forest `tau_hat` rankings against the selected GLMNet uplift benchmarks on the held-out test set. Correlations are member-level rank comparisons, and top-decile overlap shows how many members appear in both high-benefit groups. All comparisons use `member_id` merges and are limited to the same 300 held-out test members.
 
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary START -->
-| Comparison | Role | N compared | Pearson corr | Spearman corr | Top decile overlap | Top 20% overlap |
-|---|---|---:|---:|---:|---:|---:|
-| Causal forest vs GLMNet T-learner | Primary selected uplift benchmark | 300 | -0.014 | 0.041 | 20.0% | 35.0% |
-| Causal forest vs GLMNet X-learner | Primary selected uplift benchmark | 300 | 0.574 | 0.534 | 53.3% | 63.3% |
+| Model | Pearson corr vs GLMNet T-learner | Spearman corr vs GLMNet T-learner | Pearson corr vs GLMNet X-learner | Spearman corr vs GLMNet X-learner | Top decile overlap vs GLMNet T-learner | Top decile overlap vs GLMNet X-learner |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Causal forest | -0.014 | 0.041 | 0.574 | 0.534 | 20.0% | 53.3% |
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary END -->
 
 On the held-out test set, the causal forest ranking shows moderate alignment with the GLMNet X-learner and weak alignment with the GLMNet T-learner. The weak alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
