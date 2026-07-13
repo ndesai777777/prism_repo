@@ -212,6 +212,30 @@ Supporting file:
 - [`risk_tier_thresholds.csv`](Outputs/Uplift/Python/risk_tier_thresholds.csv)
 - [`risk_tier_population_summary.csv`](Outputs/Uplift/Python/risk_tier_population_summary.csv)
 
+---
+
+## Evaluation Roadmap
+
+The remaining analyses are organized into three evaluation stages that build upon one another.
+
+| Evaluation Level | Question | Analytical Tasks |
+|---|---|---|
+| **Level 1: Outcome Model Validation** | Can the models accurately predict factual ED risk? | Task 3 |
+| **Level 2: Uplift Model Validation** | Do the models produce credible treatment-effect estimates? | Tasks 4–5 |
+| **Level 3: Operational Evaluation** | Does uplift targeting improve decision making and business value? | Tasks 6–8 |
+
+---
+
+---
+
+# Evaluation Level 1: Outcome Model Validation
+
+**Question:** Can the models accurately predict factual ED risk?
+
+The first stage of the evaluation focuses on validating the factual outcome models. Before interpreting treatment effects, the underlying treated and control outcome models should demonstrate reasonable predictive performance.
+
+---
+
 ## Analytical Task 3: Model Performance
 
 Before estimating treatment effects, the factual outcome models should demonstrate reasonable predictive performance. This section evaluates the treated and control outcome models using discrimination, calibration, and prediction-quality metrics. Because the treatment-effect estimates produced by both the T-learner and X-learner depend on these factual outcome models, their performance provides the foundation for the remaining analyses.
@@ -321,6 +345,17 @@ Supporting files:
 - [`GLMNet/model_brier_scores.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/model_brier_scores.csv)
 - [`XGBoost/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/XGBoost/calibration_summary.csv)
 - [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/calibration_summary.csv)
+
+
+---
+
+# Evaluation Level 2: Uplift Model Validation
+
+**Question:** Do the models produce credible treatment-effect estimates?
+
+Having established that the factual outcome models provide reasonable performance, the next stage evaluates whether the causal modeling frameworks produce meaningful treatment-effect estimates and useful member prioritization.
+
+---
 
 ## Analytical Task 4: Treatment Effect Analysis
 
@@ -455,6 +490,17 @@ Supporting files:
 - [`GLMNet X-learner/xlearner_decile_summary.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/xlearner_decile_summary.csv)
 - [`GLMNet true-benefit decile overlap summary`](Outputs/Uplift/Python/glmnet_true_benefit_decile_overlap_summary.csv)
 - [`X-learner consistency summary`](Outputs/Uplift/Python/X-Learner/xlearner_vs_tlearner_consistency_summary.csv)
+
+---
+
+# Evaluation Level 3: Operational Evaluation
+
+**Question:** Does uplift modeling improve decision making and business value?
+
+The final stage evaluates whether the treatment-effect estimates are interpretable and whether they support operational decision making through explainability and business-value assessment.
+
+---
+
 
 ## Analytical Task 6: Variable Importance and Explainability
 
