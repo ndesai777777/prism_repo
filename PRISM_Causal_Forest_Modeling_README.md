@@ -344,21 +344,6 @@ Supporting files:
 - [`causal_forest_ate_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_ate_summary.csv)
 - [`causal_forest_effect_distribution_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_effect_distribution_summary.csv)
 
-The member-level examples below are intended to illustrate how causal forest separates high expected intervention benefit from baseline risk. The same conceptual interpretation used in the uplift README applies here: high risk does not necessarily mean high impactability.
-
-<!-- AUTO_TABLE:causal_forest_top_benefit_examples START -->
-| Member profile | Member ID | Actual outcome | Treatment flag | Current risk score | `tau_hat` | `tau_se` | Benefit score | HTE decile | Interpretation |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| Highest benefit | 620 | 0 | 0 | 60.5 | -0.101 | 0.044 | 0.101 | 1 | Strong outreach candidate based on estimated ED risk reduction. |
-| Lowest benefit | 71 | 0 | 0 | 46.4 | -0.001 | 0.012 | 0.001 | 10 | Lowest priority by causal forest benefit score. |
-| Low risk, high benefit | 238 | 0 | 1 | 41.0 | -0.077 | 0.029 | 0.077 | 1 | May be missed by risk-only targeting but appears impactable. |
-<!-- AUTO_TABLE:causal_forest_top_benefit_examples END -->
-
-Supporting files:
-
-- [`causal_forest_scored_test_output.csv`](Outputs/Causal-Forests/Python/causal_forest_scored_test_output.csv)
-- [`causal_forest_top_benefit_examples.csv`](Outputs/Causal-Forests/Python/causal_forest_top_benefit_examples.csv)
-
 ### Synthetic True-Benefit Validation
 
 Because this project uses synthetic data, the known treatment-benefit formula can be used to validate treatment-effect estimates directly. The synthetic true benefit is:
