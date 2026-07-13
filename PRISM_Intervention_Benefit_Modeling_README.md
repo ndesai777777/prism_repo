@@ -24,25 +24,25 @@ The analysis also addresses what factors drive future ED utilization, what facto
 
 The project evaluates whether uplift modeling can support care management prioritization. The workflow explains the modeling framework for both technical and non-technical audiences, evaluates model performance, compares practical business usefulness, interprets model outputs, identifies limitations, and documents a reproducible process that could later be applied to live client data.
 
-# Analytical Task 1: Understanding the Modeling Framework
+## Analytical Task 1: Understanding the Modeling Framework
 
 This project evaluates a causal machine learning framework for estimating which members are most likely to benefit from care management intervention. Rather than predicting only future emergency department (ED) utilization, the framework estimates the expected benefit of intervention for each member. Different causal modeling approaches estimate this benefit in different ways. Some estimate potential outcomes under treatment and control, while others estimate treatment effects directly.
 
-## Outcome Variable
+### Outcome Variable
 
 The outcome variable is `outcome_ed_90d`, a binary indicator of whether a member experienced an emergency department visit within 90 days.
 
 - **1** = Member had a 90-day ED visit
 - **0** = Member did not have a 90-day ED visit
 
-## Treatment Variable
+### Treatment Variable
 
 The treatment variable is `intervention_flag`, indicating whether a member received care management intervention.
 
 - **1** = Received intervention
 - **0** = No intervention (control)
 
-## Predictor Variables
+### Predictor Variables
 
 The model uses predictors available before intervention that may influence future ED utilization or the expected benefit of care management. Predictors are organized into six categories:
 
@@ -61,7 +61,7 @@ Complete variable definitions and descriptive summaries are provided in:
 - [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/numeric_predictor_summary.csv)
 - [`categorical_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/categorical_predictor_summary.csv)
 
-## Overall Modeling Workflow
+### Overall Modeling Workflow
 
 The dataset is divided into stratified training and test sets. Models are trained using cross-validation within the training data and evaluated on a held-out test set. Treatment-effect estimates are then used to rank members according to their predicted intervention benefit.
 
@@ -78,11 +78,11 @@ flowchart TD
     H --> I["Business Value & Operational Evaluation"]
 ```
 
-## Treatment-Effect Frameworks
+### Treatment-Effect Frameworks
 
 Two causal treatment-effect frameworks are evaluated in this project.
 
-### T-Learner
+#### T-Learner
 
 The T-learner estimates treatment benefit by training separate outcome models for treated and untreated members. Each member receives predicted ED risk under both scenarios, and the treatment benefit is calculated as the difference between the two predicted risks.
 
@@ -114,7 +114,7 @@ flowchart TD
     J --> K["Assign Uplift Deciles"]
 ```
 
-### X-Learner
+#### X-Learner
 
 The X-learner estimates treatment benefit by first constructing counterfactual outcomes and then learning treatment effects directly. A propensity model combines information from treated and untreated members to produce a final treatment-effect estimate.
 
@@ -146,7 +146,7 @@ flowchart TD
 
 The T-learner provides a direct estimate of intervention benefit by comparing predicted risks under treatment and control. The X-learner provides an independent estimate of treatment effect and is used to evaluate whether the member rankings produced by the T-learner are consistent across causal modeling frameworks.
 
-## Modeling Techniques
+### Modeling Techniques
 
 Two predictive modeling techniques are evaluated within each treatment-effect framework:
 
@@ -155,7 +155,7 @@ Two predictive modeling techniques are evaluated within each treatment-effect fr
 
 Comparing both modeling techniques helps evaluate whether treatment-benefit rankings are consistent across different predictive models.
 
-## Relationship to Later Tasks
+### Relationship to Later Tasks
 
 This task introduces the overall modeling framework used throughout the project.
 
