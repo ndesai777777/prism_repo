@@ -719,7 +719,7 @@ Supporting files:
 
 ## Analytical Task 7: Business Value Assessment
 
-The business value analysis estimates how much gross savings would be captured when members are targeted by predicted uplift versus the prior-style approach of targeting members strictly by highest `current_risk_score`. The main visual is a cumulative targeting chart: top 10%, top 20%, top 30%, and so on. This makes the comparison easier to interpret because it answers the operational question: if outreach capacity is limited, which ranking method captures more estimated savings first?
+This section compares uplift-based targeting with traditional risk-based targeting by estimating expected avoided ED visits and gross savings under both approaches.
 
 The current calculation assumes:
 
@@ -732,7 +732,7 @@ net_savings = gross_savings - intervention_cost
 roi = net_savings / intervention_cost
 ```
 
-The current cost assumptions are $1,200 per ED visit and $250 per intervention. The primary comparison below focuses on gross savings because the goal is to compare targeting quality before layering in intervention-cost assumptions. Because Tasks 4 and 5 showed that the GLMNet X-learner better recovered true synthetic treatment benefit, Task 7 reports business-value estimates for both GLMNet frameworks.
+The analysis assumes an average cost of **$1,200 per ED visit** and **$250 per intervention**. Because Tasks 4 and 5 showed that the GLMNet X-learner more accurately recovered the synthetic treatment effect, business-value estimates are presented for both GLMNet frameworks.
 
 ### GLMNet T-Learner Targeting
 
@@ -754,7 +754,7 @@ This view compares two targeting policies on the same held-out test population: 
 ![GLMNet T-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:glmnet_roi_by_decile END -->
 
-The chart below compares the additional gross savings from each T-learner targeting band against the additional gross savings from selecting the same number of members by current risk. Positive bars mean benefit-based targeting adds more estimated value than the current-risk approach for that band; negative bars mean the current-risk approach adds more estimated value for that band. In this run, the T-learner has positive marginal advantage through the top 30%, then turns slightly negative in the 30-40% and 40-50% bands.
+The chart below compares the marginal gross savings of uplift-based targeting with current-risk targeting across successive targeting bands. Positive values indicate that benefit-based targeting captures more estimated value within that band. In this run, the T-learner maintains a positive marginal advantage through the top 30% of targeted members before declining slightly in later bands.
 
 <!-- AUTO_CHART:tlearner_marginal_advantage START -->
 ![GLMNet T-learner marginal gross savings advantage versus current risk](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
@@ -780,15 +780,15 @@ The X-learner view uses the same held-out test population and the same cost assu
 ![GLMNet X-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:xlearner_roi_by_decile END -->
 
-The chart below shows the same marginal advantage comparison for the X-learner. In this run, the X-learner remains positive through the top 50%, meaning each additional 10% targeting band shown still adds more estimated gross savings than the current-risk approach.
+The X-learner maintains a positive marginal advantage through the top 50% of targeted members, indicating that benefit-based targeting consistently captures more estimated value than current-risk targeting across the evaluated targeting bands.
 
 <!-- AUTO_CHART:xlearner_marginal_advantage START -->
 ![GLMNet X-learner marginal gross savings advantage versus current risk](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 <!-- AUTO_CHART:xlearner_marginal_advantage END -->
 
-The current-risk comparison uses the same held-out test population and the same cost assumptions within each model framework. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using that framework's predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data.
 
-These savings results are directional rather than definitive. They are sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
+Overall, both GLMNet frameworks suggest that prioritizing members by predicted treatment benefit captures greater estimated value than prioritizing members by baseline risk alone, with the X-learner demonstrating the larger overall advantage on this synthetic dataset.
 
 Supporting files:
 
