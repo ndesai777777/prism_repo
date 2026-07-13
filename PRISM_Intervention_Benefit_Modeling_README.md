@@ -87,10 +87,7 @@ Two causal treatment-effect frameworks are evaluated in this project.
 The T-learner estimates treatment benefit by training separate outcome models for treated and untreated members. Each member receives predicted ED risk under both scenarios, and the treatment benefit is calculated as the difference between the two predicted risks.
 
 ```text
-benefit_score =
-predicted ED risk if untreated
-−
-predicted ED risk if treated
+benefit_score = predicted ED risk if untreated − predicted ED risk if treated
 ```
 
 ```mermaid
@@ -277,9 +274,7 @@ Brier score = (1 / n) * sum((outcome_i - predicted_probability_i)^2)
 Calibration error:
 
 ```text
-Calibration error =
-sum((n_bin / n_total) *
-abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
+Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
 ```
 
 <!-- AUTO_TABLE:brier_calibration_summary START -->
