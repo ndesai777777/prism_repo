@@ -781,6 +781,12 @@ This view compares two targeting policies on the same held-out test population: 
 ![GLMNet T-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:glmnet_roi_by_decile END -->
 
+The chart below compares the additional gross savings from each T-learner targeting band against the additional gross savings from selecting the same number of members by current risk. Positive bars mean benefit-based targeting adds more estimated value than the current-risk approach for that band; negative bars mean the current-risk approach adds more estimated value for that band. In this run, the T-learner has positive marginal advantage through the top 30%, then turns slightly negative in the 30-40% and 40-50% bands.
+
+<!-- AUTO_CHART:tlearner_marginal_advantage START -->
+![GLMNet T-learner marginal gross savings advantage versus current risk](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+<!-- AUTO_CHART:tlearner_marginal_advantage END -->
+
 ### GLMNet X-Learner Targeting
 
 <!-- AUTO_TABLE:xlearner_roi_summary START -->
@@ -813,6 +819,12 @@ The X-learner view uses the same held-out test population and the same cost assu
 ![GLMNet X-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:xlearner_roi_by_decile END -->
 
+The chart below shows the same marginal advantage comparison for the X-learner. In this run, the X-learner remains positive through the top 50%, meaning each additional 10% targeting band shown still adds more estimated gross savings than the current-risk approach.
+
+<!-- AUTO_CHART:xlearner_marginal_advantage START -->
+![GLMNet X-learner marginal gross savings advantage versus current risk](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+<!-- AUTO_CHART:xlearner_marginal_advantage END -->
+
 The current-risk comparison uses the same held-out test population and the same cost assumptions within each model framework. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using that framework's predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
 
 These savings results are directional rather than definitive. They are sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
@@ -823,11 +835,15 @@ Supporting files:
 - [`GLMNet T-learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv)
 - [`GLMNet T-learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv)
 - [`GLMNet T-learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/marginal_gross_savings_by_targeting.csv)
+- [`GLMNet T-learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/marginal_gross_savings_advantage_vs_current_risk.csv)
 - [`GLMNet T-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
+- [`GLMNet T-learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 - [`GLMNet X-learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv)
 - [`GLMNet X-learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv)
 - [`GLMNet X-learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/marginal_gross_savings_by_targeting.csv)
+- [`GLMNet X-learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift/Python/X-Learner/GLMNet/marginal_gross_savings_advantage_vs_current_risk.csv)
 - [`GLMNet X-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
+- [`GLMNet X-learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 
 ## Analytical Task 8: Client Perspective
 
