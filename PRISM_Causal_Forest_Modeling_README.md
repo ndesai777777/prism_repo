@@ -575,6 +575,21 @@ The six true benefit drivers are: `ed_visits_last_6m`, `admits_last_6m`, `food_i
 
 Both methods identify `current_risk_score` as a top-10 driver, which is in the true formula. The remaining five true drivers (`ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`) do not appear in the top 10 for either method. This is consistent with the causal forest having moderate but imperfect Spearman correlation (0.27) with true benefit, and suggests the model is partially detecting the risk-score channel of the benefit formula but not the utilization and social determinant channels as strongly as the composite risk scores.
 
+The table below provides a more granular check: for each true driver, the member-level SHAP contribution for that feature is compared against the member-level true contribution from the known formula using Spearman correlation. A positive Spearman correlation above 0.1 indicates the causal forest SHAP correctly recovers the direction of that driver's contribution to benefit.
+
+<!-- AUTO_TABLE:causal_forest_true_driver_shap_spearman START -->
+| Feature | True contribution formula | Mean true contribution | Causal forest SHAP Spearman | Direction recovered? |
+|---|---|---:|---:|---|
+| `ed_visits_last_6m` | `0.018 * ed_visits_last_6m` | 0.0163 | 0.830 | Yes |
+| `admits_last_6m` | `0.015 * admits_last_6m` | 0.0053 | 0.596 | Yes |
+| `food_insecurity_flag` | `0.018 * food_insecurity_flag` | 0.0038 | -0.557 | No |
+| `transportation_barrier_flag` | `0.014 * transportation_barrier_flag` | 0.0036 | 0.689 | Yes |
+| `behavioral_health_risk_flag` | `0.012 * behavioral_health_risk_flag` | 0.0046 | -0.789 | No |
+| `current_risk_score` | `0.0006 * max(current_risk_score - 50, 0)` | 0.0010 | 0.750 | Yes |
+<!-- AUTO_TABLE:causal_forest_true_driver_shap_spearman END -->
+
+The causal forest SHAP correctly recovers the direction of 4 out of 6 true drivers. The two strongest utilization-based drivers (`ed_visits_last_6m` and `admits_last_6m`) and the risk-score driver have high positive Spearman correlations (0.60–0.83), and `transportation_barrier_flag` is also well recovered (0.69). The causal forest reverses the direction for `food_insecurity_flag` and `behavioral_health_risk_flag`, suggesting the model conflates those binary SDOH/clinical flags with correlated features that have opposite relationships with the estimated treatment effect.
+
 ## Analytical Task 7: Business Value Assessment
 
 The causal forest business value assessment is narrower than the ROI section in the uplift README. The current causal forest workflow does not simulate multiple alternative targeting policies or full ROI assumptions. Instead, it estimates potential targeting value by summarizing average benefit and cumulative expected ED reductions across HTE deciles.
