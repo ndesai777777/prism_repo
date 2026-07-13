@@ -182,7 +182,7 @@ The core question for this section is:
 
 Unlike factual outcome prediction, individual treatment effects cannot be directly observed for every member because each member is only observed under one condition: treated or untreated. Therefore, this section does not try to prove that each member-level `tau_hat` is correct. Instead, it evaluates whether the estimates are credible enough for exploratory prioritization and subgroup discovery.
 
-The main evidence comes from event counts, propensity overlap, cross-fitting, treatment-effect distribution, uncertainty, HTE decile behavior, and consistency against independent uplift benchmarks.
+The main evidence comes from event counts, propensity overlap, cross-fitting, uncertainty, HTE decile behavior, and consistency against independent uplift benchmarks.
 
 ### Cross-Fitting And Nuisance Model Controls
 
@@ -280,6 +280,36 @@ Supporting file:
 
 - [`causal_forest_propensity_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_propensity_summary.csv)
 
+### Uncertainty Checks
+
+When standard errors are available, the notebook summarizes uncertainty around member-level treatment-effect estimates. This is important because treatment-effect estimates can be noisy, especially with rare outcomes and small decile-level samples.
+
+<!-- AUTO_TABLE:causal_forest_uncertainty_summary START -->
+| Metric | Value |
+|---|---:|
+| Mean tau standard error | 0.026 |
+| Median tau standard error | 0.024 |
+| Members with tau CI entirely below zero | 87 |
+| Members with tau CI crossing zero | 213 |
+| Members with tau CI entirely above zero | 0 |
+| Top HTE decile mean tau standard error | 0.038 |
+<!-- AUTO_TABLE:causal_forest_uncertainty_summary END -->
+
+Supporting file:
+
+- [`causal_forest_uncertainty_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_uncertainty_summary.csv)
+
+## Analytical Task 4: Treatment Effect Analysis
+
+Each test-set member receives:
+
+```text
+tau_hat
+tau_se
+benefit_score
+hte_decile
+```
+
 ### Treatment Effect Distribution
 
 The treatment-effect distribution is shown using `benefit_score`, where `benefit_score = -tau_hat`. Higher benefit scores indicate larger estimated ED risk reductions from intervention. This keeps the table focused on the business interpretation while preserving the causal forest sign convention explained earlier.
@@ -313,50 +343,6 @@ Supporting files:
 
 - [`causal_forest_ate_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_ate_summary.csv)
 - [`causal_forest_effect_distribution_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_effect_distribution_summary.csv)
-
-### Uncertainty Checks
-
-When standard errors are available, the notebook summarizes uncertainty around member-level treatment-effect estimates. This is important because treatment-effect estimates can be noisy, especially with rare outcomes and small decile-level samples.
-
-<!-- AUTO_TABLE:causal_forest_uncertainty_summary START -->
-| Metric | Value |
-|---|---:|
-| Mean tau standard error | 0.026 |
-| Median tau standard error | 0.024 |
-| Members with tau CI entirely below zero | 87 |
-| Members with tau CI crossing zero | 213 |
-| Members with tau CI entirely above zero | 0 |
-| Top HTE decile mean tau standard error | 0.038 |
-<!-- AUTO_TABLE:causal_forest_uncertainty_summary END -->
-
-Supporting file:
-
-- [`causal_forest_uncertainty_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_uncertainty_summary.csv)
-
-### Treatment-Effect Credibility Summary
-
-The current causal forest estimates are credible enough for exploratory prioritization and subgroup discovery, but they should not be presented as definitive individual-level causal truth. The strongest evidence in support of the estimates is:
-
-1. Propensity overlap is acceptable. No members have estimated propensity below 0.05 or above 0.95, which means the model is not relying on extreme extrapolation for members who were almost always treated or almost never treated.
-2. Treatment assignment is only modestly predictable in the test set. The test treatment-model AUC is 0.593, suggesting treated and control members are not cleanly separated by measured predictors.
-3. Cross-fitting is used. The `CausalForestDML` setup uses 5-fold cross-fitting, which helps reduce overfitting in the nuisance model components used to estimate treatment effects.
-4. The HTE deciles show a smooth benefit gradient. The highest-benefit decile has an average estimated benefit of 0.084, while the lowest-benefit decile has an average estimated benefit of 0.012.
-5. The top-decile profile is clinically plausible. The highest-benefit group has higher current risk, clinical risk, recent cost, and utilization markers than other deciles.
-6. Some estimates are statistically separated from zero. Eighty-seven members have confidence intervals entirely below zero for `tau_hat`, while none have confidence intervals entirely above zero.
-7. The causal forest ranking is directionally consistent with the GLMNet X-learner benchmark comparison shown later in this README.
-
-The main limitation is that most member-level confidence intervals still cross zero. Therefore, the best interpretation is directional: the causal forest appears to identify plausible high-benefit subgroups, but live-data validation and sensitivity testing would be needed before using the estimates for production decision-making.
-
-## Analytical Task 4: Treatment Effect Analysis
-
-Each test-set member receives:
-
-```text
-tau_hat
-tau_se
-benefit_score
-hte_decile
-```
 
 The member-level examples below are intended to illustrate how causal forest separates high expected intervention benefit from baseline risk. The same conceptual interpretation used in the uplift README applies here: high risk does not necessarily mean high impactability.
 
