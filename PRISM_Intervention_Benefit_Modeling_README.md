@@ -222,9 +222,7 @@ The remaining analyses are organized into three evaluation stages that build upo
 |---|---|---|
 | **Level 1: Outcome Model Validation** | Can the models accurately predict factual ED risk? | Task 3 |
 | **Level 2: Uplift Model Validation** | Do the models produce credible treatment-effect estimates? | Tasks 4–5 |
-| **Level 3: Operational Evaluation** | Does uplift targeting improve decision making and business value? | Tasks 6–8 |
-
----
+| **Level 3: Operational Evaluation** | Does uplift targeting improve decision making and business value? | Tasks 6–7 |
 
 ---
 
@@ -346,6 +344,9 @@ Supporting files:
 - [`XGBoost/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/XGBoost/calibration_summary.csv)
 - [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/calibration_summary.csv)
 
+## Level 1 Summary: Outcome Model Validation
+
+The first stage of the evaluation assessed whether the factual outcome models provided a reliable foundation for treatment-effect estimation. On this simulated dataset and train/test split, GLMNet demonstrated stronger held-out discrimination and probability calibration than XGBoost. Consequently, GLMNet was selected as the primary modeling approach for the remaining analyses.
 
 ---
 
@@ -491,6 +492,10 @@ Supporting files:
 - [`GLMNet true-benefit decile overlap summary`](Outputs/Uplift/Python/glmnet_true_benefit_decile_overlap_summary.csv)
 - [`X-learner consistency summary`](Outputs/Uplift/Python/X-Learner/xlearner_vs_tlearner_consistency_summary.csv)
 
+## Level 2 Summary: Uplift Model Validation
+
+The second stage evaluated whether the causal modeling frameworks produced credible treatment-effect estimates. While both frameworks estimated member-level intervention benefit, the GLMNet X-learner more accurately recovered the known synthetic treatment effect. It demonstrated lower prediction error, stronger correlation with true benefit, and substantially greater recovery of the highest-benefit members than the GLMNet T-learner. These findings suggest that the X-learner provides the more reliable treatment-benefit ranking for this synthetic dataset.
+
 ---
 
 # Evaluation Level 3: Operational Evaluation
@@ -500,7 +505,6 @@ Supporting files:
 The final stage evaluates whether the treatment-effect estimates are interpretable and whether they support operational decision making through explainability and business-value assessment.
 
 ---
-
 
 ## Analytical Task 6: Variable Importance and Explainability
 
@@ -852,51 +856,13 @@ Supporting files:
 - [`GLMNet X-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 - [`GLMNet X-learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 
-## Analytical Task 8: Client Perspective
 
-From the perspective of a Medicaid health plan executive team, the most important conclusion is that the uplift framework provides a more targeted prioritization method than baseline risk alone. It attempts to identify members whose ED risk is expected to decrease with intervention.
+## Level 3 Summary: Operational Evaluation
 
-GLMNet is the current candidate model for interpretation and operational discussion. It has better held-out test AUC, better calibration, and higher top-decile predicted benefit. However, after the stratified split, the GLMNet top decile does not have a positive observed control-treated gap. This means the current results support GLMNet as the stronger ranking model, but they do not yet provide strong observed top-decile validation for operational targeting.
+The final stage evaluated whether the treatment-effect models provide information that could support operational decision making.
 
-If the model were used for exploratory prioritization, uplift decile 1 would be the first group to review. GLMNet decile 1 has average predicted benefit of 0.0827 and an observed control-treated ED gap of -0.0667. The negative observed gap means the highest-ranked group should not be presented as validated proof of treatment benefit. Because estimated top-decile ROI also remains negative under current cost assumptions, the model is best presented as a promising prioritization proof of concept rather than a ready financial case.
+The business-value analysis suggests that benefit-based targeting outperforms traditional risk-based targeting under the current assumptions, with the GLMNet X-learner maintaining a larger estimated advantage across a broader range of targeted members.
 
-The results are explainable enough for stakeholder discussion because GLMNet provides standardized coefficient/logit contribution explanations. The benefit-driver analysis is especially important because the variables that drive baseline ED risk are not always the same as the variables that drive expected treatment benefit.
+The explainability analysis provides more mixed evidence. Although both the T-learner and X-learner identified clinically plausible predictors, feature importance rankings varied across explanation methods and neither framework consistently recovered all known synthetic treatment-effect drivers. Consequently, the treatment-benefit rankings appear more reliable than the associated feature explanations.
 
-Several limitations are central to the interpretation. The dataset is synthetic and may not reflect live population behavior. Treatment assignment may be confounded. Observed treated-control gaps are not randomized treatment effects. Decile-level sample sizes are small, which can make observed rates unstable. Rare outcome prevalence can compress predicted probabilities toward zero. ROI depends heavily on cost assumptions and model calibration. Live-data validation is required before production deployment.
-
-Operationally, the workflow would score members using the trained uplift model, rank members by benefit score, assign uplift deciles, prioritize outreach starting with decile 1, review benefit drivers for operational context, track outcomes after intervention, and recalibrate/retrain the model over time.
-
-## Recommendation
-
-The uplift modeling framework provides a structured way to prioritize members by predicted intervention benefit rather than baseline ED risk alone. In the current outputs, GLMNet provides the stronger candidate model because it has better held-out test AUC, better calibration, and higher top-decile predicted benefit. The observed top-decile treatment gap is negative after the stratified split, so the model should be described as a promising but not yet validated prioritization workflow.
-
-The current GLMNet top decile has average predicted benefit of 0.0827, observed ED rate of 23.3%, and observed control-treated ED gap of -6.67 percentage points. Estimated top-decile ROI remains negative under the current assumptions of $1,200 per ED visit and $250 per intervention. Therefore, the model is best presented as a promising prioritization workflow that requires live-data validation, calibration review, observed-outcome validation, and ROI sensitivity testing before production deployment.
-
-## Presentation Summary
-
-A presentation based on these results can be organized around the business problem, the reason high risk is not always high benefit, the T-learner modeling approach, the data review, model performance, uplift decile findings, explainability results, ROI, limitations, and final recommendation.
-
-The strongest slide story is that GLMNet is the candidate model carried forward for uplift prioritization. The caution is that the observed top-decile control-treated gap is not positive after the stratified split, ROI is still negative under current assumptions, and the data are synthetic. The workflow is promising, but it requires live-data validation before operational use.
-
-## Reproducibility
-
-The analysis can be reproduced by opening `Code/Uplift Model Code_rh06032026.ipynb`, restarting the kernel, and running all cells in order. The GLMNet T-learner outputs used in the final interpretation are saved in `Outputs/Uplift/Python/T-Learner/GLMNet`; GLMNet X-learner comparison outputs are saved in `Outputs/Uplift/Python/X-Learner/GLMNet`.
-
-After rerunning the notebook, refresh the generated README tables, text snippets, and chart embeds with:
-
-```bash
-python Code/generate_readme_tables.py
-```
-
-Key output files:
-
-- [`data_review_summary.csv`](Outputs/Uplift/Python/data_review_summary.csv)
-- [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
-- [`model_recommendation_summary.csv`](Outputs/Uplift/Python/model_recommendation_summary.csv)
-- [`GLMNet/uplift_decile_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_decile_summary.csv)
-- [`GLMNet/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_roi_by_decile.csv)
-- [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/calibration_summary.csv)
-- [`GLMNet/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_observed_gap_by_decile.csv)
-- [`GLMNet/top_benefit_decile_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/top_benefit_decile_summary.csv)
-- [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/shap_importance_treated_control_models.csv)
-- [`GLMNet/shap_importance_benefit_score.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/shap_importance_benefit_score.csv)
+Overall, the modeling framework demonstrates promising potential for member prioritization, but additional validation on larger and more representative datasets is needed before operational deployment.
