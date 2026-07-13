@@ -488,37 +488,24 @@ The causal forest recovers 30.0% of the true top-decile benefit members in the s
 
 Causal forest variable importance is a partial explainability layer. It identifies features used by the model to split members into groups with different estimated treatment effects. It should not be interpreted as a definitive causal explanation of why the intervention works.
 
-Signed variable importance is derived by combining the standard causal forest feature importance (which measures heterogeneity contribution) with the Spearman correlation direction between each feature and the estimated `benefit_score`. Positive signed importance means higher feature values are associated with higher estimated benefit; negative means higher values are associated with lower estimated benefit.
-
-**Top 5 features associated with higher benefit:**
-
-<!-- AUTO_TABLE:causal_forest_variable_importance_positive START -->
-| Rank | Feature | Importance | Direction |
-|---:|---|---:|---|
-| 1 | current_risk_score | 0.173 | + |
-| 2 | percolator_clinical_score | 0.138 | + |
-| 3 | age | 0.101 | + |
-| 4 | med_adherence_pdc | 0.072 | + |
-| 5 | percolator_utilization_score | 0.064 | + |
-<!-- AUTO_TABLE:causal_forest_variable_importance_positive END -->
-
-**Top 5 features associated with lower benefit:**
-
-<!-- AUTO_TABLE:causal_forest_variable_importance_negative START -->
-| Rank | Feature | Importance | Direction |
-|---:|---|---:|---|
-| 1 | pcp_visits_last_6m | 0.068 | − |
-| 2 | percolator_sdoh_score | 0.049 | − |
-| 3 | food_insecurity_flag | 0.009 | − |
-| 4 | housing_instability_flag | 0.002 | − |
-| 5 | anxiety_flag | 0.002 | − |
-<!-- AUTO_TABLE:causal_forest_variable_importance_negative END -->
+<!-- AUTO_TABLE:causal_forest_variable_importance START -->
+| Rank | Feature | Importance |
+|---:|---|---:|
+| 1 | current_risk_score | 0.173 |
+| 2 | percolator_clinical_score | 0.138 |
+| 3 | age | 0.101 |
+| 4 | med_adherence_pdc | 0.072 |
+| 5 | pcp_visits_last_6m | 0.068 |
+| 6 | percolator_utilization_score | 0.064 |
+| 7 | total_cost_last_6m | 0.062 |
+| 8 | percolator_sdoh_score | 0.049 |
+| 9 | rx_count_last_6m | 0.028 |
+| 10 | chf_flag | 0.025 |
+<!-- AUTO_TABLE:causal_forest_variable_importance END -->
 
 <!-- AUTO_CHART:causal_forest_variable_importance START -->
 ![Causal forest variable importance](Outputs/Causal-Forests/Python/dashboard_causal_forest_variable_importance.png)
 <!-- AUTO_CHART:causal_forest_variable_importance END -->
-
-Members with higher clinical complexity (risk score, clinical score, utilization score) and older age tend to have higher estimated treatment benefit. Members with more primary care visits, higher SDOH scores, and certain social determinants (food insecurity, housing instability) tend to have lower estimated benefit in this model run. These patterns should be interpreted as subgroup descriptors rather than definitive causal drivers.
 
 Supporting files:
 
