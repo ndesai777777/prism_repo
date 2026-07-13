@@ -155,15 +155,6 @@ Two predictive modeling techniques are evaluated within each treatment-effect fr
 
 Comparing both modeling techniques helps evaluate whether treatment-benefit rankings are consistent across different predictive models.
 
-### Relationship to Later Tasks
-
-This task introduces the overall modeling framework used throughout the project.
-
-- **Task 2** reviews the dataset and population characteristics.
-- **Task 3** evaluates the performance of the factual outcome models.
-- **Tasks 4–5** assess treatment-effect estimates and uplift rankings.
-- **Tasks 6–8** interpret model explanations, evaluate business value, and discuss operational recommendations.
-
 ## Analytical Task 2: Data Review
 
 The current dataset contains 1,000 members. Of these, 394 received intervention and 606 were untreated/control members, giving an overall treatment rate of 39.4%. The ED outcome is relatively rare: 60 members had a 90-day ED event, for an overall outcome prevalence of 6.0%.
@@ -226,23 +217,13 @@ Supporting file:
 
 ## Analytical Task 3: Model Performance
 
-This section evaluates whether the factual outcome models are credible enough to support treatment-effect analysis. These diagnostics are useful before comparing T-learner and X-learner results because both frameworks depend on reasonable estimates of ED risk under treated and untreated conditions. In the T-learner, treatment benefit is estimated by subtracting two predicted probabilities:
+Before estimating treatment effects, the factual outcome models should demonstrate reasonable predictive performance. This section evaluates the treated and control outcome models using discrimination, calibration, and prediction-quality metrics. Because the treatment-effect estimates produced by both the T-learner and X-learner depend on these factual outcome models, their performance provides the foundation for the remaining analyses.
 
-```text
-benefit_score = pred_ed_if_control - pred_ed_if_treated
-```
-
-Because the benefit score depends on outcome modeling quality, model performance is evaluated first at the factual outcome-model level. The treated model is evaluated among actual treated members using `pred_ed_if_treated`, and the control model is evaluated among actual control members using `pred_ed_if_control`. Detailed uplift decile behavior is evaluated separately in Analytical Task 5.
-
-### Hyperparameter Tuning
-
-As described in Analytical Task 1, both model families were tuned using cross-validation within the training data. This tuning section is included before the treatment-effect comparison because both the T-learner and X-learner depend on credible underlying outcome models. In other words, Task 3 evaluates model quality before the report asks whether the T-learner and X-learner produce consistent uplift rankings.
-
-Cross-validation AUC is useful for model selection, but held-out test performance is more important for judging generalization. Because the ED outcome is rare and each T-learner arm is trained separately, performance should be interpreted with attention to the number of positive ED events available in each group.
+Both model families were tuned using cross-validation within the training data, as described in Analytical Task 1. The results below focus on held-out test performance.
 
 ### Event Counts And Modeling Constraints
 
-The main modeling constraint is not only the 6.0% overall ED outcome rate. It is the small number of positive ED events after splitting the data into treated and control groups. The treated model is especially data-limited because it has relatively few positive examples available for learning and evaluation.
+The primary modeling limitation is the small number of positive ED events after splitting the data into treated and control groups. This is especially important for the treated model, which contains relatively few positive examples for model training and evaluation.
 
 <!-- AUTO_TABLE:factual_event_counts START -->
 | Split | Group | N | Positive ED events | Negative ED events | Event rate |
@@ -253,11 +234,11 @@ The main modeling constraint is not only the 6.0% overall ED outcome rate. It is
 | Test | Control | 182 | 13 | 169 | 7.1% |
 <!-- AUTO_TABLE:factual_event_counts END -->
 
-This event-count table is important context for all performance metrics. With only a small number of ED-positive cases, especially in the treated group, AUC, calibration, and decile-level observed rates can move noticeably with small changes in the train/test split. The results should therefore be interpreted as directional evidence rather than definitive proof of individual-level prediction accuracy.
+These event counts should be considered when interpreting all subsequent performance metrics. Because positive ED events are limited, especially in the treated group, the results are best interpreted as directionally informative rather than definitive.
 
 ### Discrimination Performance
 
-Discrimination asks whether the model ranks actual ED-positive members above actual ED-negative members. In this project, treated AUC evaluates actual treated members using `pred_ed_if_treated`, and control AUC evaluates actual control members using `pred_ed_if_control`. This is the most direct test of whether each factual outcome model is learning useful risk ranking within the group it was trained to represent.
+Discrimination was evaluated using the area under the receiver operating characteristic curve (AUC) within the factual treatment groups.
 
 <!-- AUTO_TABLE:model_performance_summary START -->
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC |
@@ -266,11 +247,11 @@ Discrimination asks whether the model ranks actual ED-positive members above act
 | GLMNet | 0.7195 | 0.6472 | 0.9044 | 0.6600 |
 <!-- AUTO_TABLE:model_performance_summary END -->
 
-GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also higher. XGBoost now ranks treated members well, but its control test AUC is weaker than GLMNet's control test AUC. Because both treated and control outcome models feed into the benefit score, GLMNet remains the stronger candidate for outcome-risk ranking.
+On this simulated dataset and train/test split, GLMNet demonstrated stronger held-out discrimination than XGBoost, particularly within the control group. Given the limited number of positive events, these differences should be interpreted cautiously
 
 ### Factual Discrimination And Prediction Separation
 
-AUC is useful, but it can feel abstract. The table below combines factual-group AUC with a more direct diagnostic: whether actual ED-positive members receive higher predicted risk than actual ED-negative members within the same factual group. For actual treated members, the comparison uses `pred_ed_if_treated`. For actual control members, the comparison uses `pred_ed_if_control`.
+The table below complements AUC by comparing predicted probabilities between members who experienced an ED event and those who did not. A useful outcome model should assign higher predicted risk to members with observed ED events.
 
 <!-- AUTO_TABLE:factual_prediction_separation START -->
 | Model | Group | Positive events | Negative events | AUC | Avg pred for ED=1 | Avg pred for ED=0 | Avg difference | Median pred for ED=1 | Median pred for ED=0 |
@@ -281,21 +262,11 @@ AUC is useful, but it can feel abstract. The table below combines factual-group 
 | GLMNet | Control | 13 | 169 | 0.6600 | 0.0774 | 0.0729 | 0.0045 | 0.0742 | 0.0713 |
 <!-- AUTO_TABLE:factual_prediction_separation END -->
 
-This table is one of the most important diagnostics for the project. The AUC column measures whether the model ranks actual ED-positive members above ED-negative members. The average and median prediction columns show whether ED-positive members receive higher predicted probabilities in magnitude. A useful risk model should show both stronger ranking and higher predicted risk among actual ED-positive members.
+Both model families generally assigned higher predicted probabilities to observed ED-positive members, with GLMNet showing greater separation within the treated group.
 
 ### Brier Score And Calibration
 
-Brier score and calibration evaluate probability quality rather than ranking alone. Brier score measures the average squared difference between the observed outcome and predicted probability:
-
-```text
-Brier score = (1 / n) * sum((outcome_i - predicted_probability_i)^2)
-```
-
-Calibration error groups members into predicted-risk bins, compares each bin's average predicted ED rate with its observed ED rate, and then takes a weighted average of the absolute differences:
-
-```text
-Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
-```
+Model calibration was evaluated using Brier score and calibration error. Lower values indicate better agreement between predicted probabilities and observed outcomes.
 
 <!-- AUTO_TABLE:brier_calibration_summary START -->
 | Model | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
@@ -304,17 +275,17 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 | GLMNet | 0.0392 | 0.0658 | 0.0615 | 0.0511 |
 <!-- AUTO_TABLE:brier_calibration_summary END -->
 
-GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside factual AUC, positive-vs-negative prediction separation, and prediction range.
+GLMNet achieved lower Brier scores and calibration errors than XGBoost in both factual groups, indicating better calibrated probability estimates on this simulated dataset.
 
 <!-- AUTO_CHART:glmnet_calibration_plot START -->
 ![GLMNet calibration plot](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_calibration_plot.png)
 <!-- AUTO_CHART:glmnet_calibration_plot END -->
 
+Because ED utilization is a rare outcome, calibration should be interpreted alongside discrimination metrics rather than in isolation.
+
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
-The model is not expected to produce many probabilities above 0.50 because the ED outcome rate is low. A maximum predicted probability below 0.50 does not imply model failure. The more important question is whether higher predicted probabilities correspond to higher observed ED risk and whether the model ranks members usefully within each factual group.
-
-The prediction ranges below are **factual evaluation ranges**. For treated members, the table summarizes `pred_ed_if_treated` among members who were actually treated. For control members, it summarizes `pred_ed_if_control` among members who were actually untreated. These ranges are used to evaluate the outcome models on the groups where the observed treatment condition is known.
+The table below summarizes the distribution of predicted probabilities within the factual evaluation groups.
 
 <!-- AUTO_TABLE:factual_prediction_ranges START -->
 | Model | Group | Min | P10 | Median | Mean | P90 | Max |
@@ -325,13 +296,13 @@ The prediction ranges below are **factual evaluation ranges**. For treated membe
 | GLMNet | Control | 0.0601 | 0.0644 | 0.0716 | 0.0732 | 0.0844 | 0.1084 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-This table helps explain probability magnitude in a rare-outcome setting. GLMNet's treated predictions are tightly compressed around 4.0%, so even small rank-order differences can produce a strong AUC while still producing very little probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
+Because the observed ED outcome is rare, predicted probabilities remain relatively low across both models. This behavior is expected and does not imply poor model performance. More important than the absolute probability values is whether higher predicted probabilities correspond to higher observed ED risk.
 
 ### Model Performance Takeaway
 
-Overall, GLMNet is the stronger outcome-risk model in this run. It has better held-out discrimination across the two factual groups, lower Brier scores, and lower calibration error. XGBoost performs well in the treated group but is weaker in the control group, while GLMNet is more consistent across both arms. The strongest conclusion is that GLMNet appears more useful for relative risk ranking and probability quality than XGBoost.
+On this simulated dataset and train/test split, GLMNet demonstrated stronger overall performance than XGBoost. It achieved higher held-out discrimination, lower Brier scores, and better calibration across the factual treatment groups, making it the preferred outcome model for the remaining analyses.
 
-The main limitation is event scarcity. The treated model is trained and evaluated with very few positive ED events, which makes individual-level probability estimates and decile-level validation unstable. The current results support GLMNet as the preferred candidate model for the rest of the analysis, but the evidence should be described as directionally supportive rather than definitive. Uplift decile behavior and operational prioritization are evaluated in Analytical Task 5.
+The limited number of positive ED events, particularly in the treated group, means these results should be confirmed on the larger GenRocket dataset before drawing broader conclusions.
 
 Supporting files:
 
