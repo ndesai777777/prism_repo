@@ -583,6 +583,16 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention. 
 
 This view compares two targeting policies on the same held-out test population: ranking members by causal forest predicted benefit versus ranking members by current risk score. Through the top 30% of targeted members, causal forest benefit targeting captures $7,344.29 in estimated gross savings, compared with $6,437.13 from current-risk targeting, an advantage of $907.15. Gross savings are estimated from the causal forest predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
 
+<!-- AUTO_CHART:causal_forest_roi_by_decile START -->
+![Causal forest cumulative gross savings by targeting approach](Outputs/Causal-Forests/Python/dashboard_cumulative_gross_savings_targeting.png)
+<!-- AUTO_CHART:causal_forest_roi_by_decile END -->
+
+The chart below compares the additional gross savings from each causal forest targeting band against the additional gross savings from selecting the same number of members by current risk. Positive bars mean benefit-based targeting adds more estimated value than the current-risk approach for that band; negative bars mean the current-risk approach adds more estimated value for that band. In this run, causal forest benefit targeting has positive marginal advantage across all five bands (0-10% through 40-50%), meaning each additional 10% targeting band captures more estimated gross savings than the current-risk approach.
+
+<!-- AUTO_CHART:causal_forest_marginal_advantage START -->
+![Causal forest marginal gross savings advantage versus current risk](Outputs/Causal-Forests/Python/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+<!-- AUTO_CHART:causal_forest_marginal_advantage END -->
+
 Supporting file:
 
 - [`causal_forest_targeting_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_targeting_summary.csv)
