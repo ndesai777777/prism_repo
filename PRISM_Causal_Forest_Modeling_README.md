@@ -301,15 +301,6 @@ Supporting file:
 
 ## Analytical Task 4: Treatment Effect Analysis
 
-Each test-set member receives:
-
-```text
-tau_hat
-tau_se
-benefit_score
-hte_decile
-```
-
 ### Treatment Effect Distribution
 
 The treatment-effect distribution is shown using `benefit_score`, where `benefit_score = -tau_hat`. Higher benefit scores indicate larger estimated ED risk reductions from intervention. This keeps the table focused on the business interpretation while preserving the causal forest sign convention explained earlier.
