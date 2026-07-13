@@ -511,6 +511,55 @@ Supporting files:
 
 - [`causal_forest_variable_importance.csv`](Outputs/Causal-Forests/Python/causal_forest_variable_importance.csv)
 
+### SHAP Benefit-Score Contributions
+
+The standard variable importance above measures how much each feature contributes to heterogeneity in treatment effects, but it does not indicate whether higher feature values push benefit up or down. This section uses permutation SHAP on the causal forest `benefit_score = -tau_hat` function to decompose member-level benefit predictions into per-feature signed contributions. Mean absolute SHAP ranks global importance, while mean signed SHAP shows average contribution direction.
+
+**Top 10 benefit drivers by magnitude (mean absolute contribution):**
+
+<!-- AUTO_TABLE:causal_forest_shap_importance START -->
+| Rank | Feature | Mean abs SHAP |
+|---:|---|---:|
+| 1 | percolator_clinical_score | 0.0081 |
+| 2 | current_risk_score | 0.0065 |
+| 3 | age | 0.0050 |
+| 4 | percolator_sdoh_score | 0.0039 |
+| 5 | pcp_visits_last_6m | 0.0024 |
+| 6 | med_adherence_pdc | 0.0023 |
+| 7 | service_region_Central | 0.0013 |
+| 8 | total_cost_last_6m | 0.0012 |
+| 9 | rx_count_last_6m | 0.0012 |
+| 10 | county_County_E | 0.0011 |
+<!-- AUTO_TABLE:causal_forest_shap_importance END -->
+
+**Signed SHAP direction table:**
+
+<!-- AUTO_TABLE:causal_forest_shap_signed START -->
+| Direction | Feature | Mean signed contribution |
+|---|---|---:|
+| Increase predicted benefit | current_risk_score | 0.0009 |
+| Increase predicted benefit | total_cost_last_6m | 0.0005 |
+| Increase predicted benefit | percolator_clinical_score | 0.0004 |
+| Increase predicted benefit | rx_count_last_6m | 0.0003 |
+| Increase predicted benefit | specialist_visits_last_6m | 0.0003 |
+| Decrease predicted benefit | pcp_visits_last_6m | -0.0003 |
+| Decrease predicted benefit | percolator_sdoh_score | -0.0003 |
+| Decrease predicted benefit | med_adherence_pdc | -0.0002 |
+| Decrease predicted benefit | county_County_E | -0.0001 |
+| Decrease predicted benefit | percolator_utilization_score | -0.0001 |
+<!-- AUTO_TABLE:causal_forest_shap_signed END -->
+
+<!-- AUTO_CHART:causal_forest_global_benefit_shap START -->
+![Causal forest SHAP benefit-score drivers](Outputs/Causal-Forests/Python/dashboard_causal_forest_global_benefit_shap.png)
+<!-- AUTO_CHART:causal_forest_global_benefit_shap END -->
+
+Members with higher clinical complexity scores and current risk scores tend to have SHAP contributions that increase predicted benefit, while members with more primary care visits and higher SDOH scores tend to have contributions that decrease predicted benefit. The signed direction table complements the unsigned variable importance by showing which features push the causal forest benefit estimate higher or lower on average.
+
+Supporting files:
+
+- [`causal_forest_global_benefit_shap_importance.csv`](Outputs/Causal-Forests/Python/causal_forest_global_benefit_shap_importance.csv)
+- [`causal_forest_member_benefit_shap_values.csv`](Outputs/Causal-Forests/Python/causal_forest_member_benefit_shap_values.csv)
+
 ## Analytical Task 7: Business Value Assessment
 
 The causal forest business value assessment is narrower than the ROI section in the uplift README. The current causal forest workflow does not simulate multiple alternative targeting policies or full ROI assumptions. Instead, it estimates potential targeting value by summarizing average benefit and cumulative expected ED reductions across HTE deciles.
