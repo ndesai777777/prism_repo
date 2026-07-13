@@ -560,6 +560,21 @@ Supporting files:
 - [`causal_forest_global_benefit_shap_importance.csv`](Outputs/Causal-Forests/Python/causal_forest_global_benefit_shap_importance.csv)
 - [`causal_forest_member_benefit_shap_values.csv`](Outputs/Causal-Forests/Python/causal_forest_member_benefit_shap_values.csv)
 
+### Known Synthetic Driver Alignment
+
+Because the synthetic true-benefit formula is known, the model's explainability outputs can be compared against the six true drivers of treatment benefit. The table below checks how many of the six known drivers appear in each method's top-10 feature list.
+
+The six true benefit drivers are: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score`.
+
+<!-- AUTO_TABLE:causal_forest_known_driver_alignment START -->
+| Model | Explainability method | True drivers recovered in top 10 | Recovered true drivers |
+|---|---|---:|---|
+| Causal forest | Variable importance | 1 of 6 | `current_risk_score` |
+| Causal forest | SHAP benefit contribution | 1 of 6 | `current_risk_score` |
+<!-- AUTO_TABLE:causal_forest_known_driver_alignment END -->
+
+Both methods identify `current_risk_score` as a top-10 driver, which is in the true formula. The remaining five true drivers (`ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`) do not appear in the top 10 for either method. This is consistent with the causal forest having moderate but imperfect Spearman correlation (0.27) with true benefit, and suggests the model is partially detecting the risk-score channel of the benefit formula but not the utilization and social determinant channels as strongly as the composite risk scores.
+
 ## Analytical Task 7: Business Value Assessment
 
 The causal forest business value assessment is narrower than the ROI section in the uplift README. The current causal forest workflow does not simulate multiple alternative targeting policies or full ROI assumptions. Instead, it estimates potential targeting value by summarizing average benefit and cumulative expected ED reductions across HTE deciles.
