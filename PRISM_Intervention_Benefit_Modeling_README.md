@@ -328,6 +328,7 @@ This section applies the GLMNet T-learner to estimate member-level treatment ben
 
 ```text
 benefit_score = pred_ed_if_control - pred_ed_if_treated
+```
 
 A higher benefit score indicates a larger predicted reduction in ED risk under intervention. The examples below illustrate how predicted risk and predicted treatment benefit can lead to different outreach priorities.
 
