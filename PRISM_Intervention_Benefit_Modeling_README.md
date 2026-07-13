@@ -456,19 +456,17 @@ Supporting files:
 - [`GLMNet true-benefit decile overlap summary`](Outputs/Uplift/Python/glmnet_true_benefit_decile_overlap_summary.csv)
 - [`X-learner consistency summary`](Outputs/Uplift/Python/X-Learner/xlearner_vs_tlearner_consistency_summary.csv)
 
-## Analytical Task 6: Variable Importance And Explainability
+## Analytical Task 6: Variable Importance and Explainability
 
-The explainability analysis separates risk drivers from benefit drivers. Risk drivers explain what predicts ED utilization in the treated and control outcome models. Benefit drivers explain what contributes to predicted treatment benefit.
+This section examines which member characteristics are associated with predicted treatment benefit and whether those findings align with the known synthetic treatment-effect formula. Because the true treatment-benefit drivers are known in this synthetic dataset, the analysis evaluates not only which features each model identifies as important, but also how well those explanations recover the true underlying signal.
 
-Because synthetic true benefit is known in this dataset, Task 6 is organized around three levels of evidence:
+Three complementary perspectives are used throughout this section:
 
-| Level | Question answered | Main caution |
-|---|---|---|
-| Model-learned feature contributions | Which variables does the fitted GLMNet model use to explain predicted benefit? | Correlated predictors can split, absorb, or swap attribution. |
-| Known true-driver alignment | Do the model explanations recover the known synthetic treatment-effect drivers? | Alignment is evaluated against true contribution terms, not raw coefficients. |
-| Interpretation | Which explanation should be emphasized? | The X-learner explanations deserve more weight because Tasks 4-5 showed stronger treatment-effect recovery, but attribution is still directional rather than definitive. |
-
-The true synthetic benefit formula is especially useful here because the real treatment-effect drivers are known: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score` above 50. This makes it possible to evaluate whether feature explanations are recovering the known signal rather than only describing the fitted model.
+| Level | Question answered |
+|---|---|
+| Risk drivers | Which variables are most associated with predicted ED utilization? |
+| Benefit drivers | Which variables contribute most to predicted treatment benefit? |
+| True-driver validation | Do the identified drivers align with the known synthetic treatment-effect formula? |
 
 ### Risk Drivers
 
@@ -479,7 +477,7 @@ Before interpreting benefit drivers, it is useful to separate baseline ED-risk d
 | Treated model | `current_risk_score`, `percolator_utilization_score`, `ed_visits_last_6m`, `total_cost_last_6m`, `risk_tier_High` |
 | Control model | `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
 
-### Benefit Drivers
+### Explainability Approaches
 
 For GLMNet, benefit-driver importance is compared across the T-learner and X-learner frameworks. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
 
