@@ -472,6 +472,18 @@ Supporting file:
 
 - [`causal_forest_vs_uplift_consistency_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_vs_uplift_consistency_summary.csv)
 
+### True-Benefit Top-Group Overlap
+
+Because the synthetic true-benefit formula is known, the causal forest's highest-benefit groups can be compared against the true highest-benefit groups. The top 10% overlap is the strictest targeting check, while the top 20% overlap aligns with the project definition of **High benefit** as HTE deciles 1-2.
+
+<!-- AUTO_TABLE:causal_forest_true_benefit_decile_overlap START -->
+| Model | Test members | Top 10% overlap | Top 20% overlap |
+|---|---:|---:|---:|
+| Causal forest | 300 | 9 of 30 (30.0%) | 25 of 60 (41.7%) |
+<!-- AUTO_TABLE:causal_forest_true_benefit_decile_overlap END -->
+
+The causal forest recovers 30.0% of the true top-decile benefit members in the strictest top 10% check and 41.7% of the true top-20% benefit group. This is meaningfully stronger than the GLMNet T-learner (6.7%) and broadly comparable to the GLMNet X-learner (46.7%), suggesting the causal forest identifies a similar high-benefit population as the selected uplift benchmark.
+
 ## Analytical Task 6: Variable Importance And Explainability
 
 Causal forest variable importance is a partial explainability layer. It identifies features used by the model to split members into groups with different estimated treatment effects. It should not be interpreted as a definitive causal explanation of why the intervention works.
