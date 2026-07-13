@@ -343,7 +343,7 @@ The current causal forest estimates are credible enough for exploratory prioriti
 4. The HTE deciles show a smooth benefit gradient. The highest-benefit decile has an average estimated benefit of 0.084, while the lowest-benefit decile has an average estimated benefit of 0.012.
 5. The top-decile profile is clinically plausible. The highest-benefit group has higher current risk, clinical risk, recent cost, and utilization markers than other deciles.
 6. Some estimates are statistically separated from zero. Eighty-seven members have confidence intervals entirely below zero for `tau_hat`, while none have confidence intervals entirely above zero.
-7. The causal forest ranking is directionally consistent with several benchmarks, especially the XGBoost T-learner and GLMNet X-learner comparisons shown later in this README.
+7. The causal forest ranking is directionally consistent with the GLMNet X-learner benchmark comparison shown later in this README.
 
 The main limitation is that most member-level confidence intervals still cross zero. Therefore, the best interpretation is directional: the causal forest appears to identify plausible high-benefit subgroups, but live-data validation and sensitivity testing would be needed before using the estimates for production decision-making.
 
@@ -455,16 +455,14 @@ Supporting file:
 
 ### Framework Consistency Check
 
-The main benchmark is the selected GLMNet uplift workflow, because the uplift README identified GLMNet as the stronger factual outcome-model family. XGBoost T-learner and XGBoost X-learner outputs are included as secondary sensitivity checks because they are flexible tree-based uplift alternatives, but they are not the primary benchmark carried forward in the uplift report.
+The main benchmark is the selected GLMNet uplift workflow, because the uplift README identified GLMNet as the stronger factual outcome-model family.
 
-The causal forest notebook compares against the uplift model outputs on the held-out test set:
+The causal forest notebook compares against the GLMNet uplift model outputs on the held-out test set:
 
 | Comparison | Benchmark role |
 |---|---|
 | Causal forest vs GLMNet T-learner | Primary selected uplift benchmark |
 | Causal forest vs GLMNet X-learner | Primary selected uplift benchmark |
-| Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check |
-| Causal forest vs XGBoost X-learner | Secondary tree-based sensitivity check |
 
 All model-to-model comparisons use `member_id` merges and are limited to the same 300 held-out test members. T-learner outputs are filtered to the causal forest test `member_id`s before correlation and overlap are calculated. The current risk score is not included in this framework-consistency table because the risk-tier-versus-benefit-group section above already evaluates how causal forest benefit ranking relates to baseline risk.
 
@@ -473,11 +471,9 @@ All model-to-model comparisons use `member_id` merges and are limited to the sam
 |---|---|---:|---:|---:|---:|---:|
 | Causal forest vs GLMNet T-learner | Primary selected uplift benchmark | 300 | -0.014 | 0.041 | 20.0% | 35.0% |
 | Causal forest vs GLMNet X-learner | Primary selected uplift benchmark | 300 | 0.574 | 0.534 | 53.3% | 63.3% |
-| Causal forest vs XGBoost T-learner | Secondary tree-based sensitivity check | 300 | 0.785 | 0.717 | 70.0% | 73.3% |
-| Causal forest vs XGBoost X-learner | Secondary tree-based sensitivity check | 300 | 0.465 | 0.485 | 40.0% | 58.3% |
 <!-- AUTO_TABLE:causal_forest_vs_uplift_consistency_summary END -->
 
-On the held-out test set, the causal forest ranking is most aligned with the XGBoost T-learner and moderately aligned with the GLMNet X-learner and XGBoost X-learner. The weak alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
+On the held-out test set, the causal forest ranking shows moderate alignment with the GLMNet X-learner and weak alignment with the GLMNet T-learner. The weak alignment with the GLMNet T-learner suggests that causal forest is not simply reproducing the primary uplift report's GLMNet T-learner ranking. This should be presented as a model-comparison finding rather than as a failure.
 
 Supporting file:
 
