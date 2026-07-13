@@ -38,8 +38,6 @@ The treatment variable is `intervention_flag`. It indicates whether the member r
 
 ### Predictor Variables
 
-### Predictor Variables
-
 The model uses predictors available before intervention that may influence future emergency department (ED) utilization or the expected benefit of care management. Predictors are organized into six categories:
 
 - **Demographics:** Member characteristics such as age, gender, geographic region, and program enrollment.
