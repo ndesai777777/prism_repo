@@ -266,7 +266,21 @@ Both model families generally assigned higher predicted probabilities to observe
 
 ### Brier Score And Calibration
 
-Model calibration was evaluated using Brier score and calibration error. Lower values indicate better agreement between predicted probabilities and observed outcomes.
+Model calibration was evaluated using the Brier score and calibration error. Lower values indicate better agreement between predicted probabilities and observed outcomes.
+
+Brier score:
+
+```text
+Brier score = (1 / n) * sum((outcome_i - predicted_probability_i)^2)
+```
+
+Calibration error:
+
+```text
+Calibration error =
+sum((n_bin / n_total) *
+abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
+```
 
 <!-- AUTO_TABLE:brier_calibration_summary START -->
 | Model | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
@@ -280,8 +294,6 @@ GLMNet achieved lower Brier scores and calibration errors than XGBoost in both f
 <!-- AUTO_CHART:glmnet_calibration_plot START -->
 ![GLMNet calibration plot](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_calibration_plot.png)
 <!-- AUTO_CHART:glmnet_calibration_plot END -->
-
-Because ED utilization is a rare outcome, calibration should be interpreted alongside discrimination metrics rather than in isolation.
 
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
