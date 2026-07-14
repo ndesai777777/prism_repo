@@ -38,11 +38,17 @@ The treatment variable is `intervention_flag`. It indicates whether the member r
 
 ### Predictor Variables
 
-The causal forest notebook uses the same broad predictor categories as the uplift modeling workflow: demographics, clinical conditions, social determinants of health, utilization, pharmacy, and risk scores.
+The causal forest uses the same predictor inventory as the uplift workflow. Predictors are organized into six categories:
 
-Example demographic predictors include `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Example clinical predictors include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, and `behavioral_health_risk_flag`. Example SDOH predictors include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
 
-The notebook adds a stable `member_id` before splitting so member-level outputs can be compared across causal forest, T-learner, and X-learner files. `member_id` is used only for matching and output validation; it is excluded from the model predictors.
+- **Demographics**
+- **Clinical conditions**
+- **Social determinants of health (SDOH)**
+- **Healthcare utilization**
+- **Pharmacy**
+- **Risk scores**
+
+A complete variable inventory is provided in `causal_forest_predictor_inventory.csv`
 
 Supporting file:
 
