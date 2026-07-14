@@ -164,6 +164,27 @@ Supporting file:
 
 - [`causal_forest_data_review_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_data_review_summary.csv)
 
+---
+
+## Evaluation Roadmap
+
+The remaining analyses are organized into two evaluation stages that build upon one another.
+
+| Evaluation Level | Question | Analytical Tasks |
+|---|---|---|
+| **Level 1: Treatment-Effect Credibility** | Are the estimated treatment effects sufficiently credible for interpretation and member prioritization? | Tasks 3–5 |
+| **Level 2: Explainability And Business Value** | Can the estimated treatment effects be explained and translated into improved targeting decisions? | Tasks 6–7 |
+
+---
+
+# Evaluation Level 1: Treatment-Effect Credibility
+
+**Question:** Are the estimated treatment effects sufficiently credible for interpretation and member prioritization?
+
+The first stage of the evaluation assesses the credibility of the causal forest treatment-effect estimates. Because individual treatment effects cannot be directly observed, credibility is established through multiple complementary analyses rather than a single performance metric. These tasks evaluate the quality of the model diagnostics, agreement with the known synthetic treatment effects, and whether the estimated treatment effects produce meaningful member rankings and high-benefit subgroups.
+
+---
+
 ## Analytical Task 3: Causal Forest Diagnostics And Estimation Credibility
 
 Unlike the uplift workflow, which first evaluates factual outcome prediction, the causal forest workflow focuses on whether the estimated treatment effects are sufficiently credible for interpretation. Because each member is only observed under one treatment condition, individual treatment effects cannot be directly verified. Instead, credibility is assessed using several complementary diagnostics.
@@ -413,6 +434,26 @@ Because the synthetic true-benefit formula is known, the causal forest's highest
 
 The causal forest recovers 30.0% of the true top-decile benefit members in the strictest top 10% check and 41.7% of the true top-20% benefit group. This is meaningfully stronger than the GLMNet T-learner (6.7%) and broadly comparable to the GLMNet X-learner (46.7%), suggesting the causal forest identifies a similar high-benefit population as the selected uplift benchmark.
 
+## Level 1 Summary: Treatment-Effect Credibility
+
+The causal forest produces treatment-effect estimates that are credible enough to support exploratory prioritization and benchmarking against the uplift models. Three lines of evidence support this conclusion.
+
+First, the estimation environment is adequate. Propensity scores range from 0.15 to 0.77 with zero members requiring extreme clipping, test treatment-model AUC is a modest 0.593 (limiting concern about deterministic treatment assignment), and 5-fold cross-fitting controls nuisance-model overfitting.
+
+Second, the causal forest recovers a meaningful portion of the known synthetic treatment-effect signal. It achieves a Pearson correlation of 0.327 and Spearman correlation of 0.268 with true benefit — weaker than the GLMNet X-learner (Pearson 0.391, Spearman 0.168) but directionally positive and substantially stronger than the GLMNet T-learner (Pearson −0.467, Spearman −0.368). It produces a clear HTE decile gradient from 8.4 pp in decile 1 to 1.2 pp in decile 10, and 87 of 300 test members have confidence intervals entirely below zero for `tau_hat`.
+
+Third, the causal forest's top-benefit targeting aligns more closely with the X-learner than with the T-learner. It shares 53.3% top-decile overlap and 0.534 Spearman correlation with the GLMNet X-learner, compared with only 20.0% overlap and 0.041 Spearman with the GLMNet T-learner. On the true-benefit targeting check, the causal forest recovers 30.0% of the true top-decile members (top 10%) and 41.7% of the true top-20% group — meaningfully stronger than the GLMNet T-learner (6.7% at both thresholds) and broadly comparable to the GLMNet X-learner (46.7% top-10%, 48.3% top-20%).
+
+The main limitation is estimation uncertainty: 213 of 300 members have confidence intervals crossing zero. The estimates should be interpreted as directional rankings rather than precise individual-level treatment effects.
+
+---
+# Evaluation Level 2: Explainability And Business Value
+
+**Question:** Can the estimated treatment effects be explained and translated into improved targeting decisions?
+
+Once the treatment-effect estimates have been shown to be sufficiently credible, the second stage of the evaluation focuses on their practical value. This stage examines which member characteristics drive the estimated treatment effects, how well those findings align with the known synthetic treatment-benefit formula, and whether prioritizing members by predicted benefit improves care management targeting compared with traditional risk-based approaches. The goal is to determine whether the causal forest provides interpretable insights and actionable recommendations that could support operational decision making.
+
+---
 ## Analytical Task 6: Variable Importance And Explainability
 
 Causal forest variable importance is a partial explainability layer. It identifies features used by the model to split members into groups with different estimated treatment effects. It should not be interpreted as a definitive causal explanation of why the intervention works.
@@ -564,45 +605,9 @@ Supporting file:
 
 - [`causal_forest_targeting_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_targeting_summary.csv)
 
-## Analytical Task 8: Client Perspective
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data. Overall, the causal forest suggests that prioritizing members by predicted treatment benefit may capture greater estimated value than targeting members by baseline risk alone on this synthetic dataset.
 
-From a Medicaid health plan executive perspective, the causal forest model should be presented as a challenger and subgroup-discovery framework rather than a production-ready replacement for the selected uplift model. Its main value is that it estimates heterogeneous treatment effects directly and can identify high-benefit member subgroups for care management review.
-
-The most important operational question is not whether causal forest exactly matches the GLMNet T-learner or X-learner. It is whether causal forest provides a stable, explainable, and clinically plausible ranking that can improve outreach prioritization beyond baseline risk alone. In this run, causal forest produced a clear HTE decile gradient, identified a clinically plausible top-decile profile, and showed moderate-to-strong alignment with several uplift benchmarks.
-
-Several limitations are central to interpretation. The dataset is synthetic. Treatment assignment may be confounded. ED outcomes are rare. Treatment-effect estimates can be noisy. Overlap may be limited for some subgroups. Variable importance is not a causal explanation. Live-data validation, prospective monitoring, and recalibration would be required before operational deployment.
-
-## Recommendation
-
-The causal forest model should initially be positioned as a challenger and subgroup-discovery model. The selected GLMNet T-learner and X-learner results remain the primary uplift benchmarks because GLMNet was selected in the uplift README based on stronger factual outcome-model performance. Causal forest should be compared primarily against those GLMNet uplift results, while XGBoost T-learner and XGBoost X-learner outputs should be treated as secondary tree-based sensitivity checks.
-
-The current causal forest results are promising because the HTE deciles show a clear estimated-benefit gradient and the top-decile profile is clinically plausible. However, the uncertainty results show that many member-level confidence intervals cross zero. The best next step is to present causal forest as a complementary prioritization and validation framework rather than as the sole model for outreach decisions.
-
-## Presentation Summary
-
-A presentation based on these results can be organized around the business problem, why high risk is not always high benefit, how causal forest estimates HTE, data review, causal forest diagnostics, treatment-effect distribution, HTE decile findings, framework consistency against GLMNet and XGBoost uplift models, explainability, business value, limitations, and final recommendation.
-
-The strongest slide story is:
-
-1. The uplift workflow selected GLMNet as the primary benchmark.
-2. Causal forest is a challenger framework for direct HTE estimation.
-3. Shared `member_id` and shared propensity scores strengthen cross-model comparability.
-4. Causal forest estimates an average ED-risk reduction of about 4.1 percentage points in the test set.
-5. HTE decile 1 has an average benefit score of 8.4 percentage points, compared with 1.2 percentage points in decile 10.
-6. Framework consistency checks show where causal forest agrees with GLMNet T/X learners, XGBoost sensitivity models, and current risk.
-
-## Reproducibility
-
-The analysis can be reproduced by opening `Code/PRISM_Causal_Forest_Modeling_Workflow.ipynb`, selecting an environment with `econml` installed, restarting the kernel, and running all cells in order.
-
-Before running the causal forest notebook, rerun `Code/Uplift Model Code_rh06032026.ipynb` so the shared member-level propensity file is available:
-
-```text
-Outputs/Uplift/Python/X-Learner/shared_propensity_scores.csv
-```
-
-Key causal forest output files:
-
+Supporting files:
 - [`causal_forest_data_review_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_data_review_summary.csv)
 - [`causal_forest_event_count_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_event_count_summary.csv)
 - [`causal_forest_propensity_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_propensity_summary.csv)
@@ -615,3 +620,13 @@ Key causal forest output files:
 - [`causal_forest_scored_output.csv`](Outputs/Causal-Forests/Python/causal_forest_scored_output.csv)
 - [`causal_forest_scored_test_output.csv`](Outputs/Causal-Forests/Python/causal_forest_scored_test_output.csv)
 - [`causal_forest_vs_uplift_consistency_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_vs_uplift_consistency_summary.csv)
+
+## Level 2 Summary: Explainability and Business Value
+
+The causal forest provides a partial but informative explainability layer and demonstrates a consistent business-value advantage over risk-based targeting.
+
+On explainability, variable importance and SHAP benefit-score decomposition converge on the same key drivers: `percolator_clinical_score` (SHAP mean abs 0.0081), `current_risk_score` (0.0065), and `age` (0.0050) are the top three features by both methods. Signed SHAP contributions show that higher clinical complexity and risk scores push benefit estimates upward, while higher PCP visits and SDOH scores push them downward. However, only 1 of 6 true synthetic drivers (`current_risk_score`) appears in the top 10 for either method, indicating the model primarily detects the risk-score channel rather than the underlying utilization and SDOH drivers directly. The member-level SHAP Spearman alignment check reveals a more nuanced picture: 4 of 6 true drivers have positive rank alignment with their SHAP contributions (Spearman 0.60–0.83 for `ed_visits_last_6m`, `admits_last_6m`, `transportation_barrier_flag`, and `current_risk_score`), while `food_insecurity_flag` and `behavioral_health_risk_flag` show reversed direction — consistent with these signals being partially captured through correlated composite risk scores.
+
+On business value, causal forest benefit-based targeting outperforms current-risk targeting at every evaluated threshold. Through the top 30% of targeted members, benefit targeting captures $7,344 in estimated gross savings versus $6,437 from risk targeting — an advantage of $907. The marginal advantage remains positive through the top 60% of the population ($358–$464 per 10% band) before turning negative in the 60-100% bands, confirming that the causal forest's value is concentrated in the higher-benefit population segments where outreach capacity is most constrained.
+
+Compared with the GLMNet uplift models, the causal forest's business-value advantage at top-30% ($907) is comparable to the GLMNet T-learner ($899) and exceeds it slightly, while the GLMNet X-learner captures $731 at the same threshold. This positions the causal forest as competitive with or modestly stronger than both GLMNet frameworks for targeting-policy value in this synthetic run, despite using a fundamentally different estimation approach.
