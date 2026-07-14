@@ -601,25 +601,11 @@ The chart below compares the additional gross savings from each causal forest ta
 ![Causal forest marginal gross savings advantage versus current risk](Outputs/Causal-Forests/Python/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 <!-- AUTO_CHART:causal_forest_marginal_advantage END -->
 
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data. Overall, the causal forest suggests that prioritizing members by predicted treatment benefit may capture greater estimated value than targeting members by baseline risk alone on this synthetic dataset.
+
 Supporting file:
 
 - [`causal_forest_targeting_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_targeting_summary.csv)
-
-These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data. Overall, the causal forest suggests that prioritizing members by predicted treatment benefit may capture greater estimated value than targeting members by baseline risk alone on this synthetic dataset.
-
-Supporting files:
-- [`causal_forest_data_review_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_data_review_summary.csv)
-- [`causal_forest_event_count_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_event_count_summary.csv)
-- [`causal_forest_propensity_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_propensity_summary.csv)
-- [`causal_forest_hyperparameter_tuning_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_hyperparameter_tuning_summary.csv)
-- [`causal_forest_hyperparameter_stability_pairs.csv`](Outputs/Causal-Forests/Python/causal_forest_hyperparameter_stability_pairs.csv)
-- [`causal_forest_ate_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_ate_summary.csv)
-- [`causal_forest_effect_distribution_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_effect_distribution_summary.csv)
-- [`causal_forest_uncertainty_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_uncertainty_summary.csv)
-- [`causal_forest_decile_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_decile_summary.csv)
-- [`causal_forest_scored_output.csv`](Outputs/Causal-Forests/Python/causal_forest_scored_output.csv)
-- [`causal_forest_scored_test_output.csv`](Outputs/Causal-Forests/Python/causal_forest_scored_test_output.csv)
-- [`causal_forest_vs_uplift_consistency_summary.csv`](Outputs/Causal-Forests/Python/causal_forest_vs_uplift_consistency_summary.csv)
 
 ## Level 2 Summary: Explainability and Business Value
 
