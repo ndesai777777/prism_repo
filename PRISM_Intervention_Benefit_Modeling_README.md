@@ -346,7 +346,9 @@ Supporting files:
 
 ## Level 1 Summary: Outcome Model Validation
 
-The first stage of the evaluation assessed whether the factual outcome models provided a reliable foundation for treatment-effect estimation. On this simulated dataset and train/test split, GLMNet demonstrated stronger held-out discrimination and probability calibration than XGBoost. Consequently, GLMNet was selected as the primary modeling approach for the remaining analyses.
+GLMNet is the stronger factual outcome model across every evaluated metric. On the held-out test set, GLMNet achieves a treated AUC of 0.904 versus XGBoost's 0.835, and a control AUC of 0.660 versus XGBoost's 0.583. GLMNet also produces better calibrated probabilities: treated Brier score 0.039 versus 0.045, control Brier score 0.066 versus 0.068, and lower calibration error in both arms (treated 0.062 vs. 0.080; control 0.051 vs. 0.064). In the factual prediction-separation check, GLMNet assigns a 1.79 percentage-point higher predicted risk to ED-positive treated members than ED-negative treated members, compared with XGBoost's 1.24 pp gap. The control-group separation is narrower for both models (GLMNet 0.45 pp, XGBoost 0.50 pp), reflecting the difficulty of discriminating rare events with limited positive examples.
+
+The key constraint is event scarcity: only 5 positive ED events are available in the treated test group and 13 in the control test group. This limits confidence in any single-split result and means all downstream treatment-effect estimates inherit this uncertainty. Nevertheless, GLMNet's consistent advantage across discrimination, calibration, and prediction separation supports its selection as the primary outcome model for the T-learner and X-learner treatment-effect analyses that follow.
 
 ---
 
@@ -494,7 +496,13 @@ Supporting files:
 
 ## Level 2 Summary: Uplift Model Validation
 
-The second stage evaluated whether the causal modeling frameworks produced credible treatment-effect estimates. While both frameworks estimated member-level intervention benefit, the GLMNet X-learner more accurately recovered the known synthetic treatment effect. It demonstrated lower prediction error, stronger correlation with true benefit, and substantially greater recovery of the highest-benefit members than the GLMNet T-learner. These findings suggest that the X-learner provides the more reliable treatment-benefit ranking for this synthetic dataset.
+The GLMNet X-learner produces substantially more credible treatment-effect estimates than the GLMNet T-learner on this synthetic dataset.
+
+In the true-benefit validation (Task 4), the X-learner achieves positive Pearson correlation with true benefit (0.391) and positive Spearman correlation (0.168), while the T-learner shows negative correlations (Pearson −0.467, Spearman −0.368). The X-learner also has smaller bias (−0.017 vs. −0.020), lower MAE (0.024 vs. 0.026), and lower RMSE (0.031 vs. 0.037). This means the X-learner not only estimates average benefit more accurately but also ranks individual members in closer agreement with the true synthetic benefit pattern.
+
+The decile analysis (Task 5) reinforces this finding. The X-learner produces a wider benefit gradient: decile 1 averages 0.070 predicted benefit versus 0.015 in decile 10, a 4.6× spread. The T-learner gradient is flatter: 0.044 in decile 1 versus 0.023 in decile 10, only a 1.9× spread. The framework-consistency check reveals weak agreement between the two methods (Pearson −0.076, Spearman 0.161, top-decile overlap 16.7%), confirming they prioritize different members despite producing similar population-level average benefit (T-learner 0.034, X-learner 0.038).
+
+The most decisive evidence comes from the true-benefit top-group overlap check. The X-learner correctly identifies 14 of 30 true top-decile members (46.7%) and 29 of 60 true top-20% members (48.3%). The T-learner recovers only 2 of 30 (6.7%) and 4 of 60 (6.7%) — barely above random chance. This indicates that the X-learner's treatment-effect ranking is meaningfully aligned with the true synthetic benefit, while the T-learner's ranking is not.
 
 ---
 
@@ -859,10 +867,10 @@ Supporting files:
 
 ## Level 3 Summary: Operational Evaluation
 
-The final stage evaluated whether the treatment-effect models provide information that could support operational decision making.
+Both the T-learner and X-learner demonstrate that benefit-based targeting outperforms risk-based targeting, but the X-learner delivers a larger and more sustained advantage.
 
-The business-value analysis suggests that benefit-based targeting outperforms traditional risk-based targeting under the current assumptions, with the GLMNet X-learner maintaining a larger estimated advantage across a broader range of targeted members.
+On business value (Task 7), the T-learner captures $4,409 in estimated gross savings through the top 30% of targeted members versus $3,510 from current-risk targeting — an advantage of $899. The X-learner captures $5,920 versus $5,190 from risk targeting — an advantage of $731 at the same threshold, but with substantially higher absolute savings because its benefit scores are larger. The T-learner's marginal advantage turns slightly negative after the top 30%, while the X-learner maintains positive marginal advantage through the full top 50%, indicating a broader population of members where benefit-based targeting adds value.
 
-The explainability analysis provides more mixed evidence. Although both the T-learner and X-learner identified clinically plausible predictors, feature importance rankings varied across explanation methods and neither framework consistently recovered all known synthetic treatment-effect drivers. Consequently, the treatment-benefit rankings appear more reliable than the associated feature explanations.
+On explainability (Task 6), both frameworks identify clinically plausible benefit drivers but recover the true synthetic drivers unevenly. SHAP-based explanation recovers 3 of 6 true drivers in the T-learner's top 10 (`current_risk_score`, `behavioral_health_risk_flag`, `food_insecurity_flag`) and 2 of 6 in the X-learner's top 10 (`admits_last_6m`, `ed_visits_last_6m`). The member-level SHAP alignment check shows that both frameworks correctly rank `ed_visits_last_6m` contributions (Spearman 0.931 T-learner, 0.934 X-learner) and `admits_last_6m` (0.793 both). However, neither framework consistently recovers all six drivers with correct sign, confirming that feature attribution should be interpreted as directional model evidence rather than definitive causal proof.
 
-Overall, the modeling framework demonstrates promising potential for member prioritization, but additional validation on larger and more representative datasets is needed before operational deployment.
+The combined evidence supports a clear operational recommendation: the GLMNet X-learner provides the more reliable treatment-benefit ranking for prioritizing care management outreach, while the T-learner's primary value is as a comparison framework that validates whether the X-learner's rankings are consistent with an independent estimation approach. Both frameworks demonstrate that uplift-based targeting captures more estimated value than risk-based targeting when outreach capacity is constrained, making the case for benefit-based prioritization over traditional risk stratification alone.
