@@ -63,11 +63,15 @@ This produces 700 training members and 300 test members. The stratified split ma
 
 ### What A Doubly Robust Learner Estimates
 
-The doubly robust learner estimates an individualized treatment effect (`tau_hat`) for each member through a two-stage process:
+The doubly robust learner estimates an individualized treatment effect (`tau_hat`) for each member through a two-stage process. The key innovation is the construction of a doubly robust pseudo-outcome that combines three components:
 
-1. **Pseudo-outcome construction** — For each training member, the model constructs a doubly robust pseudo-outcome that combines the outcome model residual with an inverse-propensity-weighted correction. This pseudo-outcome approximates the individual treatment effect and is robust to partial misspecification of either the outcome or propensity model.
+1. **Initial treatment-effect estimate** — The difference between the predicted treated outcome (μ₁) and predicted control outcome (μ₀) provides a baseline treatment-effect estimate for each member.
 
-2. **Final-stage regression** — A forest model regresses the pseudo-outcomes on member features to produce smooth, individualized treatment-effect predictions on new members.
+2. **Treated correction term** — For members who actually received treatment, the residual (difference between observed outcome and predicted treated outcome) is weighted by inverse propensity (1/ê) to correct for misspecification of the outcome model.
+
+3. **Control correction term** — For members who did not receive treatment, the residual is weighted by inverse propensity (1/(1-ê)) to correct for misspecification of the outcome model.
+
+The sum of these three components forms the doubly robust pseudo-outcome. A final-stage Random Forest regression model is then trained on these pseudo-outcomes to estimate individualized treatment effects for new members. The doubly robust property means the treatment-effect estimates remain consistent if either the outcome model or the propensity model is correctly specified — providing an additional layer of robustness compared with methods that rely on a single nuisance model.
 
 Because `outcome_ed_90d` is an undesirable outcome:
 
@@ -86,15 +90,15 @@ Higher benefit scores indicate larger estimated reductions in ED risk under inte
 
 ### Model Specification
 
-The doubly robust learner is implemented using `econml.dr.ForestDRLearner`, which constructs doubly robust pseudo-outcomes and fits a final-stage causal forest to predict heterogeneous treatment effects.
+The doubly robust learner is implemented using `econml.dr.ForestDRLearner`. ForestDRLearner first constructs doubly robust pseudo-outcomes using the outcome models and propensity model. A final-stage Random Forest regression model is then trained on these pseudo-outcomes to estimate individualized treatment effects for new members.
 
-The model combines two nuisance models with a final forest estimator:
+The model combines two nuisance models with a final-stage regression:
 
 | Component | Model | Purpose |
 |---|---|---|
 | Outcome model | `RandomForestRegressor` | Estimates baseline ED risk (μ₀, μ₁) |
 | Treatment model | `LogisticRegressionCV` (elastic net) | Estimates treatment propensity (ê) |
-| Final stage | `ForestDRLearner` (causal forest) | Regresses doubly robust pseudo-outcomes on features to predict τ(x) |
+| Final-stage regression | Random Forest regression model (within ForestDRLearner) | Learns the relationship between doubly robust pseudo-outcomes and individualized treatment effects |
 
 The doubly robust pseudo-outcome for each member is constructed as:
 
@@ -102,32 +106,35 @@ The doubly robust pseudo-outcome for each member is constructed as:
 Ỹ_DR = μ₁(x) - μ₀(x) + W/ê(x) * (Y - μ₁(x)) - (1-W)/(1-ê(x)) * (Y - μ₀(x))
 ```
 
-This formula combines the outcome-model prediction with an inverse-propensity-weighted correction, providing robustness when either the outcome model or the propensity model is misspecified (but not both).
+This formula combines the initial outcome-model treatment-effect estimate with inverse-propensity-weighted correction terms, providing robustness when either the outcome model or the propensity model is misspecified (but not both).
 
 ```mermaid
 flowchart TD
-    A["Modeling dataset"] --> B["Train/test split"]
-    B --> C["Outcome model (μ₀, μ₁)"]
-    B --> D["Treatment model (ê)"]
-    C --> E["Construct DR pseudo-outcomes"]
-    D --> E
-    E --> F["Final-stage forest on pseudo-outcomes"]
-    F --> G["Estimate tau_hat"]
-    G --> H["benefit_score = -tau_hat"]
-    H --> I["Rank members"]
-    I --> J["Assign HTE deciles"]
-    J --> K["Compare with uplift, X-learner, and causal forest"]
+    A["Training data"] --> B["Outcome models (μ₁, μ₀)"]
+    A --> C["Propensity model (ê)"]
+    B --> D["Predicted treated outcome μ₁<br/>Predicted control outcome μ₀"]
+    D --> E["Initial treatment effect<br/>μ₁ − μ₀"]
+    C --> F["Residual corrections"]
+    D --> F
+    F --> G["Treated correction:<br/>W/ê × (Y − μ₁)"]
+    F --> H["Control correction:<br/>(1−W)/(1−ê) × (Y − μ₀)"]
+    E --> I["Construct DR pseudo-outcome<br/>= initial effect + corrections"]
+    G --> I
+    H --> I
+    I --> J["Final-stage Random Forest<br/>regression on pseudo-outcomes"]
+    J --> K["Estimated treatment effect τ(x)"]
+    K --> L["benefit_score = −τ(x)"]
+    L --> M["Rank members"]
+    M --> N["Assign HTE deciles"]
 ```
 
 ### Propensity Alignment With Uplift Models
 
-To improve comparability across models, the doubly robust learner reuses the member-level propensity scores generated by the X-learner workflow.
+To improve comparability across models, the doubly robust learner reuses the member-level propensity scores generated by the X-learner workflow. The **propensity scores are shared** across the X-learner, causal forest, and doubly robust workflows, ensuring that differences between methods reflect treatment-effect estimation rather than propensity estimation.
 
-The uplift notebook writes a shared propensity file:
+The **outcome models are not shared**. ForestDRLearner estimates its own nuisance outcome models internally during cross-fitting before constructing the doubly robust pseudo-outcomes. This means the DR learner's treatment-effect estimates are fully independent from the other workflows while still using identical inverse-propensity weights for the same individuals.
 
 - [`shared_propensity_scores.csv`](Outputs/Uplift/Python/X-Learner/shared_propensity_scores.csv)
-
-The doubly robust notebook merges these scores by `member_id`, ensuring that all four frameworks (T-learner, X-learner, causal forest, doubly robust) use identical propensity estimates. This allows differences between results to reflect the treatment-effect models rather than differences in propensity estimation.
 
 The shared propensity model uses the same GLMNet-style specification as the X-learner workflow:
 
@@ -201,7 +208,7 @@ The diagnostics below evaluate the modeling data, treatment-group overlap, pseud
 
 The doubly robust learner uses a double machine learning framework that separately models baseline ED risk and treatment assignment before constructing pseudo-outcomes. Cross-fitting reduces overfitting by estimating these nuisance models on separate folds from those used for pseudo-outcome construction and final-stage estimation.
 
-The key distinction from a standard causal forest is the intermediate pseudo-outcome step. Rather than directly splitting on treatment-effect heterogeneity, the doubly robust learner first constructs a corrected pseudo-outcome for each member and then regresses those pseudo-outcomes on features using a final-stage forest. This two-step process provides double robustness: the estimator remains consistent if either the outcome model or the propensity model is correctly specified.
+The key distinction from a standard causal forest is the intermediate pseudo-outcome step. Rather than directly splitting on treatment-effect heterogeneity within the forest structure, the doubly robust learner first constructs a corrected pseudo-outcome for each member and then trains a separate Random Forest regression on those pseudo-outcomes. This two-step process provides double robustness: the estimator remains consistent if either the outcome model or the propensity model is correctly specified.
 
 ### Event Counts
 
@@ -220,41 +227,17 @@ Supporting file:
 
 - [`doubly_robust_event_count_summary.csv`](Outputs/Doubly-Robust/Python/doubly_robust_event_count_summary.csv)
 
-### Propensity And Overlap Checks
+### Propensity And Overlap
 
-Reliable treatment-effect estimation requires overlap between treated and untreated members with similar baseline characteristics. To ensure comparability with the uplift and causal forest analyses, the doubly robust learner reuses the shared member-level propensity scores generated by the X-learner workflow.
-
-The summary below shows the propensity-score distribution and confirms that no observations required extreme clipping.
-
-<!-- AUTO_TABLE:doubly_robust_propensity_summary START -->
-| Metric | Value |
-|---|---:|
-| Propensity source | shared_propensity_scores_member_id_merge |
-| Train treatment model AUC | 0.700 |
-| Test treatment model AUC | 0.593 |
-| Mean propensity | 0.403 |
-| Min propensity | 0.150 |
-| 5th percentile | 0.239 |
-| Median propensity | 0.384 |
-| 95th percentile | 0.605 |
-| Max propensity | 0.774 |
-| Members below 0.05 | 0 |
-| Members above 0.95 | 0 |
-<!-- AUTO_TABLE:doubly_robust_propensity_summary END -->
-
-<!-- AUTO_CHART:doubly_robust_propensity_overlap START -->
-![Doubly robust propensity overlap check](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_propensity_overlap.png)
-<!-- AUTO_CHART:doubly_robust_propensity_overlap END -->
+The doubly robust learner reuses the shared propensity scores generated by the X-learner workflow. The overlap diagnostics are identical to those presented in the causal forest README. Key facts: propensity ranges from 0.15 to 0.77, mean 0.40, no members require clipping below 0.05 or above 0.95, and test treatment-model AUC is 0.593.
 
 Supporting file:
 
 - [`doubly_robust_propensity_summary.csv`](Outputs/Doubly-Robust/Python/doubly_robust_propensity_summary.csv)
 
-### Pseudo-Outcome Diagnostics
+### Training-Set Treatment Effect Distribution
 
-The doubly robust pseudo-outcome is the intermediate quantity that the final-stage forest regresses on. Unlike a direct causal forest, where treatment-effect heterogeneity is estimated through forest splitting, the doubly robust learner constructs an explicit pseudo-outcome for each training member that approximates the individual treatment effect.
-
-The quality of the pseudo-outcomes directly affects the quality of the final treatment-effect estimates. The distribution below summarizes the training-set pseudo-outcomes after cross-fitting.
+The ForestDRLearner internally constructs doubly robust pseudo-outcomes during cross-fitting, then fits a final-stage Random Forest on those pseudo-outcomes. Because the raw pseudo-outcomes are not directly accessible from the fitted model, the distribution below shows the training-set treatment-effect estimates produced by `dr_model.effect(x_train)`. These represent the final-stage model's smoothed predictions rather than the raw doubly robust pseudo-outcomes, but they provide a useful diagnostic for assessing whether the model produces well-behaved treatment-effect estimates across the training population.
 
 <!-- AUTO_TABLE:doubly_robust_pseudo_outcome_diagnostics START -->
 | Metric | Value |
@@ -274,10 +257,10 @@ The quality of the pseudo-outcomes directly affects the quality of the final tre
 | Fraction negative | 99.9% |
 <!-- AUTO_TABLE:doubly_robust_pseudo_outcome_diagnostics END -->
 
-The pseudo-outcomes are overwhelmingly negative (99.9% of training members), indicating that the doubly robust construction consistently estimates that intervention reduces ED risk across the training population. The mean pseudo-outcome of −0.044 corresponds to a 4.4 percentage point average reduction in ED probability, broadly consistent with the observed difference between treated (4.0%) and control (7.3%) event rates. The narrow standard deviation (0.015) and absence of extreme outliers suggest stable nuisance-model estimation without severe inverse-propensity-weight inflation.
+The training-set effects are overwhelmingly negative (99.9% of training members), indicating that the model consistently estimates that intervention reduces ED risk across the training population. The mean effect of −0.044 corresponds to a 4.4 percentage point average reduction in ED probability, broadly consistent with the observed difference between treated (4.0%) and control (7.3%) event rates. The narrow standard deviation (0.015) and absence of extreme outliers suggest stable estimation without severe inverse-propensity-weight inflation.
 
 <!-- AUTO_CHART:doubly_robust_pseudo_outcome_distribution START -->
-![Doubly robust pseudo-outcome distribution](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_pseudo_outcome_distribution.png)
+![Doubly robust training-set treatment effect distribution](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_pseudo_outcome_distribution.png)
 <!-- AUTO_CHART:doubly_robust_pseudo_outcome_distribution END -->
 
 Supporting file:
