@@ -1,0 +1,15 @@
+metric,value
+Source,Training-set effect estimates (proxy for pseudo-outcomes)
+N,700
+Mean,-0.04368722012147722
+Std,0.01536662306881465
+Min,-0.09503178449047031
+5th percentile,-0.07113224762297653
+10th percentile,-0.06554360853751517
+25th percentile,-0.0531260101725594
+Median,-0.0417576443607433
+75th percentile,-0.03210664749495795
+90th percentile,-0.026585618944312495
+95th percentile,-0.022731772452368997
+Max,0.007638728518971672
+Fraction negative (benefit direction),0.9985714285714286

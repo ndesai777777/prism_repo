@@ -11,3 +11,6 @@ Final predictors before one-hot encoding,41.0
 Continuous/count numeric predictors,14.0
 Binary indicator predictors,18.0
 Multi-level categorical predictors,9.0
+Model matrix columns after one-hot encoding,77.0
+Train rows,700.0
+Test rows,300.0
