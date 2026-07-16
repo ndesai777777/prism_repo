@@ -1,0 +1,13 @@
+metric,current_value
+Total members,1000.0
+Treated members,394.0
+Untreated/control members,606.0
+Treatment rate,0.394
+ED outcome events,60.0
+Outcome prevalence,0.06
+Treated observed ED rate,0.04060913705583756
+Control observed ED rate,0.07260726072607261
+Final predictors before one-hot encoding,41.0
+Continuous/count numeric predictors,14.0
+Binary indicator predictors,18.0
+Multi-level categorical predictors,9.0
