@@ -1,0 +1,2 @@
+n_components,silhouette_score,davies_bouldin_index,calinski_harabasz_index,bootstrap_mean_ari,bootstrap_std_ari,ari_gmm_vs_kmeans,ari_gmm_vs_agglomerative,stability_assessment
+6,0.09299331796922906,1.9648518017740537,12.620888712654642,0.36079417853208345,0.16072202533539542,0.3449252338493524,0.4539759261878146,WEAK
