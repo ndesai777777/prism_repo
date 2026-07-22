@@ -1,0 +1,4 @@
+confidence_tier,n,avg_true_benefit,avg_predicted_benefit
+High,38.0,0.07311789473684209,0.0651625795752045
+Medium,,,
+Low,22.0,0.09560090909090907,0.0617877871198192
