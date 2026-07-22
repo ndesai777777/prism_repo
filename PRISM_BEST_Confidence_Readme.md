@@ -26,44 +26,6 @@ confidence_tier              = Low / High on this run (Medium is supported by th
 knn_similarity              = 1 / (1 + mean Euclidean distance to the k=10 nearest training members in PCA space); diagnostic only, excluded from the confidence score
 ```
 
-## Recommendation (stated first)
-
-**Use in shadow mode only. Do not use `gmm_archetype` for automated routing or targeting.** Three
-findings, each developed below, drive this:
-
-1. **The archetypes do not differentiate benefit.** The mean-benefit difference between the two
-   archetypes has a 95% CI that spans zero (see Task 3, benefit-difference test), so the label
-   carries no targeting value even if it were stable.
-2. **The archetype split is not reproducible.** Bootstrap stability is WEAK and cross-method
-   agreement is near chance; removing two binary comorbidity flags changes the split entirely
-   *and* improves silhouette roughly 10× — evidence the split is partly a specification artifact,
-   not a robust clinical structure (see Task 3, flag ablation).
-3. **The confidence score is not yet validated against ground truth.** On synthetic true benefit,
-   the High tier does not show higher true benefit than the Low tier, and within-tier rank
-   correlation does not favor the High tier (see Level 3, ground-truth validation).
-
-**Caveats second:** these are exploratory findings on n=140 train / n=60 test high-benefit members,
-with ~4.2 observations per GMM parameter — a design constraint of the current population size, not
-necessarily a property of the underlying clinical data.
-
-**What does work as designed (last):** the two-signal geometric-mean machinery and HDBSCAN
-cross-verification behave exactly as intended — the score correctly penalizes "confident but
-atypical" members, and the tiering reports the number of natural bands the data supports rather
-than forcing thirds. The machinery is sound; the archetypes it is currently applied to are not.
-
-## Flagged Gaps and Where They Are Addressed
-
-| # | Gap (from review) | Impact | Where addressed |
-|---|---|---|---|
-| 1 | Internal metrics for K-Means / Agglomerative / HDBSCAN | Method comparison was incomplete | Task 3 — internal validation table (now computed for all methods) |
-| 2 | 100 bootstrap ARI values not retained | Stability histogram unrenderable | Task 3 — bootstrap distribution chart + `bootstrap_ari_values.csv` |
-| 3 | No row-level schema of the scored table | Schema unverified in-doc | Task 5 — literal column list |
-| 4 | `true_benefit` validation by tier not run | Confidence score never validated vs. ground truth | Level 3 — ground-truth validation subsection |
-| 5 | Two binary flags inside PCA+GMM | Likely causes the weak-stability headline | Task 3 — flag ablation subsection |
-| 6 | Score normalization circular / per-batch | Scores not comparable across batches | Task 4 — raw score summary + frozen train bounds |
-| 7 | Benefit difference between archetypes never tested | Archetype targeting value unquantified | Task 3 — benefit-difference test |
-| 8 | Standardization / reproducibility undocumented | Pipeline not reproducible | Model Specification + Reproducibility section |
-
 ## Background
 
 Care management programs must decide which members should receive intervention when outreach
@@ -353,8 +315,6 @@ split (near-zero ARI vs. the original) and raises silhouette roughly ten-fold. T
 flags materially destabilize the clustering. This is the mechanism behind the weak bootstrap
 stability — a split partly anchored on two binary flags flips under resampling.
 
-**Recommendation:** cluster the continuous features only and treat the flags as post-hoc profiling
-variables, or use a mixed-type method (k-prototypes, latent class analysis) in a future iteration.
 
 ### Archetype Benefit-Difference Test
 
