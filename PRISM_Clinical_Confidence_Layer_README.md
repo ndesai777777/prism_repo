@@ -37,10 +37,22 @@ confidence_tier              = Low / Medium / High, cut at natural breaks (1-D G
 | Reconstructed test members | 300 |
 | High-benefit train members (top 20%) | 140 |
 | High-benefit test members (top 20%) | 60 |
+| High-benefit train benefit-score threshold | >= 0.0568 |
+| High-benefit test benefit-score threshold | >= 0.0555 |
 <!-- AUTO_TABLE:clinical_confidence_data_review_summary END -->
 
 <!-- AUTO_TABLE:clinical_confidence_pca_variance START -->
-_Pending: re-run notebook to export PCA variance CSV._
+| Component | Variance explained |
+| ---: | ---: |
+| PC1 | 26.4% |
+| PC2 | 19.9% |
+| PC3 | 11.4% |
+| PC4 | 9.8% |
+| PC5 | 8.0% |
+| PC6 | 6.0% |
+| PC7 | 4.9% |
+| PC8 | 4.6% |
+| **Cumulative** | **91.0%** |
 <!-- AUTO_TABLE:clinical_confidence_pca_variance END -->
 
 ---
@@ -52,15 +64,30 @@ _Pending: re-run notebook to export PCA variance CSV._
 <!-- AUTO_CHART:clinical_confidence_gmm_bic_aic_selection END -->
 
 <!-- AUTO_TABLE:clinical_confidence_bic_by_k START -->
-_Pending: re-run notebook to export BIC-by-k CSV._
+| Candidate archetype count (k) | BIC |
+| ---: | ---: |
+| 2 | 3,420.1 |
+| 3 | 3,444.3 |
+| 4 | 3,493.8 |
+| 5 | 3,519.8 |
 <!-- AUTO_TABLE:clinical_confidence_bic_by_k END -->
 
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison START -->
-_Pending: re-run notebook to export clustering method comparison CSV._
+| Method | Clusters found | Cluster sizes | Noise points (HDBSCAN only) |
+| ---: | ---: | ---: | ---: |
+| Gaussian Mixture | 2 | 105/35 | n/a |
+| K-Means | 2 | 57/83 | n/a |
+| Agglomerative | 2 | 125/15 | n/a |
+| HDBSCAN | 2 | nan | 38 |
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison START -->
-_Pending: re-run notebook to export clustering method comparison CSV._
+| Method | Silhouette | Davies-Bouldin | Calinski-Harabasz |
+| ---: | ---: | ---: | ---: |
+| Gaussian Mixture | 0.011 | 3.186 | 7.76 |
+| K-Means | 0.157 | 2.074 | 29.38 |
+| Agglomerative | 0.193 | 1.303 | 21.41 |
+| HDBSCAN | not computed | not computed | not computed |
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_cross_method_agreement START -->
@@ -125,7 +152,10 @@ _Pending: re-run notebook to export clustering method comparison CSV._
 ### Natural-Break Tiering
 
 <!-- AUTO_TABLE:clinical_confidence_tier_bic START -->
-_Pending: re-run notebook to export tier BIC CSV._
+| Candidate tier count | BIC |
+| ---: | ---: |
+| 2 | 14.7 |
+| 3 | 24.4 |
 <!-- AUTO_TABLE:clinical_confidence_tier_bic END -->
 
 <!-- AUTO_TABLE:clinical_confidence_tier_summary START -->
