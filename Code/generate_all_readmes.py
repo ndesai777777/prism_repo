@@ -168,10 +168,8 @@ def cc_internal_validation_comparison() -> str:
     rows = []
     for _, r in df.iterrows():
         sil = fnum(r.get("silhouette", ""), 3) if pd.notna(r.get("silhouette")) else "not computed"
-        db = fnum(r.get("davies_bouldin", ""), 3) if pd.notna(r.get("davies_bouldin")) else "not computed"
-        ch = fnum(r.get("calinski_harabasz", ""), 2) if pd.notna(r.get("calinski_harabasz")) else "not computed"
-        rows.append([r["method"], sil, db, ch])
-    return markdown_table(["Method", "Silhouette", "Davies-Bouldin", "Calinski-Harabasz"], rows)
+        rows.append([r["method"], sil])
+    return markdown_table(["Method", "Silhouette"], rows)
 
 
 def cc_cross_method_agreement() -> str:
@@ -190,8 +188,6 @@ def cc_stability_summary() -> str:
     rows = [
         ["n_components (GMM)", int(r["n_components"])],
         ["Silhouette (GMM)", fnum(r["silhouette_score"])],
-        ["Davies-Bouldin (GMM)", fnum(r["davies_bouldin_index"])],
-        ["Calinski-Harabasz (GMM)", fnum(r["calinski_harabasz_index"], 2)],
         ["Bootstrap mean ARI (100 resamples)", fnum(r["bootstrap_mean_ari"])],
         ["Bootstrap std ARI", fnum(r["bootstrap_std_ari"])],
         ["Stability assessment", f"**{r['stability_assessment']}**"],
@@ -281,15 +277,6 @@ def cc_flag_ablation() -> str:
     return markdown_table(["Comparison", "Value"], rows)
 
 
-def cc_flag_pca_loadings() -> str:
-    path = CC_OUTPUT / "clinical_confidence_flag_pca_loadings.csv"
-    if not path.exists():
-        return "_Pending: re-run notebook to export flag PCA loadings CSV._"
-    df = pd.read_csv(path)
-    rows = [[r["component"], fnum(r["anxiety_flag"], 3), fnum(r["copd_flag"], 3)] for _, r in df.iterrows()]
-    return markdown_table(["Component", "anxiety_flag loading", "copd_flag loading"], rows)
-
-
 def cc_benefit_difference_test() -> str:
     path = CC_OUTPUT / "clinical_confidence_benefit_difference_test.csv"
     if not path.exists():
@@ -301,12 +288,9 @@ def cc_benefit_difference_test() -> str:
         "benefit_difference": "Difference (A1 − A0)",
         "ci95_lower": "95% CI lower",
         "ci95_upper": "95% CI upper",
-        "mannwhitney_u": "Mann-Whitney U",
-        "mannwhitney_p": "Mann-Whitney p",
-        "welch_t": "Welch t",
-        "welch_p": "Welch p",
     }
-    rows = [[label.get(r["metric"], r["metric"]), fnum(r["value"], 4)] for _, r in df.iterrows()]
+    rows = [[label.get(r["metric"], r["metric"]), fnum(r["value"], 4)] for _, r in df.iterrows()
+            if r["metric"] in label]
     return markdown_table(["Metric", "Value"], rows)
 
 
@@ -541,7 +525,6 @@ GENERATORS: list[tuple[Path, str, str, Callable[[], str]]] = [
     (CC_README, "TABLE", "clinical_confidence_tier_distribution", cc_tier_distribution),
     # New review-driven analyses
     (CC_README, "TABLE", "clinical_confidence_flag_ablation", cc_flag_ablation),
-    (CC_README, "TABLE", "clinical_confidence_flag_pca_loadings", cc_flag_pca_loadings),
     (CC_README, "TABLE", "clinical_confidence_benefit_difference_test", cc_benefit_difference_test),
     (CC_README, "TABLE", "clinical_confidence_true_benefit_by_tier", cc_true_benefit_by_tier),
     (CC_README, "TABLE", "clinical_confidence_typicality_generalization", cc_typicality_generalization),

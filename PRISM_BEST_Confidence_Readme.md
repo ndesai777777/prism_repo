@@ -165,23 +165,6 @@ textbook case.
 | Cross-check methods | `KMeans`, `AgglomerativeClustering` (`linkage="ward"`) | Alternative hard-clustering methods used only for the Level 1 comparison |
 | Outlier cross-check | `HDBSCAN` | Independent, density-based corroboration of low-confidence/outlier calls in Level 3 |
 
-```mermaid
-flowchart TD
-    A["High-benefit train/test members<br/>140 train / 60 test (top 20% by DR benefit_score)"] --> B["SHAP-ranked feature pool<br/>(77 candidates)"]
-    B --> C["Correlation pruning<br/>(0 dropped this run)"]
-    C --> C2["StandardScaler<br/>(fit on train, applied to test)"]
-    C2 --> D["PCA: 12 features -> 8 components<br/>(91.0% variance retained; fit on train)"]
-    D --> E["Fit GMM, K-Means, Agglomerative, HDBSCAN<br/>in PCA space"]
-    E --> F["Level 1: compare methods,<br/>select GMM (k=2, BIC-optimal)"]
-    F --> G["GMM archetype labels (train, n=140)"]
-    G --> H["Score test members (n=60):<br/>gmm_max_posterior, typicality_score"]
-    H --> I["Level 2: combine via geometric mean<br/>clinical_confidence_score"]
-    I --> J["Natural-break tiering<br/>(1-D GMM: 2 tiers found, High/Low)"]
-    J --> K["Outlier override -> Low tier<br/>(0 additional members moved)"]
-    K --> L["Level 3: HDBSCAN cross-verification<br/>(100% of strict outliers corroborated)"]
-    L --> M["Final scored test-patient table<br/>(60 rows: DR columns + confidence-layer columns)"]
-```
-
 ### Feature Selection Alignment With Doubly Robust SHAP Importance
 
 To keep this notebook consistent with the upstream DR workflow, the clustering feature pool is
@@ -251,34 +234,21 @@ weak-separation finding in Level 1.
 
 # Evaluation Level 1: Cluster Credibility
 
-**Question:** Do reproducible archetypes exist among high-benefit members, and does the evidence
-support choosing GMM over the alternative clustering methods?
-
-Because there is no ground-truth archetype label, credibility here is established through multiple
-complementary diagnostics rather than one metric — internal validation scores, cross-method
-agreement, and bootstrap reproducibility. As the numbers below show, these diagnostics do not all
-point the same direction, and the honest conclusion is more cautious than a typical "the model
-works" narrative.
+**Conclusion up front: the archetype split is not reproducible.** BIC selects k=2 cleanly, but
+cross-method agreement is at chance, bootstrap stability is WEAK, and the split appears driven
+by two binary flags rather than a multivariate clinical structure. GMM is kept for functional
+reasons only (the confidence layer needs its posterior and log-likelihood).
 
 ## Analytical Task 3: Archetype Diagnostics And Clustering Method Comparison
 
-> **Primary question:** Does a reproducible archetype structure exist in the high-benefit
-> population at all — and, given that the confidence layer requires soft posteriors and a
-> likelihood that only a mixture model provides, how much weight can the GMM archetype labels
-> bear?
-
-### Why GMM Despite Worse Partition Metrics
-
-The selection criterion here is **functional, not a quality claim.** K-Means and Agglomerative emit
-hard labels only; the confidence layer's two signals require more than that — `typicality_score`
-needs `gmm.score_samples()` (a per-member log-likelihood) and `gmm_max_posterior` needs
-`gmm.predict_proba()` (a soft membership distribution). K-Means and Agglomerative provide neither.
-GMM is therefore retained because it is the only candidate that *emits the quantities the
-confidence layer is built on* — not because it partitions this space better. As the internal
-validation table below shows, it in fact partitions this space **worse** than the alternatives on
-every metric. Both facts are true simultaneously and are stated plainly.
+> Does a reproducible archetype structure exist in the high-benefit population, and how much
+> weight can the GMM archetype labels bear?
 
 ### GMM Model Selection
+
+BIC and AIC are model-selection scores that balance fit quality against complexity — lower values
+indicate a better tradeoff, and they are used here to pick the number of archetypes (k)
+automatically rather than assuming one.
 
 <!-- AUTO_CHART:clinical_confidence_gmm_bic_aic_selection START -->
 ![GMM BIC/AIC model selection across candidate archetype counts](Outputs/Clinical-Confidence-Layer/Python/gmm_bic_aic_selection.png)
@@ -315,25 +285,23 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison START -->
-| Method | Silhouette | Davies-Bouldin | Calinski-Harabasz |
-| ---: | ---: | ---: | ---: |
-| Gaussian Mixture | 0.011 | 3.186 | 7.76 |
-| K-Means | 0.157 | 2.074 | 29.38 |
-| Agglomerative | 0.193 | 1.303 | 21.41 |
-| HDBSCAN (non-noise, n=118) | 0.114 | 2.110 | 11.44 |
+| Method | Silhouette |
+| ---: | ---: |
+| Gaussian Mixture | 0.011 |
+| K-Means | 0.157 |
+| Agglomerative | 0.193 |
+| HDBSCAN (non-noise, n=118) | 0.114 |
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison END -->
 
-**On every internal-validation metric, GMM is the worst of the hard-clustering methods** (silhouette
-0.011 vs. 0.157 K-Means and 0.193 Agglomerative; Davies-Bouldin 3.186 vs. 2.074 and 1.303;
-Calinski-Harabasz 7.76 vs. 29.38 and 21.41). GMM is retained not because it partitions this space
-better, but because it is the only candidate that emits the posterior and log-likelihood the
-confidence layer requires (see "Why GMM" above).
+**GMM has the worst silhouette of all methods** (0.011 vs. 0.157 K-Means and 0.193
+Agglomerative). GMM is retained not because it partitions this space better, but because it is the
+only candidate that emits the posterior and log-likelihood the confidence layer requires — the
+selection criterion is functional, not a quality claim.
 
-> **One caveat on these metrics:** silhouette, Davies-Bouldin and Calinski-Harabasz all reward
-> compact, spherical, similar-sized clusters — the assumption GMM is deliberately chosen to relax.
-> A low silhouette for a diagonal-covariance mixture is therefore *weaker* evidence against
-> structure than the same number would be for K-Means. The conclusion here does not rest on it:
-> the load-bearing evidence is the bootstrap instability and near-chance cross-method agreement
+> **Caveat on silhouette:** silhouette rewards compact, spherical, similar-sized clusters — the
+> assumption GMM is deliberately chosen to relax. A low silhouette for a diagonal-covariance
+> mixture is therefore weaker evidence against structure than the same number would be for K-Means.
+> The load-bearing evidence is the bootstrap instability and near-chance cross-method agreement
 > below, neither of which depends on a sphericity assumption.
 
 <!-- AUTO_TABLE:clinical_confidence_cross_method_agreement START -->
@@ -343,22 +311,20 @@ confidence layer requires (see "Why GMM" above).
 | GMM vs. Agglomerative | 0.094 |
 <!-- AUTO_TABLE:clinical_confidence_cross_method_agreement END -->
 
-This is the most important number in Level 1, and it should not be softened: **an ARI of −0.013
-against K-Means means GMM's 2-way split and K-Means' 2-way split agree with each other no better
-than chance** (an ARI of 0 is the expected value for random labelings; −0.013 is essentially at
-that baseline). Agreement with Agglomerative is weak-positive (0.094) but still far from the >0.5
-range that would indicate the same underlying structure is being found regardless of clustering
-assumptions. Combined with the very low GMM silhouette (0.011 — near the "no real separation"
-end of the [-1,1] range) and the HDBSCAN noise rate (27.1% of training members don't cleanly
-belong to any density-based cluster), the internal-validation and cross-method evidence together
-suggest the 2-way split is highly sensitive to which clustering method and distance assumptions are
-used — not a robust, method-agnostic structure in the data.
+HDBSCAN is excluded from this ARI comparison because it labels some points as noise rather than
+assigning them to any cluster, so a direct pairwise ARI against the GMM labels would compare
+different effective populations. This is a real gap in the comparison, not a stylistic omission.
 
-Also notable: the three hard-clustering methods disagree sharply on cluster *sizes*, not just
-membership — GMM splits roughly 75/25, K-Means splits roughly 41/59, and Agglomerative splits
-roughly 89/11. When three different methods can't even agree on how large the two groups should
-be, that's independent evidence the 2-cluster structure is not a strong, unambiguous feature of the
-data.
+The GMM-vs-K-Means ARI of −0.013 is the most important number in Level 1. The two methods'
+2-way splits agree no better than chance (ARI of 0 is expected for random labelings). Agreement
+with Agglomerative is weak-positive (0.094) but far from the >0.5 range that would indicate a
+method-agnostic structure. Combined with GMM's near-zero silhouette (0.011) and the HDBSCAN noise
+rate (15.7% of training members don't belong to any density-based cluster), the evidence suggests
+the 2-way split is highly sensitive to method assumptions.
+
+The methods also disagree on cluster sizes — GMM splits roughly 75/25, K-Means 41/59,
+Agglomerative 89/11. When three methods can't agree on group size, that's independent evidence
+the 2-cluster structure isn't a strong feature of the data.
 
 Supporting file:
 
@@ -382,34 +348,13 @@ of the archetype label is really just those flags.
 | Silhouette (continuous-only fit) | 0.121 |
 <!-- AUTO_TABLE:clinical_confidence_flag_ablation END -->
 
-<!-- AUTO_TABLE:clinical_confidence_flag_pca_loadings START -->
-| Component | anxiety_flag loading | copd_flag loading |
-| ---: | ---: | ---: |
-| PC1 | -0.042 | 0.162 |
-| PC2 | -0.075 | -0.107 |
-| PC3 | 0.336 | 0.174 |
-| PC4 | 0.323 | 0.674 |
-| PC5 | 0.817 | -0.358 |
-| PC6 | -0.219 | -0.253 |
-| PC7 | 0.215 | -0.150 |
-| PC8 | 0.013 | -0.468 |
-<!-- AUTO_TABLE:clinical_confidence_flag_pca_loadings END -->
+The decisive finding: refitting GMM on continuous features only produces a completely different
+split (near-zero ARI vs. the original) and raises silhouette roughly ten-fold. The two binary
+flags materially destabilize the clustering. This is the mechanism behind the weak bootstrap
+stability — a split partly anchored on two binary flags flips under resampling.
 
-The result is more nuanced than a clean 1:1 re-encoding: the archetype labels agree only weakly with
-either flag individually and moderately with their union (not the ARI > 0.6 that would prove the
-split *is* the flags). But the decisive finding is what happens when the flags are removed:
-refitting GMM on the continuous features only produces a **completely different** split (near-zero
-ARI against the original labels) *and* **raises the silhouette roughly ten-fold** over the
-flags-included fit. In other words, the two binaries are not a harmless add-on — they materially
-destabilize the clustering and actively degrade its quality. This is the mechanism behind the weak
-bootstrap stability reported next: a split partly anchored on two binary flags is exactly the kind
-of structure that flips under resampling.
-
-**Recommendation:** clustering a mixed binary/continuous space with PCA + GMM is a misspecification.
-Two options: (a) cluster the continuous features only and treat the flags as post-hoc profiling
-variables — cheap, and the silhouette gain suggests it is already better; or (b) use a mixed-type
-method built for this (k-prototypes, latent class analysis, or Gower distance + PAM) in a future
-iteration.
+**Recommendation:** cluster the continuous features only and treat the flags as post-hoc profiling
+variables, or use a mixed-type method (k-prototypes, latent class analysis) in a future iteration.
 
 ### Archetype Benefit-Difference Test
 
@@ -425,17 +370,11 @@ benefit.
 | Difference (A1 − A0) | 0.0019 |
 | 95% CI lower | -0.0012 |
 | 95% CI upper | 0.0049 |
-| Mann-Whitney U | 1527.0000 |
-| Mann-Whitney p | 0.1357 |
-| Welch t | -1.2071 |
-| Welch p | 0.2320 |
 <!-- AUTO_TABLE:clinical_confidence_benefit_difference_test END -->
 
-The 95% confidence interval on the between-archetype benefit difference **spans zero**, and both the
-Mann-Whitney and Welch tests are non-significant. **The archetypes do not differentiate expected
-benefit.** Their only possible value would be in differentiating the *type* of outreach a member
-should receive — something this analysis has not validated and cannot validate without an
-outreach-type outcome.
+The 95% confidence interval spans zero. **The archetypes do not differentiate expected benefit.**
+Their only possible value would be in differentiating the type of outreach — something this
+analysis cannot validate without an outreach-type outcome.
 
 ### Bootstrap Stability
 
@@ -444,8 +383,6 @@ outreach-type outcome.
 | ---: | ---: |
 | n_components (GMM) | 2 |
 | Silhouette (GMM) | 0.011 |
-| Davies-Bouldin (GMM) | 3.186 |
-| Calinski-Harabasz (GMM) | 7.76 |
 | Bootstrap mean ARI (100 resamples) | 0.172 |
 | Bootstrap std ARI | 0.241 |
 | Stability assessment | **WEAK** |
@@ -455,7 +392,11 @@ outreach-type outcome.
 ![Bootstrap ARI distribution with STRONG/MODERATE/WEAK thresholds](Outputs/Clinical-Confidence-Layer/Python/bootstrap_ari_distribution.png)
 <!-- AUTO_CHART:clinical_confidence_bootstrap_ari_distribution END -->
 
-**Stability protocol (exactly as run):**
+**The archetype split is not reliably reproducible.** A mean bootstrap ARI of 0.172 (std 0.241)
+falls squarely in the WEAK band, and the large standard deviation means the split varies
+substantially from resample to resample.
+
+**Stability protocol:**
 
 ```text
 Resampling  : 100 bootstrap resamples of the 140 training members, WITH replacement
@@ -465,17 +406,10 @@ Comparison  : labels predicted for the full 140-member training set from each re
 Bands       : STRONG >= 0.75 | MODERATE 0.50-0.75 | WEAK < 0.50
 ```
 
-A mean bootstrap ARI of 0.172 (std 0.241) is unambiguously in the WEAK band, and the standard
-deviation is large relative to the mean — the archetype split varies substantially from resample to
-resample. This reinforces the cross-method disagreement above.
-
-**A likely mechanical driver — parameter count vs. sample size:** a diagonal-covariance GMM with
-k=2 in 8 dimensions estimates 33 free parameters (2×8 means, 2×8 variances, 1 mixing weight) from
-140 observations — roughly **4.2 observations per parameter** (full covariance would have needed
-89). This ratio is the most likely mechanical explanation for the WEAK stability and should be read
-as a constraint of the current population size, not necessarily a property of the underlying
-clinical data. A concrete sensitivity check for a future run: repeat model selection at 70% and 80%
-PCA-variance targets (fewer components) and see whether stability rises.
+**Likely mechanical driver:** a diagonal-covariance GMM with k=2 in 8 dimensions estimates 33 free
+parameters from 140 observations — roughly 4.2 observations per parameter. This is the most likely
+explanation for the WEAK stability and should be read as a constraint of sample size, not
+necessarily a property of the underlying clinical data.
 
 Supporting files:
 
@@ -491,18 +425,10 @@ Supporting files:
 | 1 | 35 | 0.0685 | 59.69 | 55.66 | 51.17 | 51.69 | 0.78 | 29.37 | 2.00 | 1.17 | 8.46 | $4,744 | 0.0% | 0.0% |
 <!-- AUTO_TABLE:clinical_confidence_archetype_summary END -->
 
-This table is the clearest evidence for *why* the archetype split is fragile: **Archetype 1 has
-literally 0% anxiety and 0% COPD**, while Archetype 0 has 32.4% anxiety and 50.5% COPD. The two
-continuous clinical-severity features (clinical score, risk score, utilization score) differ only
-modestly between archetypes (roughly 2-5 points on scales that run into the 50s-60s), and average
-benefit score is nearly identical (0.0667 vs. 0.0685 — a 3% relative difference). In other words,
-the "archetype" split found here looks less like two distinct clinical severity profiles and more
-like a binary split on the presence/absence of two specific comorbidity flags, with everything else
-riding along as a byproduct of who happens to have those flags in this training sample. That's a
-real, interpretable pattern — but it's a much narrower finding than "two clinically distinct
-high-benefit phenotypes," and it explains why the split doesn't survive bootstrap resampling well:
-a two-flag split is exactly the kind of structure that can flip under resampling if the flags are
-not strongly correlated with the continuous PCA-space position driving the actual GMM fit.
+**Archetype 1 has 0% anxiety and 0% COPD**; Archetype 0 has 32.4% and 50.5% respectively. The
+continuous features differ only modestly (2-5 points), and benefit is near-identical (3% relative
+difference). The split looks like a binary-flag partition more than two distinct clinical profiles —
+explaining why it doesn't survive bootstrap resampling.
 
 > **On naming:** descriptive archetype names (e.g. "Comorbid (anxiety and/or COPD present)" vs.
 > "Non-comorbid") are deliberately withheld. Given the flag-ablation finding and the WEAK
@@ -512,33 +438,22 @@ not strongly correlated with the continuous PCA-space position driving the actua
 
 ### Conclusion Of Level 1
 
-GMM is retained as the primary clustering method for the reasons described in Task 1 — soft,
-probabilistic membership and a log-likelihood that Level 2's `typicality_score` depends on
-directly, neither of which K-Means or Agglomerative provide. BIC also decisively and smoothly
-selects k=2, a clear improvement over an earlier uncorrected 12-D/full-covariance version of this
-analysis. **However, the credibility evidence for treating this 2-archetype split as a validated,
-reproducible clinical finding is weak**: near-chance agreement with K-Means (ARI −0.013), a
-near-zero silhouette (0.011), WEAK bootstrap stability (mean ARI 0.172), and an archetype
-separation that appears driven predominantly by two binary comorbidity flags rather than a
-holistic multivariate signature. GMM is the right *tool* for the confidence-layer machinery that
-follows; the *archetypes themselves* should be treated as exploratory and unconfirmed rather than
-established clinical subgroups (see Level 1 Summary and the operational recommendation in Level 3).
+GMM is the right tool for the confidence-layer machinery — it emits the posterior and
+log-likelihood that Level 2 depends on. BIC smoothly selects k=2. But the credibility evidence for
+treating this split as a validated clinical finding is weak: near-chance cross-method agreement
+(ARI −0.013 vs. K-Means), near-zero silhouette (0.011), WEAK bootstrap stability (mean ARI 0.172),
+and a separation driven primarily by two binary flags. The archetypes should be treated as
+exploratory and unconfirmed.
 
 ## Level 1 Summary: Cluster Credibility
 
-BIC selects k=2 archetypes with a smooth, monotonic curve, and this is a genuine methodological
-improvement over an earlier version of this analysis that showed an unstable, non-monotonic BIC
-search in raw high-dimensional space. On the credibility of the resulting split itself, though, the
-evidence is weak on every axis measured: GMM's silhouette (0.011) indicates essentially no internal
-separation; cross-method agreement with K-Means is at chance level (ARI −0.013) and only weakly
-positive with Agglomerative (0.094); and bootstrap resampling classifies stability as WEAK (mean
-ARI 0.172, std 0.241). The archetype profiles show the 2-way split is driven almost entirely by two
-binary comorbidity flags (anxiety_flag: 32.4% vs. 0.0%; copd_flag: 50.5% vs. 0.0%) rather than a
-rich, multivariate clinical distinction — average benefit score differs by only 3% between the two
-groups. **GMM is carried forward as the primary method because its soft posterior/log-likelihood
-machinery is required for Level 2's confidence scoring**, not because the archetypes it finds have
-been shown to be a robust, reproducible clinical structure. This caveat should travel with every
-downstream use of `gmm_archetype`.
+BIC selects k=2 with a smooth, monotonic curve — a methodological improvement over earlier
+versions. The resulting split itself is weak on every diagnostic: silhouette 0.011, cross-method
+ARI at chance (−0.013 vs. K-Means), and WEAK bootstrap stability (mean ARI 0.172, std 0.241). The
+profiles show the split is driven by two binary flags (anxiety 32.4% vs. 0%; COPD 50.5% vs. 0%)
+rather than multivariate clinical distinction. **GMM is carried forward because its
+posterior/log-likelihood machinery is required for Level 2**, not because the archetypes have been
+validated.
 
 ---
 
@@ -608,12 +523,10 @@ the fitted mixture, mean test typicality would sit near 0.50.
 | Median test log-likelihood | -12.1726 |
 <!-- AUTO_TABLE:clinical_confidence_typicality_generalization END -->
 
-Mean test typicality is below 0.50, indicating the GMM density is fit somewhat more tightly to the
-training sample than it generalizes to held-out members — consistent with the ~4.2 observations per
-parameter noted in Level 1. The KS test on train-vs-test log-likelihoods quantifies whether that
-shift is statistically distinguishable (it is a mild, not dramatic, shift on this run). The
-practical implication: some portion of the Low tier reflects model overfitting rather than genuine
-member atypicality, a further reason to treat tier assignments as advisory.
+Mean test typicality is 0.41 (below the 0.50 expected under exchangeability), indicating the GMM
+fits training members somewhat more tightly than it generalizes to held-out members — consistent
+with ~4.2 observations per parameter. The KS test quantifies this shift. Practical implication:
+some Low-tier assignments may reflect model overfitting rather than genuine atypicality.
 
 Supporting file:
 
@@ -641,15 +554,10 @@ min/max would be circular (min-max normalization forces them to exactly 0 and 1)
 | Normalized score std (fixed train bounds) | 0.2651 |
 <!-- AUTO_TABLE:clinical_confidence_combined_score_summary END -->
 
-The tier breakdown below provides a direct, real-data confirmation of why the geometric mean
-(rather than an arithmetic average) was the right choice: **the average posterior is nearly
-identical between the High and Low confidence tiers
-(0.907 vs. 0.910)** — posterior alone carries essentially no information about which tier a member
-lands in. It's the typicality axis that does almost all of the separating work (0.582 in the High
-tier vs. 0.103 in the Low tier). Under an arithmetic mean, a member with posterior≈0.91 and
-typicality≈0.10 would be pulled toward the middle of the range by the strong posterior; under the
-geometric mean actually used here, that same member is correctly pushed toward the low end, because
-a near-zero typicality can't be compensated for by a high posterior.
+The tier breakdown confirms the geometric-mean design is doing real work: posterior is essentially
+identical across tiers (0.907 High vs. 0.910 Low), so tier placement is driven entirely by
+typicality (0.582 vs. 0.103). A high posterior can't compensate for near-zero typicality under the
+geometric mean — exactly the "confident but atypical" failure mode it was designed to catch.
 
 ### Natural-Break Tiering
 
@@ -686,17 +594,12 @@ Supporting file:
 
 ## Level 2 Summary: Confidence Value Determination
 
-The confidence score is `sqrt(gmm_max_posterior × typicality_score)`, normalized to [0,1], with an
-observed mean of 0.565 (std 0.245) spanning the full range on this test population. A 1-D GMM fit
-directly on the confidence scores selected 2 natural tiers over 3 (BIC 14.7 vs. 24.4), producing a
-63.3% High / 36.7% Low split with no Medium tier — the natural-break design worked as intended
-rather than forcing an artificial third group. The tier breakdown provides direct evidence that the
-geometric-mean combination rule is doing real work: average posterior is essentially identical
-across tiers (0.907 High vs. 0.910 Low), so tier placement here is driven almost entirely by
-typicality (0.582 vs. 0.103) — exactly the "confident but atypical" failure mode the geometric mean
-was designed to catch. All 6 members flagged as strict archetype outliers were already in the Low
-tier before the override was applied, so the override served as confirmation rather than active
-correction on this run.
+The confidence score is `sqrt(gmm_max_posterior × typicality_score)`, normalized to [0,1] against
+fixed training bounds. BIC selected 2 natural tiers over 3, producing a 63.3% High / 36.7% Low
+split. Tier placement is driven by typicality (the tiers have near-identical posterior) — the
+geometric mean correctly catches "confident but atypical" members. All 6 strict outliers were
+already in the Low tier before the override, confirming the override is a safety net rather than
+an active correction.
 
 ---
 
@@ -898,16 +801,11 @@ confidence = more trustworthy benefit estimate"?
 | Low | 22 | 0.0956 | 0.0379 | 0.247 | 0.267 |
 <!-- AUTO_TABLE:clinical_confidence_true_benefit_by_tier END -->
 
-**The result does not support the confidence score's core claim on this run.** The High tier does
-*not* show higher mean true benefit than the Low tier (if anything it is lower), and the within-tier
-rank correlation between estimated and true benefit does *not* favor the High tier — the High-tier
-correlation is weakly negative while the Low-tier correlation is weakly positive, the opposite of
-what "the confidence score is working as intended" would predict. Neither within-tier correlation is
-statistically significant at these sample sizes (n=38 High, n=22 Low), so the honest reading is:
-**there is no evidence the confidence tier improves benefit-estimate fidelity, and the weak signals
-that do appear point the wrong way.** This is the single most important reason the top-line
-recommendation is shadow-mode-only rather than automated routing — and it is exactly the check that
-should be re-run first on any larger or re-specified version of this pipeline.
+**The confidence score does not improve benefit-estimate fidelity on this run.** The High tier
+does not show higher mean true benefit than the Low tier, and the within-tier rank correlation
+between estimated and true benefit does not favor the High tier (High-tier Spearman is weakly
+negative while Low-tier is weakly positive). Neither correlation is statistically significant at
+these sample sizes (n=38, n=22). This is the primary reason the recommendation is shadow-mode-only.
 
 Supporting file:
 
@@ -915,20 +813,13 @@ Supporting file:
 
 ## Level 3 Summary: Visualization And Verification
 
-The archetype and confidence-tier 3D scatter plots visually confirm what Level 1's diagnostics
-indicated numerically: the two archetypes overlap substantially in PCA space rather than forming
-clean, separated clusters, and High/Low confidence members are visually interspersed rather than
-spatially segregated — consistent with typicality (a density-under-the-model measure) driving tier
-placement rather than raw geometric position. HDBSCAN verification corroborates the strict
-outlier calls in large majority and shows good-but-imperfect agreement at the broader tier level;
-the handful of disagreement cases are flagged for manual review. The final scored table is complete
-at 60 rows (matching the high-benefit test population exactly) with the full column list printed
-above, and no members dropped between population definition and export. Operationally, the
-confidence layer would route roughly 63% of the high-benefit test
-population to a lighter-touch workflow and 37% to full manual review — but given Level 1's weak
-cluster-credibility findings, this report recommends a care-manager confirmation step for *both*
-tiers (not full automation for High) until the underlying archetype stability is revisited, ideally
-with a larger training population or an expanded feature/hyperparameter search.
+The 3D scatter plots visually confirm what Level 1's diagnostics show: archetypes overlap
+substantially, and High/Low confidence members are interspersed rather than spatially separated.
+HDBSCAN corroborates the strict outlier calls and shows good agreement at the tier level. The
+scored table is complete (60 rows, 57 columns). Operationally the confidence layer would route
+~63% to lighter-touch review and ~37% to full manual review — but given Level 1's findings, a
+care-manager confirmation step is recommended for both tiers until stability is revisited on a
+larger population.
 
 ---
 
