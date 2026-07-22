@@ -364,10 +364,28 @@ def cc_archetype_scatter_3d() -> str:
         path = CC_OUTPUT / name
         if path.exists():
             rel = path.relative_to(ROOT).as_posix()
-            return markdown_image(
+            lines = [markdown_image(
                 "3D PCA scatter of training members colored by archetype, with centroids",
                 rel,
-            )
+            )]
+            # Add interactive links if HTML exists
+            html_3d = CC_OUTPUT / "archetype_scatter_3d.html"
+            html_2d = CC_OUTPUT / "archetype_scatter_2d.html"
+            png_2d = CC_OUTPUT / "archetype_scatter_2d.png"
+            if html_3d.exists() or html_2d.exists():
+                lines.append("")
+                lines.append("📊 **Interactive versions (drag to rotate):**")
+                if html_3d.exists():
+                    lines.append(f"- [3D Archetype scatter (interactive)]({html_3d.relative_to(ROOT).as_posix()})")
+                if html_2d.exists():
+                    lines.append(f"- [2D Archetype scatter (interactive)]({html_2d.relative_to(ROOT).as_posix()})")
+            if png_2d.exists():
+                lines.append("")
+                lines.append(markdown_image(
+                    "2D PCA scatter of training members colored by archetype",
+                    png_2d.relative_to(ROOT).as_posix(),
+                ))
+            return "\n".join(lines)
     return "_Pending: re-run notebook with fig.write_image() to export archetype_scatter_3d.png._"
 
 
@@ -375,9 +393,26 @@ def cc_tier_scatter_3d() -> str:
     path = CC_OUTPUT / "confidence_tiers_3d.png"
     if path.exists():
         rel = path.relative_to(ROOT).as_posix()
-        return markdown_image(
+        lines = [markdown_image(
             "3D PCA scatter of test members colored by confidence tier", rel
-        )
+        )]
+        html_3d = CC_OUTPUT / "confidence_tiers_3d.html"
+        html_2d = CC_OUTPUT / "confidence_tiers_2d.html"
+        png_2d = CC_OUTPUT / "confidence_tiers_2d.png"
+        if html_3d.exists() or html_2d.exists():
+            lines.append("")
+            lines.append("📊 **Interactive versions (drag to rotate):**")
+            if html_3d.exists():
+                lines.append(f"- [3D Confidence tier scatter (interactive)]({html_3d.relative_to(ROOT).as_posix()})")
+            if html_2d.exists():
+                lines.append(f"- [2D Confidence tier scatter (interactive)]({html_2d.relative_to(ROOT).as_posix()})")
+        if png_2d.exists():
+            lines.append("")
+            lines.append(markdown_image(
+                "2D PCA scatter of test members colored by confidence tier",
+                png_2d.relative_to(ROOT).as_posix(),
+            ))
+        return "\n".join(lines)
     return "_Pending: re-run notebook with fig.write_image() to export confidence_tiers_3d.png._"
 
 

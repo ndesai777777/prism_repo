@@ -534,7 +534,13 @@ it imply operationally?
 ### Archetype Visualization
 
 <!-- AUTO_CHART:clinical_confidence_archetype_scatter_3d START -->
-![3D PCA scatter of training members colored by archetype, with centroids](Outputs/Clinical-Confidence-Layer/Python/gmm_archetypes_pca.png)
+![3D PCA scatter of training members colored by archetype, with centroids](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_3d.png)
+
+📊 **Interactive versions (drag to rotate):**
+- [3D Archetype scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_3d.html)
+- [2D Archetype scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_2d.html)
+
+![2D PCA scatter of training members colored by archetype](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_2d.png)
 <!-- AUTO_CHART:clinical_confidence_archetype_scatter_3d END -->
 
 The plot shows PC1-3, which together capture 57.7% of total variance. Visually, the two archetypes
@@ -547,6 +553,12 @@ indicated: the boundary between archetypes is soft and overlapping, not a clean 
 
 <!-- AUTO_CHART:clinical_confidence_tier_scatter_3d START -->
 ![3D PCA scatter of test members colored by confidence tier](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_3d.png)
+
+📊 **Interactive versions (drag to rotate):**
+- [3D Confidence tier scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_3d.html)
+- [2D Confidence tier scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_2d.html)
+
+![2D PCA scatter of test members colored by confidence tier](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_2d.png)
 <!-- AUTO_CHART:clinical_confidence_tier_scatter_3d END -->
 
 High-confidence members (green, n=38) and Low-confidence members (red, n=22) are visibly
