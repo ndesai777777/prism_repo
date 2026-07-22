@@ -386,15 +386,6 @@ explaining why it doesn't survive bootstrap resampling.
 > `Archetype 0` / `Archetype 1` until stability is established on a larger population or a
 > mixed-type method.
 
-### Conclusion Of Level 1
-
-GMM is the right tool for the confidence-layer machinery — it emits the posterior and
-log-likelihood that Level 2 depends on. BIC smoothly selects k=2. But the credibility evidence for
-treating this split as a validated clinical finding is weak: near-chance cross-method agreement
-(ARI −0.013 vs. K-Means), near-zero silhouette (0.011), WEAK bootstrap stability (mean ARI 0.172),
-and a separation driven primarily by two binary flags. The archetypes should be treated as
-exploratory and unconfirmed.
-
 ## Level 1 Summary: Cluster Credibility
 
 BIC selects k=2 with a smooth, monotonic curve — a methodological improvement over earlier
