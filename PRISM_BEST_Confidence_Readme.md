@@ -356,15 +356,6 @@ analysis cannot validate without an outreach-type outcome.
 falls squarely in the WEAK band, and the large standard deviation means the split varies
 substantially from resample to resample.
 
-**Stability protocol:**
-
-```text
-Resampling  : 100 bootstrap resamples of the 140 training members, WITH replacement
-Refit       : GMM refit on each resample; k fixed at 2; covariance_type="diag"; reg_covar=1e-3; n_init=5
-Comparison  : labels predicted for the full 140-member training set from each resampled fit,
-              ARI computed against the reference full-sample labeling
-Bands       : STRONG >= 0.75 | MODERATE 0.50-0.75 | WEAK < 0.50
-```
 
 **Likely mechanical driver:** a diagonal-covariance GMM with k=2 in 8 dimensions estimates 33 free
 parameters from 140 observations — roughly 4.2 observations per parameter. This is the most likely
@@ -372,7 +363,6 @@ explanation for the WEAK stability and should be read as a constraint of sample 
 necessarily a property of the underlying clinical data.
 
 Supporting files:
-
 - [`cluster_stability_summary.csv`](Outputs/Clinical-Confidence-Layer/Python/cluster_stability_summary.csv)
 - [`bootstrap_ari_values.csv`](Outputs/Clinical-Confidence-Layer/Python/bootstrap_ari_values.csv) (the 100 individual ARI values)
 
