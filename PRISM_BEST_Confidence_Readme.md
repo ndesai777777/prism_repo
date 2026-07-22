@@ -538,7 +538,6 @@ it imply operationally?
 
 📊 **Interactive versions (drag to rotate):**
 - [3D Archetype scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_3d.html)
-- [2D Archetype scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_2d.html)
 
 ![2D PCA scatter of training members colored by archetype](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_2d.png)
 <!-- AUTO_CHART:clinical_confidence_archetype_scatter_3d END -->
@@ -556,7 +555,6 @@ indicated: the boundary between archetypes is soft and overlapping, not a clean 
 
 📊 **Interactive versions (drag to rotate):**
 - [3D Confidence tier scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_3d.html)
-- [2D Confidence tier scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_2d.html)
 
 ![2D PCA scatter of test members colored by confidence tier](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_2d.png)
 <!-- AUTO_CHART:clinical_confidence_tier_scatter_3d END -->
