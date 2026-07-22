@@ -252,15 +252,116 @@ def cc_degeneracy_check() -> str:
 
 
 def cc_combined_score_summary() -> str:
-    scored = _cc_scored()
-    col = "clinical_confidence_score"
-    rows = [
-        ["Mean", fnum(scored[col].mean())],
-        ["Std", fnum(scored[col].std())],
-        ["Minimum", fnum(scored[col].min())],
-        ["Maximum", fnum(scored[col].max())],
-    ]
+    """Report the RAW sqrt(posterior*typicality) distribution + frozen train bounds.
+    (Post-normalization min/max are trivially 0/1 and were removed as circular.)"""
+    path = CC_OUTPUT / "clinical_confidence_combined_score_summary.csv"
+    if not path.exists():
+        return "_Pending: re-run notebook to export combined score summary CSV._"
+    df = pd.read_csv(path)
+    label = {
+        "raw_min": "Raw score minimum (pre-normalization)",
+        "raw_max": "Raw score maximum (pre-normalization)",
+        "raw_mean": "Raw score mean",
+        "raw_std": "Raw score std",
+        "train_bound_lo": "Frozen training lower bound",
+        "train_bound_hi": "Frozen training upper bound",
+        "normalized_mean": "Normalized score mean (fixed train bounds)",
+        "normalized_std": "Normalized score std (fixed train bounds)",
+    }
+    rows = [[label.get(r["metric"], r["metric"]), fnum(r["value"], 4)] for _, r in df.iterrows()]
     return markdown_table(["Metric", "Value"], rows)
+
+
+def cc_flag_ablation() -> str:
+    path = CC_OUTPUT / "clinical_confidence_flag_ablation.csv"
+    if not path.exists():
+        return "_Pending: re-run notebook to export flag ablation CSV._"
+    df = pd.read_csv(path)
+    rows = [[r["comparison"], fnum(r["value"], 3)] for _, r in df.iterrows()]
+    return markdown_table(["Comparison", "Value"], rows)
+
+
+def cc_flag_pca_loadings() -> str:
+    path = CC_OUTPUT / "clinical_confidence_flag_pca_loadings.csv"
+    if not path.exists():
+        return "_Pending: re-run notebook to export flag PCA loadings CSV._"
+    df = pd.read_csv(path)
+    rows = [[r["component"], fnum(r["anxiety_flag"], 3), fnum(r["copd_flag"], 3)] for _, r in df.iterrows()]
+    return markdown_table(["Component", "anxiety_flag loading", "copd_flag loading"], rows)
+
+
+def cc_benefit_difference_test() -> str:
+    path = CC_OUTPUT / "clinical_confidence_benefit_difference_test.csv"
+    if not path.exists():
+        return "_Pending: re-run notebook to export benefit difference test CSV._"
+    df = pd.read_csv(path)
+    label = {
+        "mean_benefit_archetype_0": "Mean benefit — Archetype 0",
+        "mean_benefit_archetype_1": "Mean benefit — Archetype 1",
+        "benefit_difference": "Difference (A1 − A0)",
+        "ci95_lower": "95% CI lower",
+        "ci95_upper": "95% CI upper",
+        "mannwhitney_u": "Mann-Whitney U",
+        "mannwhitney_p": "Mann-Whitney p",
+        "welch_t": "Welch t",
+        "welch_p": "Welch p",
+    }
+    rows = [[label.get(r["metric"], r["metric"]), fnum(r["value"], 4)] for _, r in df.iterrows()]
+    return markdown_table(["Metric", "Value"], rows)
+
+
+def cc_true_benefit_by_tier() -> str:
+    path = CC_OUTPUT / "clinical_confidence_true_benefit_by_tier.csv"
+    if not path.exists():
+        return "_Pending: run the ground-truth validation cell (needs true_benefit)._"
+    df = pd.read_csv(path)
+    rows = []
+    for _, r in df.iterrows():
+        rows.append([
+            r["confidence_tier"], int(r["n"]),
+            fnum(r["mean_true_benefit"], 4), fnum(r["std_true_benefit"], 4),
+            fnum(r["spearman_benefit_vs_true"], 3), fnum(r["spearman_p"], 3),
+        ])
+    return markdown_table(
+        ["Confidence tier", "N", "Mean true benefit", "Std true benefit",
+         "Within-tier Spearman (benefit vs true)", "p"],
+        rows,
+    )
+
+
+def cc_typicality_generalization() -> str:
+    path = CC_OUTPUT / "clinical_confidence_typicality_generalization.csv"
+    if not path.exists():
+        return "_Pending: re-run notebook to export typicality generalization CSV._"
+    df = pd.read_csv(path)
+    label = {
+        "mean_test_typicality": "Mean test typicality",
+        "expected_under_exchangeability": "Expected under exchangeability",
+        "ks_statistic": "KS statistic (train vs test log-lik)",
+        "ks_pvalue": "KS p-value",
+        "median_train_loglik": "Median train log-likelihood",
+        "median_test_loglik": "Median test log-likelihood",
+    }
+    rows = [[label.get(r["metric"], r["metric"]), fnum(r["value"], 4)] for _, r in df.iterrows()]
+    return markdown_table(["Metric", "Value"], rows)
+
+
+def cc_scored_schema() -> str:
+    path = CC_OUTPUT / "clinical_confidence_scored_schema.csv"
+    if not path.exists():
+        return "_Pending: re-run notebook to export scored schema CSV._"
+    cols = pd.read_csv(path)["column"].tolist()
+    return f"`{len(cols)}` columns:\n\n```text\n" + "\n".join(cols) + "\n```"
+
+
+def cc_bootstrap_ari_distribution() -> str:
+    path = CC_OUTPUT / "bootstrap_ari_distribution.png"
+    if not path.exists():
+        return "_Pending: re-run notebook to export bootstrap_ari_distribution.png._"
+    return markdown_image(
+        "Bootstrap ARI distribution with STRONG/MODERATE/WEAK thresholds",
+        path.relative_to(ROOT).as_posix(),
+    )
 
 
 def cc_tier_bic() -> str:
@@ -438,8 +539,16 @@ GENERATORS: list[tuple[Path, str, str, Callable[[], str]]] = [
     (CC_README, "TABLE", "clinical_confidence_tier_summary", cc_tier_summary),
     (CC_README, "TABLE", "clinical_confidence_hdbscan_tier_crosstab", cc_hdbscan_tier_crosstab),
     (CC_README, "TABLE", "clinical_confidence_tier_distribution", cc_tier_distribution),
+    # New review-driven analyses
+    (CC_README, "TABLE", "clinical_confidence_flag_ablation", cc_flag_ablation),
+    (CC_README, "TABLE", "clinical_confidence_flag_pca_loadings", cc_flag_pca_loadings),
+    (CC_README, "TABLE", "clinical_confidence_benefit_difference_test", cc_benefit_difference_test),
+    (CC_README, "TABLE", "clinical_confidence_true_benefit_by_tier", cc_true_benefit_by_tier),
+    (CC_README, "TABLE", "clinical_confidence_typicality_generalization", cc_typicality_generalization),
+    (CC_README, "TABLE", "clinical_confidence_scored_schema", cc_scored_schema),
     # Charts
     (CC_README, "CHART", "clinical_confidence_gmm_bic_aic_selection", cc_gmm_bic_aic_selection),
+    (CC_README, "CHART", "clinical_confidence_bootstrap_ari_distribution", cc_bootstrap_ari_distribution),
     (CC_README, "CHART", "clinical_confidence_archetype_scatter_3d", cc_archetype_scatter_3d),
     (CC_README, "CHART", "clinical_confidence_tier_scatter_3d", cc_tier_scatter_3d),
 ]

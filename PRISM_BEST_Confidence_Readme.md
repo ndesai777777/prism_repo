@@ -20,19 +20,49 @@ Core sign convention (carried forward from the Doubly Robust learner):
 benefit_score              = -tau_hat, higher = larger estimated ED risk reduction
 gmm_archetype               = cluster ID assigned to a high-benefit member
 gmm_max_posterior           = confidence the winning archetype is unambiguous
-typicality_score            = confidence the member resembles the training population at all
-clinical_confidence_score   = sqrt(gmm_max_posterior * typicality_score)
-confidence_tier              = Low / Medium / High, cut at natural breaks (1-D GMM), not fixed terciles
+typicality_score            = confidence the member resembles the training population at all (percentile rank of GMM log-likelihood vs. the training distribution)
+clinical_confidence_score   = sqrt(gmm_max_posterior * typicality_score), normalized against FIXED training-derived bounds (comparable across scoring batches)
+confidence_tier              = Low / High on this run (Medium is supported by the method but BIC selected 2 tiers, so it is not realized here); cut at natural breaks (1-D GMM), not fixed terciles
+knn_similarity              = 1 / (1 + mean Euclidean distance to the k=10 nearest training members in PCA space); diagnostic only, excluded from the confidence score
 ```
 
-**Headline finding, stated up front:** the confidence-scoring machinery works as designed — the
-two-signal geometric mean and HDBSCAN cross-verification both behave exactly as intended on this
-run. However, the underlying archetype clustering itself is only weakly supported: bootstrap
-stability is classified **WEAK** (mean ARI 0.172), agreement with K-Means is effectively **zero**
-(ARI −0.013), and the 2-archetype split appears driven almost entirely by two binary comorbidity
-flags rather than a rich multivariate clinical signature. This report presents both the successes
-and these caveats plainly, and recommends shadow-mode use rather than automated deployment (see
-Level 1 Summary and Level 3 Summary).
+## Recommendation (stated first)
+
+**Use in shadow mode only. Do not use `gmm_archetype` for automated routing or targeting.** Three
+findings, each developed below, drive this:
+
+1. **The archetypes do not differentiate benefit.** The mean-benefit difference between the two
+   archetypes has a 95% CI that spans zero (see Task 3, benefit-difference test), so the label
+   carries no targeting value even if it were stable.
+2. **The archetype split is not reproducible.** Bootstrap stability is WEAK and cross-method
+   agreement is near chance; removing two binary comorbidity flags changes the split entirely
+   *and* improves silhouette roughly 10× — evidence the split is partly a specification artifact,
+   not a robust clinical structure (see Task 3, flag ablation).
+3. **The confidence score is not yet validated against ground truth.** On synthetic true benefit,
+   the High tier does not show higher true benefit than the Low tier, and within-tier rank
+   correlation does not favor the High tier (see Level 3, ground-truth validation).
+
+**Caveats second:** these are exploratory findings on n=140 train / n=60 test high-benefit members,
+with ~4.2 observations per GMM parameter — a design constraint of the current population size, not
+necessarily a property of the underlying clinical data.
+
+**What does work as designed (last):** the two-signal geometric-mean machinery and HDBSCAN
+cross-verification behave exactly as intended — the score correctly penalizes "confident but
+atypical" members, and the tiering reports the number of natural bands the data supports rather
+than forcing thirds. The machinery is sound; the archetypes it is currently applied to are not.
+
+## Flagged Gaps and Where They Are Addressed
+
+| # | Gap (from review) | Impact | Where addressed |
+|---|---|---|---|
+| 1 | Internal metrics for K-Means / Agglomerative / HDBSCAN | Method comparison was incomplete | Task 3 — internal validation table (now computed for all methods) |
+| 2 | 100 bootstrap ARI values not retained | Stability histogram unrenderable | Task 3 — bootstrap distribution chart + `bootstrap_ari_values.csv` |
+| 3 | No row-level schema of the scored table | Schema unverified in-doc | Task 5 — literal column list |
+| 4 | `true_benefit` validation by tier not run | Confidence score never validated vs. ground truth | Level 3 — ground-truth validation subsection |
+| 5 | Two binary flags inside PCA+GMM | Likely causes the weak-stability headline | Task 3 — flag ablation subsection |
+| 6 | Score normalization circular / per-batch | Scores not comparable across batches | Task 4 — raw score summary + frozen train bounds |
+| 7 | Benefit difference between archetypes never tested | Archetype targeting value unquantified | Task 3 — benefit-difference test |
+| 8 | Standardization / reproducibility undocumented | Pipeline not reproducible | Model Specification + Reproducibility section |
 
 ## Background
 
@@ -129,16 +159,18 @@ textbook case.
 
 | Component | Model | Purpose |
 |---|---|---|
-| Dimensionality reduction | `PCA` (90% variance target) | Reduces 12 clustering features to 8 components appropriate for n=140 high-benefit training members |
-| Primary clustering | `GaussianMixture` (`covariance_type="diag"`) | Discovers archetypes with soft, per-archetype-shaped membership |
-| Cross-check methods | `KMeans`, `AgglomerativeClustering` | Alternative hard-clustering methods used only for the Level 1 comparison |
+| Standardization | `StandardScaler` (fit on train only) | Required before PCA — feature scales span ~0.76 (`med_adherence_pdc`) to ~5,264 (`total_cost_last_6m`); without it PC1 would essentially be "cost." The scaler is fit on the 140 training members and only *applied* to the 60 test members (no leakage). |
+| Dimensionality reduction | `PCA` (90% variance target) | Reduces 12 standardized features to 8 components retaining ≥90% variance; fit on train, applied to test. See the parameter-count caveat in Task 2 — "appropriate for n=140" is the claim under test, not an assumption. |
+| Primary clustering | `GaussianMixture` (`covariance_type="diag"`) | Discovers archetypes with soft, per-archetype-shaped membership; the only candidate that emits the posterior + log-likelihood the confidence layer needs |
+| Cross-check methods | `KMeans`, `AgglomerativeClustering` (`linkage="ward"`) | Alternative hard-clustering methods used only for the Level 1 comparison |
 | Outlier cross-check | `HDBSCAN` | Independent, density-based corroboration of low-confidence/outlier calls in Level 3 |
 
 ```mermaid
 flowchart TD
     A["High-benefit train/test members<br/>140 train / 60 test (top 20% by DR benefit_score)"] --> B["SHAP-ranked feature pool<br/>(77 candidates)"]
     B --> C["Correlation pruning<br/>(0 dropped this run)"]
-    C --> D["PCA: 12 features -> 8 components<br/>(91.0% variance retained)"]
+    C --> C2["StandardScaler<br/>(fit on train, applied to test)"]
+    C2 --> D["PCA: 12 features -> 8 components<br/>(91.0% variance retained; fit on train)"]
     D --> E["Fit GMM, K-Means, Agglomerative, HDBSCAN<br/>in PCA space"]
     E --> F["Level 1: compare methods,<br/>select GMM (k=2, BIC-optimal)"]
     F --> G["GMM archetype labels (train, n=140)"]
@@ -230,9 +262,21 @@ works" narrative.
 
 ## Analytical Task 3: Archetype Diagnostics And Clustering Method Comparison
 
-> **Primary question:** What evidence suggests that GMM produces more credible, reproducible
-> archetypes than the alternative clustering methods considered, and that the selected number of
-> archetypes is well-supported?
+> **Primary question:** Does a reproducible archetype structure exist in the high-benefit
+> population at all — and, given that the confidence layer requires soft posteriors and a
+> likelihood that only a mixture model provides, how much weight can the GMM archetype labels
+> bear?
+
+### Why GMM Despite Worse Partition Metrics
+
+The selection criterion here is **functional, not a quality claim.** K-Means and Agglomerative emit
+hard labels only; the confidence layer's two signals require more than that — `typicality_score`
+needs `gmm.score_samples()` (a per-member log-likelihood) and `gmm_max_posterior` needs
+`gmm.predict_proba()` (a soft membership distribution). K-Means and Agglomerative provide neither.
+GMM is therefore retained because it is the only candidate that *emits the quantities the
+confidence layer is built on* — not because it partitions this space better. As the internal
+validation table below shows, it in fact partitions this space **worse** than the alternatives on
+every metric. Both facts are true simultaneously and are stated plainly.
 
 ### GMM Model Selection
 
@@ -264,10 +308,10 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison START -->
 | Method | Clusters found | Cluster sizes | Noise points (HDBSCAN only) |
 | ---: | ---: | ---: | ---: |
-| Gaussian Mixture | 2 | 105/35 | n/a |
-| K-Means | 2 | 57/83 | n/a |
-| Agglomerative | 2 | 125/15 | n/a |
-| HDBSCAN | 2 | nan | 38 |
+| Gaussian Mixture | 2 | 105/35 | 0 |
+| K-Means | 2 | 57/83 | 0 |
+| Agglomerative | 2 | 125/15 | 0 |
+| HDBSCAN (non-noise, n=118) | 2 | 99/19 (+22 noise) | 22 |
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison START -->
@@ -276,13 +320,21 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 | Gaussian Mixture | 0.011 | 3.186 | 7.76 |
 | K-Means | 0.157 | 2.074 | 29.38 |
 | Agglomerative | 0.193 | 1.303 | 21.41 |
-| HDBSCAN | not computed | not computed | not computed |
+| HDBSCAN (non-noise, n=118) | 0.114 | 2.110 | 11.44 |
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison END -->
 
-> **Gap flagged, not filled with invented numbers:** the executed notebook only computes
-> Silhouette/Davies-Bouldin/Calinski-Harabasz for the GMM solution. A fair "GMM is better" claim
-> needs the same three metrics computed for K-Means and Agglomerative labels in the same PCA space
-> — this is a concrete follow-up before the method comparison can be considered complete.
+**On every internal-validation metric, GMM is the worst of the hard-clustering methods** (silhouette
+0.011 vs. 0.157 K-Means and 0.193 Agglomerative; Davies-Bouldin 3.186 vs. 2.074 and 1.303;
+Calinski-Harabasz 7.76 vs. 29.38 and 21.41). GMM is retained not because it partitions this space
+better, but because it is the only candidate that emits the posterior and log-likelihood the
+confidence layer requires (see "Why GMM" above).
+
+> **One caveat on these metrics:** silhouette, Davies-Bouldin and Calinski-Harabasz all reward
+> compact, spherical, similar-sized clusters — the assumption GMM is deliberately chosen to relax.
+> A low silhouette for a diagonal-covariance mixture is therefore *weaker* evidence against
+> structure than the same number would be for K-Means. The conclusion here does not rest on it:
+> the load-bearing evidence is the bootstrap instability and near-chance cross-method agreement
+> below, neither of which depends on a sphericity assumption.
 
 <!-- AUTO_TABLE:clinical_confidence_cross_method_agreement START -->
 | Comparison | Adjusted Rand Index |
@@ -312,6 +364,79 @@ Supporting file:
 
 - [`archetype_summary.csv`](Outputs/Clinical-Confidence-Layer/Python/archetype_summary.csv)
 
+### Flag Ablation: Is the Split a Specification Artifact?
+
+Two binary comorbidity flags (`anxiety_flag`, `copd_flag`) sit inside the PCA + Gaussian-mixture
+pipeline alongside the continuous features. A Gaussian mixture on a space that includes
+standardized binaries can place a component on one side of a binary almost by construction — a
+two-point distribution is the cleanest "bimodality" available to it. This subsection tests how much
+of the archetype label is really just those flags.
+
+<!-- AUTO_TABLE:clinical_confidence_flag_ablation START -->
+| Comparison | Value |
+| ---: | ---: |
+| GMM labels vs anxiety_flag | -0.075 |
+| GMM labels vs copd_flag | 0.047 |
+| GMM labels vs (anxiety OR copd) | 0.275 |
+| Original vs continuous-only GMM (ARI) | -0.017 |
+| Silhouette (continuous-only fit) | 0.121 |
+<!-- AUTO_TABLE:clinical_confidence_flag_ablation END -->
+
+<!-- AUTO_TABLE:clinical_confidence_flag_pca_loadings START -->
+| Component | anxiety_flag loading | copd_flag loading |
+| ---: | ---: | ---: |
+| PC1 | -0.042 | 0.162 |
+| PC2 | -0.075 | -0.107 |
+| PC3 | 0.336 | 0.174 |
+| PC4 | 0.323 | 0.674 |
+| PC5 | 0.817 | -0.358 |
+| PC6 | -0.219 | -0.253 |
+| PC7 | 0.215 | -0.150 |
+| PC8 | 0.013 | -0.468 |
+<!-- AUTO_TABLE:clinical_confidence_flag_pca_loadings END -->
+
+The result is more nuanced than a clean 1:1 re-encoding: the archetype labels agree only weakly with
+either flag individually and moderately with their union (not the ARI > 0.6 that would prove the
+split *is* the flags). But the decisive finding is what happens when the flags are removed:
+refitting GMM on the continuous features only produces a **completely different** split (near-zero
+ARI against the original labels) *and* **raises the silhouette roughly ten-fold** over the
+flags-included fit. In other words, the two binaries are not a harmless add-on — they materially
+destabilize the clustering and actively degrade its quality. This is the mechanism behind the weak
+bootstrap stability reported next: a split partly anchored on two binary flags is exactly the kind
+of structure that flips under resampling.
+
+**Recommendation:** clustering a mixed binary/continuous space with PCA + GMM is a misspecification.
+Two options: (a) cluster the continuous features only and treat the flags as post-hoc profiling
+variables — cheap, and the silhouette gain suggests it is already better; or (b) use a mixed-type
+method built for this (k-prototypes, latent class analysis, or Gower distance + PAM) in a future
+iteration.
+
+### Archetype Benefit-Difference Test
+
+Even if the split were stable, it only has targeting value if the two archetypes differ in expected
+benefit. This tests that directly rather than eyeballing the ~3% relative difference in mean
+benefit.
+
+<!-- AUTO_TABLE:clinical_confidence_benefit_difference_test START -->
+| Metric | Value |
+| ---: | ---: |
+| Mean benefit — Archetype 0 | 0.0667 |
+| Mean benefit — Archetype 1 | 0.0685 |
+| Difference (A1 − A0) | 0.0019 |
+| 95% CI lower | -0.0012 |
+| 95% CI upper | 0.0049 |
+| Mann-Whitney U | 1527.0000 |
+| Mann-Whitney p | 0.1357 |
+| Welch t | -1.2071 |
+| Welch p | 0.2320 |
+<!-- AUTO_TABLE:clinical_confidence_benefit_difference_test END -->
+
+The 95% confidence interval on the between-archetype benefit difference **spans zero**, and both the
+Mann-Whitney and Welch tests are non-significant. **The archetypes do not differentiate expected
+benefit.** Their only possible value would be in differentiating the *type* of outreach a member
+should receive — something this analysis has not validated and cannot validate without an
+outreach-type outcome.
+
 ### Bootstrap Stability
 
 <!-- AUTO_TABLE:clinical_confidence_stability_summary START -->
@@ -326,22 +451,36 @@ Supporting file:
 | Stability assessment | **WEAK** |
 <!-- AUTO_TABLE:clinical_confidence_stability_summary END -->
 
-> **Gap flagged:** the 100 individual bootstrap ARI values used to compute this mean/std are not
-> retained in the captured notebook output, so the histogram specified in the report plan (showing
-> the full distribution against the STRONG/MODERATE/WEAK threshold lines) can't be rendered from
-> this run — only the summary statistics above are available. Re-running with the array saved
-> (e.g. to a CSV) would let this chart be produced faithfully.
+<!-- AUTO_CHART:clinical_confidence_bootstrap_ari_distribution START -->
+![Bootstrap ARI distribution with STRONG/MODERATE/WEAK thresholds](Outputs/Clinical-Confidence-Layer/Python/bootstrap_ari_distribution.png)
+<!-- AUTO_CHART:clinical_confidence_bootstrap_ari_distribution END -->
 
-A mean bootstrap ARI of 0.172 with a standard deviation of 0.241 is unambiguously in the WEAK band
-(below the 0.5 MODERATE threshold), and the standard deviation is large relative to the mean —
-meaning the reproducibility of the archetype split itself varies substantially from resample to
-resample. This is consistent with, and reinforces, the cross-method disagreement above: the
-2-archetype split found on the full training set is not a structure that survives resampling
-reliably.
+**Stability protocol (exactly as run):**
 
-Supporting file:
+```text
+Resampling  : 100 bootstrap resamples of the 140 training members, WITH replacement
+Refit       : GMM refit on each resample; k fixed at 2; covariance_type="diag"; reg_covar=1e-3; n_init=5
+Comparison  : labels predicted for the full 140-member training set from each resampled fit,
+              ARI computed against the reference full-sample labeling
+Bands       : STRONG >= 0.75 | MODERATE 0.50-0.75 | WEAK < 0.50
+```
+
+A mean bootstrap ARI of 0.172 (std 0.241) is unambiguously in the WEAK band, and the standard
+deviation is large relative to the mean — the archetype split varies substantially from resample to
+resample. This reinforces the cross-method disagreement above.
+
+**A likely mechanical driver — parameter count vs. sample size:** a diagonal-covariance GMM with
+k=2 in 8 dimensions estimates 33 free parameters (2×8 means, 2×8 variances, 1 mixing weight) from
+140 observations — roughly **4.2 observations per parameter** (full covariance would have needed
+89). This ratio is the most likely mechanical explanation for the WEAK stability and should be read
+as a constraint of the current population size, not necessarily a property of the underlying
+clinical data. A concrete sensitivity check for a future run: repeat model selection at 70% and 80%
+PCA-variance targets (fewer components) and see whether stability rises.
+
+Supporting files:
 
 - [`cluster_stability_summary.csv`](Outputs/Clinical-Confidence-Layer/Python/cluster_stability_summary.csv)
+- [`bootstrap_ari_values.csv`](Outputs/Clinical-Confidence-Layer/Python/bootstrap_ari_values.csv) (the 100 individual ARI values)
 
 ### Archetype Profiles
 
@@ -364,6 +503,12 @@ real, interpretable pattern — but it's a much narrower finding than "two clini
 high-benefit phenotypes," and it explains why the split doesn't survive bootstrap resampling well:
 a two-flag split is exactly the kind of structure that can flip under resampling if the flags are
 not strongly correlated with the continuous PCA-space position driving the actual GMM fit.
+
+> **On naming:** descriptive archetype names (e.g. "Comorbid (anxiety and/or COPD present)" vs.
+> "Non-comorbid") are deliberately withheld. Given the flag-ablation finding and the WEAK
+> stability, attaching clinical names would lend the split an unearned authority. The labels stay
+> `Archetype 0` / `Archetype 1` until stability is established on a larger population or a
+> mixed-type method.
 
 ### Conclusion Of Level 1
 
@@ -440,11 +585,35 @@ has noticeably lower variance (std 0.040) than the two official components, cons
 role here as a secondary diagnostic rather than a primary signal — it's deliberately excluded from
 the official confidence score, kept only to sanity-check the two GMM-based signals.
 
-The posterior is high on average (0.908) and relatively concentrated (std 0.146), while typicality
-is much lower on average (0.406) and far more spread out (std 0.291). This asymmetry is exactly the
-scenario the geometric-mean design exists to catch: a population that is mostly confidently
-assigned to *some* archetype, but far more variable in whether it actually resembles the training
-population as a whole.
+The posterior is high on average and relatively concentrated, while typicality is much lower on
+average and far more spread out (exact values in the component-summary table above). This asymmetry
+is exactly the scenario the geometric-mean design exists to catch: a population that is mostly
+confidently assigned to *some* archetype, but far more variable in whether it actually resembles the
+training population as a whole.
+
+### Typicality Generalization (Overfitting Signal)
+
+`typicality_score` is the percentile rank of a member's log-likelihood against the *training*
+log-likelihood distribution. If the high-benefit train and test populations were exchangeable under
+the fitted mixture, mean test typicality would sit near 0.50.
+
+<!-- AUTO_TABLE:clinical_confidence_typicality_generalization START -->
+| Metric | Value |
+| ---: | ---: |
+| Mean test typicality | 0.4064 |
+| Expected under exchangeability | 0.5000 |
+| KS statistic (train vs test log-lik) | 0.1714 |
+| KS p-value | 0.1521 |
+| Median train log-likelihood | -11.3550 |
+| Median test log-likelihood | -12.1726 |
+<!-- AUTO_TABLE:clinical_confidence_typicality_generalization END -->
+
+Mean test typicality is below 0.50, indicating the GMM density is fit somewhat more tightly to the
+training sample than it generalizes to held-out members — consistent with the ~4.2 observations per
+parameter noted in Level 1. The KS test on train-vs-test log-likelihoods quantifies whether that
+shift is statistically distinguishable (it is a mild, not dramatic, shift on this run). The
+practical implication: some portion of the Low tier reflects model overfitting rather than genuine
+member atypicality, a further reason to treat tier assignments as advisory.
 
 Supporting file:
 
@@ -452,21 +621,29 @@ Supporting file:
 
 ### Combining The Components
 
-`clinical_confidence_score = sqrt(gmm_max_posterior * typicality_score)`, min-max normalized to
-[0,1].
+`clinical_confidence_score = sqrt(gmm_max_posterior * typicality_score)`. The raw geometric mean is
+then normalized against **fixed bounds derived from the training population** (not min-max per
+batch), so a member scored today is comparable to one scored next month and the tier cut points
+transfer. The table below reports the **raw** score distribution (min/max/mean/std before
+normalization) plus the persisted training bounds — because reporting the post-normalization
+min/max would be circular (min-max normalization forces them to exactly 0 and 1).
 
 <!-- AUTO_TABLE:clinical_confidence_combined_score_summary START -->
 | Metric | Value |
 | ---: | ---: |
-| Mean | 0.565 |
-| Std | 0.247 |
-| Minimum | 0.000 |
-| Maximum | 1.000 |
+| Raw score minimum (pre-normalization) | 0.0000 |
+| Raw score maximum (pre-normalization) | 0.9766 |
+| Raw score mean | 0.5517 |
+| Raw score std | 0.2390 |
+| Frozen training lower bound | 0.0845 |
+| Frozen training upper bound | 0.9746 |
+| Normalized score mean (fixed train bounds) | 0.5264 |
+| Normalized score std (fixed train bounds) | 0.2651 |
 <!-- AUTO_TABLE:clinical_confidence_combined_score_summary END -->
 
-The normalized score spans the full [0,1] range, and the tier breakdown below provides a direct,
-real-data confirmation of why the geometric mean (rather than an arithmetic average) was the right
-choice: **the average posterior is nearly identical between the High and Low confidence tiers
+The tier breakdown below provides a direct, real-data confirmation of why the geometric mean
+(rather than an arithmetic average) was the right choice: **the average posterior is nearly
+identical between the High and Low confidence tiers
 (0.907 vs. 0.910)** — posterior alone carries essentially no information about which tier a member
 lands in. It's the typicality axis that does almost all of the separating work (0.582 in the High
 tier vs. 0.103 in the Low tier). Under an arithmetic mean, a member with posterior≈0.91 and
@@ -479,8 +656,8 @@ a near-zero typicality can't be compensated for by a high posterior.
 <!-- AUTO_TABLE:clinical_confidence_tier_bic START -->
 | Candidate tier count | BIC |
 | ---: | ---: |
-| 2 | 14.7 |
-| 3 | 24.4 |
+| 2 | 22.6 |
+| 3 | 31.9 |
 <!-- AUTO_TABLE:clinical_confidence_tier_bic END -->
 
 BIC selects **2 natural tiers** (14.7 vs. 24.4) — the confidence scores in this test population do
@@ -491,8 +668,8 @@ onto a distribution that only supports two, the tiering method reports what's ac
 <!-- AUTO_TABLE:clinical_confidence_tier_summary START -->
 | Confidence tier | N | % of test population | Avg confidence | Avg benefit score | Avg posterior | Avg typicality | N outliers | N HDBSCAN noise |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| High | 38 | 63.3% | 0.723 | 0.0652 | 0.907 | 0.582 | 0 | 2 |
-| Low | 22 | 36.7% | 0.291 | 0.0618 | 0.910 | 0.103 | 6 | 19 |
+| High | 38 | 63.3% | 0.699 | 0.0652 | 0.907 | 0.582 | 0 | 1 |
+| Low | 22 | 36.7% | 0.229 | 0.0618 | 0.910 | 0.103 | 6 | 13 |
 <!-- AUTO_TABLE:clinical_confidence_tier_summary END -->
 
 The natural-break split (63.3% High / 36.7% Low) is meaningfully uneven, exactly as intended by
@@ -538,6 +715,7 @@ it imply operationally?
 
 📊 **Interactive versions (drag to rotate):**
 - [3D Archetype scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_3d.html)
+- [2D Archetype scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_2d.html)
 
 ![2D PCA scatter of training members colored by archetype](Outputs/Clinical-Confidence-Layer/Python/archetype_scatter_2d.png)
 <!-- AUTO_CHART:clinical_confidence_archetype_scatter_3d END -->
@@ -555,6 +733,7 @@ indicated: the boundary between archetypes is soft and overlapping, not a clean 
 
 📊 **Interactive versions (drag to rotate):**
 - [3D Confidence tier scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_3d.html)
+- [2D Confidence tier scatter (interactive)](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_2d.html)
 
 ![2D PCA scatter of test members colored by confidence tier](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_2d.png)
 <!-- AUTO_CHART:clinical_confidence_tier_scatter_3d END -->
@@ -573,24 +752,27 @@ different, density-based method with no Gaussian-shape assumption.
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab START -->
 |  | Confidence tier: Low | Confidence tier: High | All |
 | --- | --- | --- | --- |
-| HDBSCAN noise | 19 | 2 | 21 |
-| HDBSCAN in-cluster | 3 | 36 | 39 |
+| HDBSCAN noise | 13 | 1 | 14 |
+| HDBSCAN in-cluster | 9 | 37 | 46 |
 | All | 22 | 38 | 60 |
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab END -->
 
-Two results here, at different levels of strictness:
+Two results, at different levels of strictness (exact counts in the crosstab above, which
+regenerates from the scored output):
 
-- **Strict outlier corroboration is complete: 100% (6 of 6)** of the members flagged as archetype
-  outliers by the GMM-based typicality check were also flagged as HDBSCAN noise. When the GMM
-  method says "this member doesn't resemble the training population at all," HDBSCAN — using a
-  completely different, density-based definition of atypicality — agrees every time on this run.
-  That's strong convergent evidence for the narrowest, highest-confidence outlier calls.
-- **Tier-level agreement is good but not perfect: 86.4%** of the broader Low tier (19 of 22) are
-  HDBSCAN noise, and **94.7%** of the High tier (36 of 38) are HDBSCAN in-cluster — an overall
-  concordance of 91.7% (55 of 60) between "confidence tier" and "HDBSCAN in/out status." The 5
-  members where the two methods disagree (3 Low-but-in-cluster, 2 High-but-noise) are the members
-  worth the closest manual review if this were used operationally: cases where the geometric-mean
-  confidence score and an independent density-based method reach different conclusions.
+- **Strict outlier corroboration:** the members flagged as archetype outliers by the GMM-based
+  typicality check are also, in large majority, flagged as HDBSCAN noise. When the GMM method says
+  "this member doesn't resemble the training population at all," an independent density-based method
+  tends to agree — convergent evidence for the narrowest, highest-confidence outlier calls.
+- **Tier-level agreement is good but not perfect:** most of the Low tier is HDBSCAN noise and most
+  of the High tier is HDBSCAN in-cluster, with a handful of disagreements. Those disagreement cases
+  — where the geometric-mean confidence score and an independent density-based method reach
+  different conclusions — are exactly the members worth the closest manual review if this were used
+  operationally.
+
+> **Backend note:** HDBSCAN noise counts depend on the backend. The authoritative run uses the
+> `hdbscan` package; a local sklearn fallback can produce different noise counts. Treat the crosstab
+> as regenerated-from-output rather than a fixed number.
 
 Supporting file:
 
@@ -598,22 +780,80 @@ Supporting file:
 
 ### Final Scored Test-Patient Table (Primary Deliverable)
 
-The complete, wide table of every high-benefit test member (**60 rows**): every original column
-carried forward from the doubly robust scored output (`member_id`, `benefit_score`, and the
-original clinical features), plus every column produced by this notebook (`gmm_archetype`,
-`gmm_max_posterior`, `typicality_score`, `knn_similarity`, `clinical_confidence_score`,
-`confidence_tier`, `is_archetype_outlier`, `hdbscan_noise_flag`).
+The complete, wide table of every high-benefit test member. Rather than describe the schema in
+prose, the literal column list is printed directly from `scored_confidence.columns`:
 
-> **Note on this section:** the executed notebook's captured output includes the aggregate tier
-> summary (above) but not a printed row-level preview of individual members — no `.head()` or
-> `display()` call on the full `scored_confidence` table was captured. Rather than fabricate
-> example member rows, this section reports the confirmed schema and row count only; the actual
-> per-member values are in the CSV export below.
+<!-- AUTO_TABLE:clinical_confidence_scored_schema START -->
+`57` columns:
 
-Confirmed schema (14 columns): `member_id`, `benefit_score`, and the other original DR-scored
-columns for each high-benefit test member, plus the 8 confidence-layer columns listed above. Row
-count (60) matches the high-benefit test population defined in Task 2 exactly, confirming no
-members were dropped or added during scoring.
+```text
+member_id
+outcome_ed_90d
+intervention_flag
+client_contract
+service_region
+program
+case_manager_name
+age
+gender
+dual_eligible
+county
+plan_type
+language
+living_alone_flag
+diabetes_flag
+chf_flag
+copd_flag
+asthma_flag
+depression_flag
+anxiety_flag
+substance_use_flag
+ckd_flag
+behavioral_health_risk_flag
+food_insecurity_flag
+housing_instability_flag
+transportation_barrier_flag
+utilities_insecurity_flag
+pcp_visits_last_6m
+specialist_visits_last_6m
+ed_visits_last_30d
+ed_visits_last_6m
+admits_last_6m
+observation_stays_last_6m
+total_cost_last_6m
+rx_count_last_6m
+med_adherence_pdc
+high_cost_drug_flag
+opioid_flag
+polypharmacy_flag
+percolator_utilization_score
+percolator_clinical_score
+percolator_sdoh_score
+current_risk_score
+risk_tier
+tau_hat
+benefit_score
+hte_decile
+uplift_decile
+propensity_score
+gmm_archetype
+gmm_max_posterior
+typicality_score
+knn_similarity
+clinical_confidence_score
+confidence_tier
+is_archetype_outlier
+hdbscan_noise_flag
+```
+<!-- AUTO_TABLE:clinical_confidence_scored_schema END -->
+
+This carries the full set of original DR-scored columns (member id, outcome, treatment flag, the
+clinical predictors, `benefit_score`, and DR bookkeeping columns) plus the eight confidence-layer
+columns this notebook adds (`gmm_archetype`, `gmm_max_posterior`, `typicality_score`,
+`knn_similarity`, `clinical_confidence_score`, `confidence_tier`, `is_archetype_outlier`,
+`hdbscan_noise_flag`). The clinical features **are** carried forward deliberately — a care manager
+reviewing a Low-tier member needs them at hand. The row count matches the high-benefit test
+population defined in Task 2 exactly, confirming no members were dropped or added during scoring.
 
 Supporting file:
 
@@ -637,17 +877,41 @@ Supporting file:
 > until Level 1's credibility gaps (K-Means agreement, bootstrap stability) are revisited on a
 > larger or re-tuned population.
 
-> **Note on true-benefit validation:** the original report plan called for an optional check of
-> average `true_benefit` by confidence tier (using the synthetic ground-truth formula). This
-> executed notebook does not include that step — no ground-truth validation cell was run — so this
-> check is not available from the current output and is flagged as a follow-up rather than filled
-> with invented numbers.
-
 With a 63.3% / 36.7% split, roughly two-thirds of the high-benefit test population would receive a
 lighter-touch confirmation workflow and about one-third would be routed to full manual review under
 the handling proposed above — a meaningful reduction in manual review burden *if* the underlying
-confidence signal proves reliable at scale, but one that should be validated further given Level 1's
-findings before being treated as production guidance.
+confidence signal proves reliable. The ground-truth check below tests exactly that, and the result
+is why the recommendation is shadow-mode-only.
+
+### Ground-Truth Validation By Tier (Synthetic true_benefit)
+
+Because this is synthetic data, the true benefit-driving formula is known. This is the only analysis
+that can establish whether the confidence score has real value. Two questions: (1) do High-tier
+members have higher *true* benefit than Low-tier members? and (2) does the DR `benefit_score` track
+`true_benefit` **better inside the High tier** than the Low tier — the direct test of "high
+confidence = more trustworthy benefit estimate"?
+
+<!-- AUTO_TABLE:clinical_confidence_true_benefit_by_tier START -->
+| Confidence tier | N | Mean true benefit | Std true benefit | Within-tier Spearman (benefit vs true) | p |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| High | 38 | 0.0731 | 0.0297 | -0.243 | 0.142 |
+| Low | 22 | 0.0956 | 0.0379 | 0.247 | 0.267 |
+<!-- AUTO_TABLE:clinical_confidence_true_benefit_by_tier END -->
+
+**The result does not support the confidence score's core claim on this run.** The High tier does
+*not* show higher mean true benefit than the Low tier (if anything it is lower), and the within-tier
+rank correlation between estimated and true benefit does *not* favor the High tier — the High-tier
+correlation is weakly negative while the Low-tier correlation is weakly positive, the opposite of
+what "the confidence score is working as intended" would predict. Neither within-tier correlation is
+statistically significant at these sample sizes (n=38 High, n=22 Low), so the honest reading is:
+**there is no evidence the confidence tier improves benefit-estimate fidelity, and the weak signals
+that do appear point the wrong way.** This is the single most important reason the top-line
+recommendation is shadow-mode-only rather than automated routing — and it is exactly the check that
+should be re-run first on any larger or re-specified version of this pipeline.
+
+Supporting file:
+
+- [`clinical_confidence_true_benefit_by_tier.csv`](Outputs/Clinical-Confidence-Layer/Python/clinical_confidence_true_benefit_by_tier.csv)
 
 ## Level 3 Summary: Visualization And Verification
 
@@ -655,14 +919,48 @@ The archetype and confidence-tier 3D scatter plots visually confirm what Level 1
 indicated numerically: the two archetypes overlap substantially in PCA space rather than forming
 clean, separated clusters, and High/Low confidence members are visually interspersed rather than
 spatially segregated — consistent with typicality (a density-under-the-model measure) driving tier
-placement rather than raw geometric position. HDBSCAN verification is strong at the strict level
-(100% of the 6 archetype outliers are also HDBSCAN noise) and good but imperfect at the broader tier
-level (91.7% overall concordance, with 5 of 60 members where the two methods disagree — worth
-flagging for manual review specifically). The final scored table is confirmed complete at 60 rows
-and 14 columns, with no members dropped between the high-benefit population definition and the
-final export, though a literal row-level preview could not be generated from the captured notebook
-output. Operationally, the confidence layer would route roughly 63% of the high-benefit test
+placement rather than raw geometric position. HDBSCAN verification corroborates the strict
+outlier calls in large majority and shows good-but-imperfect agreement at the broader tier level;
+the handful of disagreement cases are flagged for manual review. The final scored table is complete
+at 60 rows (matching the high-benefit test population exactly) with the full column list printed
+above, and no members dropped between population definition and export. Operationally, the
+confidence layer would route roughly 63% of the high-benefit test
 population to a lighter-touch workflow and 37% to full manual review — but given Level 1's weak
 cluster-credibility findings, this report recommends a care-manager confirmation step for *both*
 tiers (not full automation for High) until the underlying archetype stability is revisited, ideally
 with a larger training population or an expanded feature/hyperparameter search.
+
+---
+
+## Reproducibility
+
+All fits use seed `123`. The pipeline is deterministic given the DR-learner scored outputs and the
+hyperparameters below.
+
+```text
+Environment    : Python 3.x, scikit-learn, numpy, pandas, scipy, matplotlib, seaborn
+                 (pin exact versions from the run environment; SageMaker run used the hdbscan package)
+HDBSCAN source : hdbscan package (approximate_predict + prediction_data) when installed;
+                 falls back to sklearn.cluster.HDBSCAN (>=1.3) otherwise. The two backends can
+                 differ on noise counts — the authoritative run uses the hdbscan package.
+Seed           : 123 (all fits: PCA, GMM, KMeans, Agglomerative, bootstrap, tier GMM)
+
+Standardization: StandardScaler, fit on the 140 training members only, applied to the 60 test members
+PCA            : n_components=0.90 (variance target), random_state=123, fit on train
+GaussianMixture: covariance_type="diag", reg_covar=1e-3, n_init=10, random_state=123; k chosen by BIC over 2..5
+KMeans         : n_init=20, random_state=123
+Agglomerative  : linkage="ward", metric="euclidean"
+HDBSCAN        : min_cluster_size=max(5, n_train//20), min_samples=3, metric="euclidean"
+Bootstrap      : 100 resamples WITH replacement; GMM refit (n_init=5) each time; k fixed at 2;
+                 ARI vs. reference full-sample labeling; bands STRONG>=0.75 / MODERATE 0.50-0.75 / WEAK<0.50
+Tiering        : 1-D GaussianMixture on the normalized confidence score, k chosen by BIC over 2..3, n_init=10
+Confidence     : sqrt(gmm_max_posterior * typicality_score), normalized against fixed training bounds
+Feature set    : top SHAP-ranked features from doubly_robust_global_benefit_shap_importance.csv,
+                 correlation-pruned at 0.80, target 12 features
+```
+
+**How to regenerate this report:** re-run `Code/PRISM_Clinical_Confidence_Layer_v2.ipynb` end to
+end (on a GPU/Chrome-enabled environment so the Plotly `write_image` calls succeed), then run
+`python Code/generate_all_readmes.py` from the project root. Every `AUTO_TABLE` / `AUTO_CHART` block
+above regenerates from the notebook's CSV/PNG outputs; the surrounding prose is never touched by the
+generator.

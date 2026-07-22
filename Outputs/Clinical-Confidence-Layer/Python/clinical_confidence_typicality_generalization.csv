@@ -1,0 +1,7 @@
+metric,value
+mean_test_typicality,0.40642857142857136
+expected_under_exchangeability,0.5
+ks_statistic,0.17142857142857143
+ks_pvalue,0.1520849636939018
+median_train_loglik,-11.35503638298091
+median_test_loglik,-12.172565644886683
