@@ -1,0 +1,8 @@
+metric,value
+Full scored population,"1,000"
+Reconstructed train members,700
+Reconstructed test members,300
+High-benefit train members (top 20%),140
+High-benefit test members (top 20%),60
+High-benefit train benefit-score threshold,>= 0.0568
+High-benefit test benefit-score threshold,>= 0.0555
