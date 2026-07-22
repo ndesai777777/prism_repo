@@ -165,19 +165,14 @@ than a different feature-ranking process.
 
 <!-- AUTO_TABLE:clinical_confidence_data_review_summary START -->
 | Metric | Value |
-|---|---:|
+| ---: | ---: |
 | Full scored population | 1,000 |
 | Reconstructed train members | 700 |
 | Reconstructed test members | 300 |
 | High-benefit train members (top 20%) | 140 |
 | High-benefit test members (top 20%) | 60 |
-| High-benefit train benefit-score threshold | ≥ 0.0568 |
-| High-benefit test benefit-score threshold | ≥ 0.0555 |
-| SHAP candidate features available | 77 |
-| Features dropped as redundant (corr ≥ 0.80) | 0 |
-| Final clustering features | 12 |
-| PCA components retained | 8 |
-| PCA cumulative variance explained | 91.0% |
+| High-benefit train benefit-score threshold | >= 0.0568 |
+| High-benefit test benefit-score threshold | >= 0.0555 |
 <!-- AUTO_TABLE:clinical_confidence_data_review_summary END -->
 
 The correlation-pruning step found nothing to prune on this run — the top 12 SHAP-ranked features
@@ -193,7 +188,7 @@ relative to n=140 training members.
 
 <!-- AUTO_TABLE:clinical_confidence_pca_variance START -->
 | Component | Variance explained |
-|---|---:|
+| ---: | ---: |
 | PC1 | 26.4% |
 | PC2 | 19.9% |
 | PC3 | 11.4% |
@@ -242,12 +237,12 @@ works" narrative.
 ### GMM Model Selection
 
 <!-- AUTO_CHART:clinical_confidence_gmm_bic_aic_selection START -->
-![GMM BIC/AIC model selection across candidate archetype counts](gmm_bic_aic_selection.png)
+![GMM BIC/AIC model selection across candidate archetype counts](Outputs/Clinical-Confidence-Layer/Python/gmm_bic_aic_selection.png)
 <!-- AUTO_CHART:clinical_confidence_gmm_bic_aic_selection END -->
 
 <!-- AUTO_TABLE:clinical_confidence_bic_by_k START -->
 | Candidate archetype count (k) | BIC |
-|---:|---:|
+| ---: | ---: |
 | 2 | 3,420.1 |
 | 3 | 3,444.3 |
 | 4 | 3,493.8 |
@@ -268,19 +263,20 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison START -->
 | Method | Clusters found | Cluster sizes | Noise points (HDBSCAN only) |
-|---|---:|---|---:|
-| Gaussian Mixture | 2 | 105 / 35 (75.0% / 25.0%) | n/a |
-| K-Means | 2 | 57 / 83 (40.7% / 59.3%) | n/a |
-| Agglomerative | 2 | 125 / 15 (89.3% / 10.7%) | n/a |
-| HDBSCAN | 2 | not individually reported | 38 (27.1%) |
+| ---: | ---: | ---: | ---: |
+| Gaussian Mixture | 2 | 105/35 | n/a |
+| K-Means | 2 | 57/83 | n/a |
+| Agglomerative | 2 | 125/15 | n/a |
+| HDBSCAN | 2 | nan | 38 |
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison START -->
 | Method | Silhouette | Davies-Bouldin | Calinski-Harabasz |
-|---|---:|---:|---:|
+| ---: | ---: | ---: | ---: |
 | Gaussian Mixture | 0.011 | 3.186 | 7.76 |
-| K-Means | not computed in this run | not computed in this run | not computed in this run |
-| Agglomerative | not computed in this run | not computed in this run | not computed in this run |
+| K-Means | 0.157 | 2.074 | 29.38 |
+| Agglomerative | 0.193 | 1.303 | 21.41 |
+| HDBSCAN | not computed | not computed | not computed |
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison END -->
 
 > **Gap flagged, not filled with invented numbers:** the executed notebook only computes
@@ -290,8 +286,8 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 
 <!-- AUTO_TABLE:clinical_confidence_cross_method_agreement START -->
 | Comparison | Adjusted Rand Index |
-|---|---:|
-| GMM vs. K-Means | −0.013 |
+| ---: | ---: |
+| GMM vs. K-Means | -0.013 |
 | GMM vs. Agglomerative | 0.094 |
 <!-- AUTO_TABLE:clinical_confidence_cross_method_agreement END -->
 
@@ -320,7 +316,7 @@ Supporting file:
 
 <!-- AUTO_TABLE:clinical_confidence_stability_summary START -->
 | Metric | Value |
-|---|---:|
+| ---: | ---: |
 | n_components (GMM) | 2 |
 | Silhouette (GMM) | 0.011 |
 | Davies-Bouldin (GMM) | 3.186 |
@@ -350,10 +346,10 @@ Supporting file:
 ### Archetype Profiles
 
 <!-- AUTO_TABLE:clinical_confidence_archetype_summary START -->
-| Archetype | N | Avg benefit score | Clinical score | Age | Risk score | Utilization score | Adherence (PDC) | SDOH score | PCP visits/6m | ED visits/6m | Rx count/6m | Total cost/6m | Anxiety flag | COPD flag |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0 | 105 | 0.0667 | 61.79 | 61.83 | 54.11 | 54.36 | 0.756 | 36.77 | 3.58 | 1.45 | 9.05 | $5,264 | 32.4% | 50.5% |
-| 1 | 35 | 0.0685 | 59.69 | 55.66 | 51.17 | 51.69 | 0.775 | 29.37 | 2.00 | 1.17 | 8.46 | $4,744 | 0.0% | 0.0% |
+| Archetype | N | Avg benefit score | Percolator Clinical Score | Age | Current Risk Score | Percolator Utilization Score | Med Adherence Pdc | Percolator Sdoh Score | Pcp Visits Last 6M | Ed Visits Last 6M | Rx Count Last 6M | Total Cost Last 6M | Anxiety Flag | Copd Flag |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 105 | 0.0667 | 61.79 | 61.83 | 54.11 | 54.36 | 0.76 | 36.77 | 3.58 | 1.45 | 9.05 | $5,264 | 32.4% | 50.5% |
+| 1 | 35 | 0.0685 | 59.69 | 55.66 | 51.17 | 51.69 | 0.78 | 29.37 | 2.00 | 1.17 | 8.46 | $4,744 | 0.0% | 0.0% |
 <!-- AUTO_TABLE:clinical_confidence_archetype_summary END -->
 
 This table is the clearest evidence for *why* the archetype split is fragile: **Archetype 1 has
@@ -423,18 +419,18 @@ does it produce, and how are those values split into interpretable tiers?
 
 <!-- AUTO_TABLE:clinical_confidence_component_summary START -->
 | Component | Mean | Std |
-|---|---:|---:|
-| gmm_max_posterior | 0.908 | 0.146 |
-| typicality_score | 0.406 | 0.291 |
+| ---: | ---: | ---: |
+| gmm_max_posterior | 0.908 | 0.147 |
+| typicality_score | 0.406 | 0.293 |
 | knn_similarity (diagnostic only) | 0.291 | 0.040 |
 <!-- AUTO_TABLE:clinical_confidence_component_summary END -->
 
 <!-- AUTO_TABLE:clinical_confidence_degeneracy_check START -->
 | Component | Std across test members | Degenerate? (std < 0.01) |
-|---|---:|---|
-| gmm_max_posterior | 0.1458 | No |
-| typicality_score | 0.2910 | No |
-| knn_similarity | 0.0396 | No |
+| ---: | ---: | ---: |
+| gmm_max_posterior | 0.1470 | No |
+| typicality_score | 0.2935 | No |
+| knn_similarity | 0.0399 | No |
 <!-- AUTO_TABLE:clinical_confidence_degeneracy_check END -->
 
 None of the three components are degenerate on this run — a real improvement over an earlier
@@ -461,9 +457,9 @@ Supporting file:
 
 <!-- AUTO_TABLE:clinical_confidence_combined_score_summary START -->
 | Metric | Value |
-|---|---:|
+| ---: | ---: |
 | Mean | 0.565 |
-| Std | 0.245 |
+| Std | 0.247 |
 | Minimum | 0.000 |
 | Maximum | 1.000 |
 <!-- AUTO_TABLE:clinical_confidence_combined_score_summary END -->
@@ -482,7 +478,7 @@ a near-zero typicality can't be compensated for by a high posterior.
 
 <!-- AUTO_TABLE:clinical_confidence_tier_bic START -->
 | Candidate tier count | BIC |
-|---:|---:|
+| ---: | ---: |
 | 2 | 14.7 |
 | 3 | 24.4 |
 <!-- AUTO_TABLE:clinical_confidence_tier_bic END -->
@@ -494,7 +490,7 @@ onto a distribution that only supports two, the tiering method reports what's ac
 
 <!-- AUTO_TABLE:clinical_confidence_tier_summary START -->
 | Confidence tier | N | % of test population | Avg confidence | Avg benefit score | Avg posterior | Avg typicality | N outliers | N HDBSCAN noise |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | High | 38 | 63.3% | 0.723 | 0.0652 | 0.907 | 0.582 | 0 | 2 |
 | Low | 22 | 36.7% | 0.291 | 0.0618 | 0.910 | 0.103 | 6 | 19 |
 <!-- AUTO_TABLE:clinical_confidence_tier_summary END -->
@@ -538,7 +534,7 @@ it imply operationally?
 ### Archetype Visualization
 
 <!-- AUTO_CHART:clinical_confidence_archetype_scatter_3d START -->
-![3D PCA scatter of training members colored by archetype, with centroids](archetype_scatter_3d.png)
+![3D PCA scatter of training members colored by archetype, with centroids](Outputs/Clinical-Confidence-Layer/Python/gmm_archetypes_pca.png)
 <!-- AUTO_CHART:clinical_confidence_archetype_scatter_3d END -->
 
 The plot shows PC1-3, which together capture 57.7% of total variance. Visually, the two archetypes
@@ -550,7 +546,7 @@ indicated: the boundary between archetypes is soft and overlapping, not a clean 
 ### Confidence Tier Visualization
 
 <!-- AUTO_CHART:clinical_confidence_tier_scatter_3d START -->
-![3D PCA scatter of test members colored by confidence tier](confidence_tiers_3d.png)
+![3D PCA scatter of test members colored by confidence tier](Outputs/Clinical-Confidence-Layer/Python/confidence_tiers_3d.png)
 <!-- AUTO_CHART:clinical_confidence_tier_scatter_3d END -->
 
 High-confidence members (green, n=38) and Low-confidence members (red, n=22) are visibly
@@ -565,8 +561,8 @@ HDBSCAN is fit on train (Level 1, Task 3) and used to flag noise points on test 
 different, density-based method with no Gaussian-shape assumption.
 
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab START -->
-| | Confidence tier: Low | Confidence tier: High | All |
-|---|---:|---:|---:|
+|  | Confidence tier: Low | Confidence tier: High | All |
+| --- | --- | --- | --- |
 | HDBSCAN noise | 19 | 2 | 21 |
 | HDBSCAN in-cluster | 3 | 36 | 39 |
 | All | 22 | 38 | 60 |
@@ -617,7 +613,7 @@ Supporting file:
 
 <!-- AUTO_TABLE:clinical_confidence_tier_distribution START -->
 | Confidence tier | N | % of high-benefit test population | Suggested operational handling |
-|---|---:|---:|---|
+| --- | --- | --- | --- |
 | High | 38 | 63.3% | Archetype-suggested protocol; care manager confirms before proceeding |
 | Low | 22 | 36.7% | Manual clinical review; no automated archetype assignment |
 <!-- AUTO_TABLE:clinical_confidence_tier_distribution END -->

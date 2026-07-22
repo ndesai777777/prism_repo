@@ -91,7 +91,7 @@ def replace_block(text: str, kind: str, name: str, content: str) -> str:
 # CLINICAL CONFIDENCE LAYER GENERATORS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-CC_README = ROOT / "PRISM_Clinical_Confidence_Layer_README.md"
+CC_README = ROOT / "PRISM_BEST_Confidence_Readme.md"
 CC_OUTPUT = ROOT / "Outputs" / "Clinical-Confidence-Layer" / "Python"
 
 
