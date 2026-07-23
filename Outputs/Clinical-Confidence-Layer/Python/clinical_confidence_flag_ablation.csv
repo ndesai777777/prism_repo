@@ -1,0 +1,6 @@
+comparison,value
+GMM labels vs anxiety_flag,-0.07515461166696402
+GMM labels vs copd_flag,0.04723643983888532
+GMM labels vs (anxiety OR copd),0.2753329819323804
+Original vs continuous-only GMM (ARI),-0.01664072161633925
+Silhouette (continuous-only fit),0.12139509021467063

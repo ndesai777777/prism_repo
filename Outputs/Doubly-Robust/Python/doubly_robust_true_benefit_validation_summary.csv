@@ -1,0 +1,2 @@
+model,n_test_members,mean_predicted_benefit,mean_true_benefit,bias,mae,rmse,pearson_corr,spearman_corr
+Doubly Robust Learner,300,0.04333269751046735,0.0548126,-0.01147990248953264,0.02125894807835655,0.027930574101673017,0.3993992545876606,0.36414883570589546

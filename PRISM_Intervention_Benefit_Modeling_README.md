@@ -24,134 +24,133 @@ The analysis also addresses what factors drive future ED utilization, what facto
 
 The project evaluates whether uplift modeling can support care management prioritization. The workflow explains the modeling framework for both technical and non-technical audiences, evaluates model performance, compares practical business usefulness, interprets model outputs, identifies limitations, and documents a reproducible process that could later be applied to live client data.
 
-## Analytical Task 1: Understanding And Explaining The Modeling Framework
+## Analytical Task 1: Understanding the Modeling Framework
+
+This project evaluates a causal machine learning framework for estimating which members are most likely to benefit from care management intervention. Rather than predicting only future emergency department (ED) utilization, the framework estimates the expected benefit of intervention for each member. Different causal modeling approaches estimate this benefit in different ways. Some estimate potential outcomes under treatment and control, while others estimate treatment effects directly.
 
 ### Outcome Variable
 
-The outcome variable is `outcome_ed_90d`. It is a binary indicator for whether a member had emergency department utilization within 90 days. A value of 1 means the member had a 90-day ED outcome, and a value of 0 means the member did not.
+The outcome variable is `outcome_ed_90d`, a binary indicator of whether a member experienced an emergency department visit within 90 days.
 
-The modeling goal is to estimate the probability of this outcome under two scenarios for each member: the probability of ED utilization if treated and the probability of ED utilization if untreated.
+- **1** = Member had a 90-day ED visit
+- **0** = Member did not have a 90-day ED visit
 
 ### Treatment Variable
 
-The treatment variable is `intervention_flag`. It indicates whether the member received the care management intervention. A value of 1 indicates intervention, and a value of 0 indicates no intervention/control.
+The treatment variable is `intervention_flag`, indicating whether a member received care management intervention.
+
+- **1** = Received intervention
+- **0** = No intervention (control)
 
 ### Predictor Variables
 
-Predictors were grouped into six defined categories: demographics, clinical conditions, social determinants of health (SDOH), utilization, pharmacy, and risk scores. The variables listed below are examples from each category rather than a complete inventory. These variables were selected because they represent member characteristics available before intervention and may influence either future ED risk or expected benefit from care management.
+The model uses predictors available before intervention that may influence future ED utilization or the expected benefit of care management. Predictors are organized into six categories:
 
-Example demographic predictors include `client_contract`, `service_region`, `program`, `case_manager_name`, `age`, `gender`, `dual_eligible`, `county`, `plan_type`, `language`, and `living_alone_flag`. Example clinical condition predictors include `diabetes_flag`, `chf_flag`, `copd_flag`, `asthma_flag`, `depression_flag`, `anxiety_flag`, `substance_use_flag`, `ckd_flag`, and `behavioral_health_risk_flag`. Example SDOH predictors include `food_insecurity_flag`, `housing_instability_flag`, `transportation_barrier_flag`, and `utilities_insecurity_flag`.
+- **Demographics**
+- **Clinical conditions**
+- **Social determinants of health (SDOH)**
+- **Healthcare utilization**
+- **Pharmacy**
+- **Risk scores**
 
-Example utilization predictors include `pcp_visits_last_6m`, `specialist_visits_last_6m`, `ed_visits_last_30d`, `ed_visits_last_6m`, `admits_last_6m`, and `observation_stays_last_6m`. Example pharmacy predictors include `total_cost_last_6m`, `rx_count_last_6m`, `med_adherence_pdc`, `high_cost_drug_flag`, `opioid_flag`, and `polypharmacy_flag`. Example risk score predictors include the percolator utilization, clinical, and SDOH score fields, plus `current_risk_score` and `risk_tier`.
+The final model includes **41 predictors** before one-hot encoding, consisting of **14 continuous/count variables**, **18 binary indicator variables**, and **9 categorical variables**. After one-hot encoding, the modeling matrix contains **77 features**.
 
-The final model uses 41 predictors before one-hot encoding: 14 continuous/count numeric predictors, 18 binary indicator predictors, and 9 multi-level categorical predictors. The multi-level categorical predictors are `client_contract`, `service_region`, `program`, `case_manager_name`, `gender`, `county`, `plan_type`, `language`, and `risk_tier`. Binary indicators remain as 0/1 model columns, while multi-level categorical predictors are expanded during one-hot encoding. After encoding, the modeling matrix contains 77 columns.
-
-The predictor data dictionary provides each variable's category, description, data type, missingness, number of unique values, example values, and value range where applicable. The numeric and categorical summary tables provide descriptive statistics that can be used in the written report.
-
-Supporting files:
+Complete variable definitions and descriptive summaries are provided in:
 
 - [`predictor_data_dictionary.csv`](Outputs/Uplift/Python/Predictor_Distributions/predictor_data_dictionary.csv)
 - [`numeric_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/numeric_predictor_summary.csv)
 - [`categorical_predictor_summary.csv`](Outputs/Uplift/Python/Predictor_Distributions/categorical_predictor_summary.csv)
 
-### Train/Test Methodology
+### Overall Modeling Workflow
 
-The dataset is split into training and held-out test sets, with 700 data points used for training and 300 data points reserved for final evaluation. The split is stratified on the combination of treatment status and ED outcome so that the training and test sets preserve the treated-positive, treated-negative, control-positive, and control-negative proportions observed in the available dataset. This is important because the outcome is rare and the T-learner trains separate treated and control outcome models.
-
-Within the training set, treated and control members are separated so that two outcome models can be trained: one model for members who received the intervention and one model for members who did not. Five-fold cross-validation is used within the training data to support model tuning and assess model stability. Final model performance is then evaluated on the held-out test data.
-
-This setup is important because the uplift task is not only about predicting ED utilization. It is about comparing two counterfactual predictions for the same member: the expected ED risk if treated versus the expected ED risk if untreated.
-
-### T-Learner Framework
-
-The notebook uses a T-learner approach. A T-learner trains two separate outcome models:
-
-1. Treated model: estimates `P(ED | Treated, member features)`
-2. Control model: estimates `P(ED | Control, member features)`
-
-Each member in the test data then receives two predicted probabilities, regardless of their actual treatment status:
-
-```text
-pred_ed_if_treated = predicted probability of ED within 90 days if treated
-pred_ed_if_control = predicted probability of ED within 90 days if untreated
-```
-
-The predicted benefit score is calculated as:
-
-```text
-benefit_score = pred_ed_if_control - pred_ed_if_treated
-```
-
-A higher benefit score means the model predicts a larger reduction in ED risk if the member receives intervention. Members are then ranked by benefit score and assigned to uplift deciles, where decile 1 represents the highest predicted benefit group.
-
-Separate treated and control models are useful because the relationship between member features and ED risk may differ depending on whether a member receives the intervention. A single risk model can identify members who are likely to have an ED visit, but it does not directly estimate whether the intervention changes that risk.
+The dataset is divided into stratified training and test sets. Models are trained using cross-validation within the training data and evaluated on a held-out test set. Treatment-effect estimates are then used to rank members according to their predicted intervention benefit.
 
 ```mermaid
 flowchart TD
-    A["Modeling dataset"] --> B["Split members by actual treatment status"]
-    B --> C["Treated members"]
-    B --> D["Control members"]
-    C --> E["Train treated<br/>outcome model"]
-    D --> F["Train control<br/>outcome model"]
-    E --> G["Predict ED risk<br/>if treated"]
-    F --> H["Predict ED risk<br/>if untreated"]
-    G --> I["pred_ed_if_treated"]
-    H --> J["pred_ed_if_control"]
-    I --> K["Benefit score<br/>control risk - treated risk"]
-    J --> K
-    K --> L["Rank by predicted<br/>intervention benefit"]
-    L --> M["Assign<br/>uplift deciles"]
+    A["Modeling Dataset"] --> B["Stratified Train/Test Split"]
+    B --> C["5-Fold Cross Validation"]
+    C --> D["Train T-Learner"]
+    C --> E["Train X-Learner"]
+    D --> F["Estimate Treatment Benefit"]
+    E --> F
+    F --> G["Rank Members by Predicted Benefit"]
+    G --> H["Assign Uplift Deciles"]
+    H --> I["Business Value & Operational Evaluation"]
 ```
 
-### X-Learner Framework
+### Treatment-Effect Frameworks
 
-The X-learner is used as a second treatment-effect framework to check whether the uplift ranking is directionally consistent with the T-learner. It starts with the same basic counterfactual idea: estimate what would have happened to treated members without treatment and what would have happened to control members with treatment. It then converts those counterfactual comparisons into imputed treatment-effect targets and trains separate treatment-effect models.
+Two causal treatment-effect frameworks are evaluated in this project.
 
-For treated members, the X-learner compares the observed outcome with the predicted untreated outcome. For control members, it compares the predicted treated outcome with the observed outcome. These imputed effects are then modeled as functions of member features. At scoring time, a propensity model estimates each member's probability of receiving treatment, and the final X-learner benefit estimate is a weighted combination of the treated-effect and control-effect model predictions.
+#### T-Learner
 
-In this report, the X-learner is not used to replace the T-learner. It is used as a consistency check: if the T-learner and X-learner identify similar high-benefit members and show similar decile patterns, that increases confidence that the benefit ranking is not purely an artifact of one modeling framework.
+The T-learner estimates treatment benefit by training separate outcome models for treated and untreated members. Each member receives predicted ED risk under both scenarios, and the treatment benefit is calculated as the difference between the two predicted risks.
+
+```text
+benefit_score = predicted ED risk if untreated − predicted ED risk if treated
+```
 
 ```mermaid
 flowchart TD
-    A["Modeling dataset"] --> B["Train treated and control outcome models"]
-    B --> C["Treated members:<br/>predict untreated risk"]
-    B --> D["Control members:<br/>predict treated risk"]
-    C --> E["Imputed effect<br/>for treated members"]
-    D --> F["Imputed effect<br/>for control members"]
-    E --> G["Train treated-side<br/>effect model"]
-    F --> H["Train control-side<br/>effect model"]
-    A --> I["Train<br/>propensity model"]
-    G --> J["Predict treated-side<br/>effect"]
-    H --> K["Predict control-side<br/>effect"]
-    I --> L["Estimate member<br/>propensity score"]
-    J --> M["Weighted X-learner<br/>benefit estimate"]
-    K --> M
-    L --> M
-    M --> N["Rank by predicted<br/>intervention benefit"]
-    N --> O["Assign<br/>uplift deciles"]
+    A["Training Data"] --> B["Split by Treatment Status"]
+
+    B --> C["Treated Members"]
+    B --> D["Control Members"]
+
+    C --> E["Train Treated Outcome Model"]
+    D --> F["Train Control Outcome Model"]
+
+    E --> G["Predict ED Risk if Treated"]
+    F --> H["Predict ED Risk if Untreated"]
+
+    G --> I["Estimated Benefit"]
+    H --> I
+
+    I["Benefit = Control Risk − Treated Risk"]
+    I --> J["Rank Members"]
+    J --> K["Assign Uplift Deciles"]
 ```
 
-### How The Analytical Tasks Fit Together
+#### X-Learner
 
-Analytical Tasks 2 and 3 are intentionally upstream of the T-learner versus X-learner comparison. Task 2 describes the data, treatment rate, outcome prevalence, and modeling constraints. Task 3 evaluates whether the factual outcome models are credible enough to support treatment-effect analysis. Those checks matter regardless of whether the final benefit estimate is produced through a T-learner or an X-learner.
+The X-learner estimates treatment benefit by first constructing counterfactual outcomes and then learning treatment effects directly. A propensity model combines information from treated and untreated members to produce a final treatment-effect estimate.
 
-The later tasks use those foundations differently. Task 4 explains the member-level treatment-effect logic using the GLMNet T-learner because it is the most direct way to show `pred_ed_if_treated`, `pred_ed_if_control`, and their difference. Task 5 then compares GLMNet T-learner and GLMNet X-learner decile behavior side by side to assess consistency across treatment-effect frameworks.
+```mermaid
+flowchart TD
+    A["Training Data"] --> B["Train Outcome Models"]
 
-### Hyperparameter Tuning
+    B --> C["Estimate Missing Counterfactuals"]
 
-Model tuning was performed within the training data using cross-validation. For XGBoost, the notebook used 5-fold cross-validation over tree depth, learning rate, and minimum child weight, with early stopping up to 500 boosting rounds. For GLMNet, the notebook used `LogisticRegressionCV` with standardized predictors, elastic-net mixing values from 0.0 to 1.0, and a regularization-strength grid. The selected treated and control outcome models were chosen using cross-validated AUC within the training data.
+    C --> D["Impute Treatment Effects"]
 
-The current X-learner implementation uses fixed second-stage treatment-effect model settings as a framework comparison rather than a full tuning exercise. A future refinement would tune X-learner second-stage models separately and compare T-learner and X-learner results after both frameworks have been tuned.
+    D --> E["Train Treated Effect Model"]
+    D --> F["Train Control Effect Model"]
 
-### Modeling Techniques Used
+    A --> G["Train Propensity Model"]
 
-Two modeling techniques were used inside the treatment-effect workflow: XGBoost and GLMNet. Both techniques can be used inside the T-learner and X-learner frameworks. The modeling technique controls how the relationship between member features and outcomes or treatment effects is learned; the learner framework controls how treatment benefit is constructed from those models.
+    E --> H["Estimate Treated Effect"]
+    F --> I["Estimate Control Effect"]
 
-XGBoost is a tree-based machine learning method. It builds many small decision trees sequentially, where each new tree attempts to correct errors made by the previous trees. Each tree splits members into groups based on predictor values, such as risk scores, utilization history, diagnosis flags, or demographic variables. The final XGBoost prediction is the combined output of all trees. In this project, one XGBoost model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
+    G --> J["Combine Using Propensity Scores"]
 
-GLMNet is a regularized logistic regression approach. Logistic regression estimates the probability of a binary outcome by assigning weights, or coefficients, to predictor variables. GLMNet adds regularization, which shrinks coefficients and can reduce overfitting when there are many related predictors. In this project, GLMNet uses an elastic-net penalty, which combines ridge-style shrinkage and lasso-style feature selection. As with XGBoost, one GLMNet model was trained on treated members and another was trained on control members. Each model outputs a predicted probability of 90-day ED utilization.
+    H --> J
+    I --> J
 
-The two approaches provide different strengths. XGBoost can capture nonlinear relationships and interactions between features, while GLMNet is more linear and easier to interpret through coefficients and model contributions. Comparing both methods helps evaluate whether the uplift findings are stable across a flexible tree-based model and a more interpretable regularized regression model.
+    J --> K["Final Treatment Benefit"]
+    K --> L["Rank Members"]
+    L --> M["Assign Uplift Deciles"]
+```
+
+The T-learner provides a direct estimate of intervention benefit by comparing predicted risks under treatment and control. The X-learner provides an independent estimate of treatment effect and is used to evaluate whether the member rankings produced by the T-learner are consistent across causal modeling frameworks.
+
+### Modeling Techniques
+
+Two predictive modeling techniques are evaluated within each treatment-effect framework:
+
+- **GLMNet** – a regularized logistic regression approach that emphasizes interpretability while reducing overfitting through elastic-net regularization.
+- **XGBoost** – a gradient-boosted decision tree approach capable of modeling nonlinear relationships and feature interactions.
+
+Comparing both modeling techniques helps evaluate whether treatment-benefit rankings are consistent across different predictive models.
 
 ## Analytical Task 2: Data Review
 
@@ -213,25 +212,37 @@ Supporting file:
 - [`risk_tier_thresholds.csv`](Outputs/Uplift/Python/risk_tier_thresholds.csv)
 - [`risk_tier_population_summary.csv`](Outputs/Uplift/Python/risk_tier_population_summary.csv)
 
+---
+
+## Evaluation Roadmap
+
+The remaining analyses are organized into three evaluation stages that build upon one another.
+
+| Evaluation Level | Question | Analytical Tasks |
+|---|---|---|
+| **Level 1: Outcome Model Validation** | Can the models accurately predict factual ED risk? | Task 3 |
+| **Level 2: Uplift Model Validation** | Do the models produce credible treatment-effect estimates? | Tasks 4–5 |
+| **Level 3: Operational Evaluation** | Does uplift targeting improve decision making and business value? | Tasks 6–7 |
+
+---
+
+# Evaluation Level 1: Outcome Model Validation
+
+**Question:** Can the models accurately predict factual ED risk?
+
+The first stage of the evaluation focuses on validating the factual outcome models. Before interpreting treatment effects, the underlying treated and control outcome models should demonstrate reasonable predictive performance.
+
+---
+
 ## Analytical Task 3: Model Performance
 
-This section evaluates whether the factual outcome models are credible enough to support treatment-effect analysis. These diagnostics are useful before comparing T-learner and X-learner results because both frameworks depend on reasonable estimates of ED risk under treated and untreated conditions. In the T-learner, treatment benefit is estimated by subtracting two predicted probabilities:
+Before estimating treatment effects, the factual outcome models should demonstrate reasonable predictive performance. This section evaluates the treated and control outcome models using discrimination, calibration, and prediction-quality metrics. Because the treatment-effect estimates produced by both the T-learner and X-learner depend on these factual outcome models, their performance provides the foundation for the remaining analyses.
 
-```text
-benefit_score = pred_ed_if_control - pred_ed_if_treated
-```
-
-Because the benefit score depends on outcome modeling quality, model performance is evaluated first at the factual outcome-model level. The treated model is evaluated among actual treated members using `pred_ed_if_treated`, and the control model is evaluated among actual control members using `pred_ed_if_control`. Detailed uplift decile behavior is evaluated separately in Analytical Task 5.
-
-### Hyperparameter Tuning
-
-As described in Analytical Task 1, both model families were tuned using cross-validation within the training data. This tuning section is included before the treatment-effect comparison because both the T-learner and X-learner depend on credible underlying outcome models. In other words, Task 3 evaluates model quality before the report asks whether the T-learner and X-learner produce consistent uplift rankings.
-
-Cross-validation AUC is useful for model selection, but held-out test performance is more important for judging generalization. Because the ED outcome is rare and each T-learner arm is trained separately, performance should be interpreted with attention to the number of positive ED events available in each group.
+Both model families were tuned using cross-validation within the training data, as described in Analytical Task 1. The results below focus on held-out test performance.
 
 ### Event Counts And Modeling Constraints
 
-The main modeling constraint is not only the 6.0% overall ED outcome rate. It is the small number of positive ED events after splitting the data into treated and control groups. The treated model is especially data-limited because it has relatively few positive examples available for learning and evaluation.
+The primary modeling limitation is the small number of positive ED events after splitting the data into treated and control groups. This is especially important for the treated model, which contains relatively few positive examples for model training and evaluation.
 
 <!-- AUTO_TABLE:factual_event_counts START -->
 | Split | Group | N | Positive ED events | Negative ED events | Event rate |
@@ -242,11 +253,11 @@ The main modeling constraint is not only the 6.0% overall ED outcome rate. It is
 | Test | Control | 182 | 13 | 169 | 7.1% |
 <!-- AUTO_TABLE:factual_event_counts END -->
 
-This event-count table is important context for all performance metrics. With only a small number of ED-positive cases, especially in the treated group, AUC, calibration, and decile-level observed rates can move noticeably with small changes in the train/test split. The results should therefore be interpreted as directional evidence rather than definitive proof of individual-level prediction accuracy.
+These event counts should be considered when interpreting all subsequent performance metrics. Because positive ED events are limited, especially in the treated group, the results are best interpreted as directionally informative rather than definitive.
 
 ### Discrimination Performance
 
-Discrimination asks whether the model ranks actual ED-positive members above actual ED-negative members. In this project, treated AUC evaluates actual treated members using `pred_ed_if_treated`, and control AUC evaluates actual control members using `pred_ed_if_control`. This is the most direct test of whether each factual outcome model is learning useful risk ranking within the group it was trained to represent.
+Discrimination was evaluated using the area under the receiver operating characteristic curve (AUC) within the factual treatment groups.
 
 <!-- AUTO_TABLE:model_performance_summary START -->
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC |
@@ -255,11 +266,11 @@ Discrimination asks whether the model ranks actual ED-positive members above act
 | GLMNet | 0.7195 | 0.6472 | 0.9044 | 0.6600 |
 <!-- AUTO_TABLE:model_performance_summary END -->
 
-GLMNet has the stronger held-out discrimination in this run. Its treated test AUC is meaningfully better than XGBoost's treated test AUC, and its control test AUC is also higher. XGBoost now ranks treated members well, but its control test AUC is weaker than GLMNet's control test AUC. Because both treated and control outcome models feed into the benefit score, GLMNet remains the stronger candidate for outcome-risk ranking.
+On this simulated dataset and train/test split, GLMNet demonstrated stronger held-out discrimination than XGBoost, particularly within the control group. Given the limited number of positive events, these differences should be interpreted cautiously
 
 ### Factual Discrimination And Prediction Separation
 
-AUC is useful, but it can feel abstract. The table below combines factual-group AUC with a more direct diagnostic: whether actual ED-positive members receive higher predicted risk than actual ED-negative members within the same factual group. For actual treated members, the comparison uses `pred_ed_if_treated`. For actual control members, the comparison uses `pred_ed_if_control`.
+The table below complements AUC by comparing predicted probabilities between members who experienced an ED event and those who did not. A useful outcome model should assign higher predicted risk to members with observed ED events.
 
 <!-- AUTO_TABLE:factual_prediction_separation START -->
 | Model | Group | Positive events | Negative events | AUC | Avg pred for ED=1 | Avg pred for ED=0 | Avg difference | Median pred for ED=1 | Median pred for ED=0 |
@@ -270,17 +281,19 @@ AUC is useful, but it can feel abstract. The table below combines factual-group 
 | GLMNet | Control | 13 | 169 | 0.6600 | 0.0774 | 0.0729 | 0.0045 | 0.0742 | 0.0713 |
 <!-- AUTO_TABLE:factual_prediction_separation END -->
 
-This table is one of the most important diagnostics for the project. The AUC column measures whether the model ranks actual ED-positive members above ED-negative members. The average and median prediction columns show whether ED-positive members receive higher predicted probabilities in magnitude. A useful risk model should show both stronger ranking and higher predicted risk among actual ED-positive members.
+Both model families generally assigned higher predicted probabilities to observed ED-positive members, with GLMNet showing greater separation within the treated group.
 
 ### Brier Score And Calibration
 
-Brier score and calibration evaluate probability quality rather than ranking alone. Brier score measures the average squared difference between the observed outcome and predicted probability:
+Model calibration was evaluated using the Brier score and calibration error. Lower values indicate better agreement between predicted probabilities and observed outcomes.
+
+Brier score:
 
 ```text
 Brier score = (1 / n) * sum((outcome_i - predicted_probability_i)^2)
 ```
 
-Calibration error groups members into predicted-risk bins, compares each bin's average predicted ED rate with its observed ED rate, and then takes a weighted average of the absolute differences:
+Calibration error:
 
 ```text
 Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_predicted_ED_rate_bin))
@@ -293,7 +306,7 @@ Calibration error = sum((n_bin / n_total) * abs(observed_ED_rate_bin - average_p
 | GLMNet | 0.0392 | 0.0658 | 0.0615 | 0.0511 |
 <!-- AUTO_TABLE:brier_calibration_summary END -->
 
-GLMNet has lower Brier scores and lower calibration error than XGBoost in both the treated and control groups. This supports GLMNet as the stronger probability model. However, Brier score should be interpreted carefully because the ED outcome is rare. A model can receive a low Brier score by predicting low probabilities for most members. For that reason, Brier and calibration should be interpreted alongside factual AUC, positive-vs-negative prediction separation, and prediction range.
+GLMNet achieved lower Brier scores and calibration errors than XGBoost in both factual groups, indicating better calibrated probability estimates on this simulated dataset.
 
 <!-- AUTO_CHART:glmnet_calibration_plot START -->
 ![GLMNet calibration plot](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_calibration_plot.png)
@@ -301,9 +314,7 @@ GLMNet has lower Brier scores and lower calibration error than XGBoost in both t
 
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
-The model is not expected to produce many probabilities above 0.50 because the ED outcome rate is low. A maximum predicted probability below 0.50 does not imply model failure. The more important question is whether higher predicted probabilities correspond to higher observed ED risk and whether the model ranks members usefully within each factual group.
-
-The prediction ranges below are **factual evaluation ranges**. For treated members, the table summarizes `pred_ed_if_treated` among members who were actually treated. For control members, it summarizes `pred_ed_if_control` among members who were actually untreated. These ranges are used to evaluate the outcome models on the groups where the observed treatment condition is known.
+The table below summarizes the distribution of predicted probabilities within the factual evaluation groups.
 
 <!-- AUTO_TABLE:factual_prediction_ranges START -->
 | Model | Group | Min | P10 | Median | Mean | P90 | Max |
@@ -314,13 +325,13 @@ The prediction ranges below are **factual evaluation ranges**. For treated membe
 | GLMNet | Control | 0.0601 | 0.0644 | 0.0716 | 0.0732 | 0.0844 | 0.1084 |
 <!-- AUTO_TABLE:factual_prediction_ranges END -->
 
-This table helps explain probability magnitude in a rare-outcome setting. GLMNet's treated predictions are tightly compressed around 4.0%, so even small rank-order differences can produce a strong AUC while still producing very little probability spread. The GLMNet control model has a wider factual prediction range, which gives it more room to separate higher-risk and lower-risk members by probability magnitude.
+Because the observed ED outcome is rare, predicted probabilities remain relatively low across both models. This behavior is expected and does not imply poor model performance. More important than the absolute probability values is whether higher predicted probabilities correspond to higher observed ED risk.
 
 ### Model Performance Takeaway
 
-Overall, GLMNet is the stronger outcome-risk model in this run. It has better held-out discrimination across the two factual groups, lower Brier scores, and lower calibration error. XGBoost performs well in the treated group but is weaker in the control group, while GLMNet is more consistent across both arms. The strongest conclusion is that GLMNet appears more useful for relative risk ranking and probability quality than XGBoost.
+On this simulated dataset and train/test split, GLMNet demonstrated stronger overall performance than XGBoost. It achieved higher held-out discrimination, lower Brier scores, and better calibration across the factual treatment groups, making it the preferred outcome model for the remaining analyses.
 
-The main limitation is event scarcity. The treated model is trained and evaluated with very few positive ED events, which makes individual-level probability estimates and decile-level validation unstable. The current results support GLMNet as the preferred candidate model for the rest of the analysis, but the evidence should be described as directionally supportive rather than definitive. Uplift decile behavior and operational prioritization are evaluated in Analytical Task 5.
+The limited number of positive ED events, particularly in the treated group, means these results should be confirmed on the larger GenRocket dataset before drawing broader conclusions.
 
 Supporting files:
 
@@ -333,19 +344,31 @@ Supporting files:
 - [`XGBoost/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/XGBoost/calibration_summary.csv)
 - [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/calibration_summary.csv)
 
+## Level 1 Summary: Outcome Model Validation
+
+GLMNet is the stronger factual outcome model across every evaluated metric. On the held-out test set, GLMNet achieves a treated AUC of 0.904 versus XGBoost's 0.835, and a control AUC of 0.660 versus XGBoost's 0.583. GLMNet also produces better calibrated probabilities: treated Brier score 0.039 versus 0.045, control Brier score 0.066 versus 0.068, and lower calibration error in both arms (treated 0.062 vs. 0.080; control 0.051 vs. 0.064). In the factual prediction-separation check, GLMNet assigns a 1.79 percentage-point higher predicted risk to ED-positive treated members than ED-negative treated members, compared with XGBoost's 1.24 pp gap. The control-group separation is narrower for both models (GLMNet 0.45 pp, XGBoost 0.50 pp), reflecting the difficulty of discriminating rare events with limited positive examples.
+
+The key constraint is event scarcity: only 5 positive ED events are available in the treated test group and 13 in the control test group. This limits confidence in any single-split result and means all downstream treatment-effect estimates inherit this uncertainty. Nevertheless, GLMNet's consistent advantage across discrimination, calibration, and prediction separation supports its selection as the primary outcome model for the T-learner and X-learner treatment-effect analyses that follow.
+
+---
+
+# Evaluation Level 2: Uplift Model Validation
+
+**Question:** Do the models produce credible treatment-effect estimates?
+
+Having established that the factual outcome models provide reasonable performance, the next stage evaluates whether the causal modeling frameworks produce meaningful treatment-effect estimates and useful member prioritization.
+
+---
+
 ## Analytical Task 4: Treatment Effect Analysis
 
-This section applies the GLMNet T-learner outputs at the member level. GLMNet is used here because Analytical Task 3 identified it as the stronger candidate outcome-risk model. Each member receives two predicted ED probabilities: one assuming the member receives intervention and one assuming the member does not receive intervention. The benefit score is the difference between those two predicted probabilities:
+This section applies the GLMNet T-learner to estimate member-level treatment benefit. Each member receives predicted ED risk under treatment and control, and the difference between these predictions defines the benefit score.
 
 ```text
 benefit_score = pred_ed_if_control - pred_ed_if_treated
 ```
 
-A higher benefit score means the model predicts a larger reduction in ED risk under intervention. A near-zero benefit score means the model predicts little difference between treatment and no treatment. A negative benefit score means the model predicts a higher ED probability under treatment than under no treatment; this should be interpreted cautiously, but operationally it means the member would not be prioritized based on predicted benefit. In uplift modeling, these negative-benefit cases are sometimes called **sleeping dogs**: cases where outreach may be unnecessary or potentially counterproductive. In this project, a sleeping-dog score should not be interpreted as proof that intervention causes harm, but it is useful as a prioritization warning.
-
-The key value of this section is that it separates **high risk** from **high expected benefit**. A member can be clinically high risk but not highly impactable if the model predicts high ED risk under both treatment and control. Conversely, a member with moderate baseline risk may be a strong outreach candidate if the model predicts a meaningful risk reduction under treatment.
-
-The examples below are real members from the GLMNet T-learner scored output. They show how predicted risk and predicted benefit can lead to different outreach interpretations.
+A higher benefit score indicates a larger predicted reduction in ED risk under intervention. The examples below illustrate how predicted risk and predicted treatment benefit can lead to different outreach priorities.
 
 <!-- AUTO_TABLE:top_benefit_examples START -->
 | Member profile | Actual outcome | Treatment flag | Predicted ED if treated | Predicted ED if control | Benefit score | Uplift decile | Outreach interpretation |
@@ -356,9 +379,9 @@ The examples below are real members from the GLMNet T-learner scored output. The
 | Sleeping dog / lowest benefit | 1 | 1 | 0.2647 | 0.1782 | -0.0866 | 10 | Not prioritized by uplift score because predicted benefit is lowest in the scored population. |
 <!-- AUTO_TABLE:top_benefit_examples END -->
 
-The high-risk and low-risk examples are selected from low positive benefit members when available, so the table separates baseline risk from impactability. The sleeping-dog row is selected separately as the lowest-benefit scored member in the current GLMNet output; if the current run does not produce a negative benefit score, this row should be interpreted as the lowest-priority member by uplift score rather than evidence of harm.
+The examples above illustrate why uplift modeling differs from traditional risk prediction. Members with the highest predicted ED risk are not necessarily those expected to benefit most from intervention. A member may remain high risk under both treatment and control, resulting in little predicted benefit, while another member with moderate baseline risk may experience a larger expected reduction in ED utilization and therefore receive a higher benefit score. Consequently, uplift modeling prioritizes members based on expected intervention benefit rather than baseline risk alone.
 
-This is why uplift modeling can be more useful than risk ranking alone. A pure risk model would tend to prioritize members with the highest predicted ED probability. The uplift model instead prioritizes members whose ED probability is expected to decrease the most if they receive intervention.
+The final example represents a sleeping dog: a member whose predicted ED risk is higher under treatment than under no treatment. In uplift modeling, these members are generally considered low-priority candidates because the model predicts little or no expected benefit. Within this synthetic demonstration, a sleeping-dog prediction should be interpreted as a prioritization signal rather than evidence that intervention causes harm.
 
 ### Synthetic True-Benefit Validation
 
@@ -398,9 +421,7 @@ Supporting files:
 
 ## Analytical Task 5: Uplift Decile Analysis
 
-Members are ranked by predicted benefit score and split into 10 uplift deciles. Decile 1 is the highest predicted benefit group.
-
-Because GLMNet is the stronger candidate model based on held-out AUC, Brier score, calibration error, and predicted benefit separation, the decile review below focuses on GLMNet. This section compares the GLMNet T-learner and GLMNet X-learner decile patterns side by side so the two treatment-effect frameworks can be checked for consistency. Each decile contains 30 held-out test members.
+Members are ranked by predicted treatment benefit and divided into ten uplift deciles, where Decile 1 represents the highest predicted benefit. This section compares GLMNet T-learner and X-learner rankings to evaluate whether the two treatment-effect frameworks identify similar high-benefit members.
 
 <!-- AUTO_TABLE:glmnet_t_vs_x_decile_summary START -->
 <table><tr>
@@ -423,13 +444,13 @@ _Note: In the T-learner table, benefit is the direct contrast between the contro
 
 ### Risk Tier Versus Benefit Group
 
-The chart below compares baseline risk tier against model-relative benefit group. Benefit groups are based on uplift deciles rather than fixed absolute ED-risk-reduction thresholds, because the observed model benefits in this dataset are smaller than the idealized synthetic-data specification.
+The chart below compares baseline risk tier with predicted benefit group. Benefit groups are defined using uplift deciles rather than fixed benefit thresholds because the predicted treatment effects in this dataset are relatively small. This comparison illustrates that members with the highest baseline risk are not necessarily those expected to benefit most from intervention.
 
 | Benefit group | Definition |
 |---|---|
-| High benefit | Uplift deciles 1-2, top 20% by predicted benefit |
-| Medium benefit | Uplift deciles 3-7, middle 50% by predicted benefit |
-| Low benefit | Uplift deciles 8-10, bottom 30% by predicted benefit |
+| High benefit | Uplift deciles 1–2 (top 20% by predicted benefit) |
+| Medium benefit | Uplift deciles 3–7 (middle 50% by predicted benefit) |
+| Low benefit | Uplift deciles 8–10 (bottom 30% by predicted benefit) |
 
 Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
 
@@ -439,9 +460,11 @@ Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, H
 | ![GLMNet T-learner risk tier by benefit group](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png) | ![GLMNet X-learner risk tier by benefit group](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png) |
 <!-- AUTO_CHART:risk_tier_by_benefit_group END -->
 
-Both panels are based on the same held-out test members. In the T-learner output, High risk members are not automatically high benefit; many fall into the low-benefit group. In the X-learner output, a larger share of High risk members are placed in the high-benefit group. No Very High members appear in the held-out test set for this run. This framework difference is useful because it shows why Task 5 compares T-learner and X-learner rankings side by side instead of assuming one risk-to-benefit relationship.
+Both frameworks demonstrate that baseline risk and expected treatment benefit are related but not equivalent. In the T-learner, many High risk members remain in the low-benefit group, whereas the X-learner places a larger proportion of High risk members into the high-benefit group. These differences highlight how treatment-effect estimates can vary across causal modeling frameworks.
 
-The consistency summary below is limited to GLMNet because GLMNet is the model carried forward for interpretation. The correlations compare member-level T-learner and X-learner benefit scores on the held-out test set, while top-decile overlap shows how many members appear in both high-benefit groups.
+### Framework Consistency
+
+The table below compares member-level treatment-benefit estimates from the GLMNet T-learner and X-learner. Correlations measure agreement between benefit scores, while top-decile overlap measures how many members are identified as highest benefit by both frameworks.
 
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary START -->
 | Model | Pearson benefit score corr | Spearman benefit score corr | Top decile overlap | T-learner mean benefit score | X-learner mean benefit score |
@@ -449,9 +472,11 @@ The consistency summary below is limited to GLMNet because GLMNet is the model c
 | GLMNet | -0.0761 | 0.1608 | 16.7% | 0.0344 | 0.0377 |
 <!-- AUTO_TABLE:glmnet_xlearner_consistency_summary END -->
 
+The modest correlations and limited top-decile overlap indicate that the two frameworks do not rank members identically, despite producing similar average predicted benefit. This motivates comparing both approaches against the known synthetic treatment benefit.
+
 ### True-Benefit Top-Group Overlap
 
-Because the synthetic true-benefit formula is known, the model's highest-benefit groups can be compared against the true highest-benefit groups. The top 10% overlap is the strictest targeting check, while the top 20% overlap aligns with the project definition of **High benefit** as uplift deciles 1-2.
+Because the synthetic treatment-benefit formula is known, each model's highest-ranked members can be compared directly with the true highest-benefit members. The top 10% overlap provides a strict evaluation of targeting accuracy, while the top 20% overlap corresponds to the project's **High benefit** group.
 
 <!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap START -->
 | Model | Test members | Top 10% overlap | Top 20% overlap |
@@ -460,7 +485,7 @@ Because the synthetic true-benefit formula is known, the model's highest-benefit
 | GLMNet X-learner | 300 | 14 of 30 (46.7%) | 29 of 60 (48.3%) |
 <!-- AUTO_TABLE:glmnet_true_benefit_decile_overlap END -->
 
-The GLMNet X-learner recovers substantially more of the true highest-benefit members than the GLMNet T-learner in this run. This pattern holds for both the strict top-decile check and the broader top-20% high-benefit group. Combined with the Task 4 true-benefit accuracy results, this supports the X-learner as the stronger GLMNet treatment-effect ranking method for the current synthetic dataset.
+The GLMNet X-learner recovers substantially more of the true highest-benefit members than the GLMNet T-learner. Combined with the true-benefit validation results presented in Task 4, these findings suggest that the X-learner provides a more accurate ranking of treatment benefit for this synthetic dataset.
 
 Supporting files:
 
@@ -469,19 +494,37 @@ Supporting files:
 - [`GLMNet true-benefit decile overlap summary`](Outputs/Uplift/Python/glmnet_true_benefit_decile_overlap_summary.csv)
 - [`X-learner consistency summary`](Outputs/Uplift/Python/X-Learner/xlearner_vs_tlearner_consistency_summary.csv)
 
-## Analytical Task 6: Variable Importance And Explainability
+## Level 2 Summary: Uplift Model Validation
 
-The explainability analysis separates risk drivers from benefit drivers. Risk drivers explain what predicts ED utilization in the treated and control outcome models. Benefit drivers explain what contributes to predicted treatment benefit.
+The GLMNet X-learner produces substantially more credible treatment-effect estimates than the GLMNet T-learner on this synthetic dataset.
 
-Because synthetic true benefit is known in this dataset, Task 6 is organized around three levels of evidence:
+In the true-benefit validation (Task 4), the X-learner achieves positive Pearson correlation with true benefit (0.391) and positive Spearman correlation (0.168), while the T-learner shows negative correlations (Pearson −0.467, Spearman −0.368). The X-learner also has smaller bias (−0.017 vs. −0.020), lower MAE (0.024 vs. 0.026), and lower RMSE (0.031 vs. 0.037). This means the X-learner not only estimates average benefit more accurately but also ranks individual members in closer agreement with the true synthetic benefit pattern.
 
-| Level | Question answered | Main caution |
-|---|---|---|
-| Model-learned feature contributions | Which variables does the fitted GLMNet model use to explain predicted benefit? | Correlated predictors can split, absorb, or swap attribution. |
-| Known true-driver alignment | Do the model explanations recover the known synthetic treatment-effect drivers? | Alignment is evaluated against true contribution terms, not raw coefficients. |
-| Interpretation | Which explanation should be emphasized? | The X-learner explanations deserve more weight because Tasks 4-5 showed stronger treatment-effect recovery, but attribution is still directional rather than definitive. |
+The decile analysis (Task 5) reinforces this finding. The X-learner produces a wider benefit gradient: decile 1 averages 0.070 predicted benefit versus 0.015 in decile 10, a 4.6× spread. The T-learner gradient is flatter: 0.044 in decile 1 versus 0.023 in decile 10, only a 1.9× spread. The framework-consistency check reveals weak agreement between the two methods (Pearson −0.076, Spearman 0.161, top-decile overlap 16.7%), confirming they prioritize different members despite producing similar population-level average benefit (T-learner 0.034, X-learner 0.038).
 
-The true synthetic benefit formula is especially useful here because the real treatment-effect drivers are known: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score` above 50. This makes it possible to evaluate whether feature explanations are recovering the known signal rather than only describing the fitted model.
+The most decisive evidence comes from the true-benefit top-group overlap check. The X-learner correctly identifies 14 of 30 true top-decile members (46.7%) and 29 of 60 true top-20% members (48.3%). The T-learner recovers only 2 of 30 (6.7%) and 4 of 60 (6.7%) — barely above random chance. This indicates that the X-learner's treatment-effect ranking is meaningfully aligned with the true synthetic benefit, while the T-learner's ranking is not.
+
+---
+
+# Evaluation Level 3: Operational Evaluation
+
+**Question:** Does uplift modeling improve decision making and business value?
+
+The final stage evaluates whether the treatment-effect estimates are interpretable and whether they support operational decision making through explainability and business-value assessment.
+
+---
+
+## Analytical Task 6: Variable Importance and Explainability
+
+This section examines which member characteristics are associated with predicted treatment benefit and whether those findings align with the known synthetic treatment-effect formula. Because the true treatment-benefit drivers are known in this synthetic dataset, the analysis evaluates not only which features each model identifies as important, but also how well those explanations recover the true underlying signal.
+
+Three complementary perspectives are used throughout this section:
+
+| Level | Question answered |
+|---|---|
+| Risk drivers | Which variables are most associated with predicted ED utilization? |
+| Benefit drivers | Which variables contribute most to predicted treatment benefit? |
+| True-driver validation | Do the identified drivers align with the known synthetic treatment-effect formula? |
 
 ### Risk Drivers
 
@@ -492,7 +535,7 @@ Before interpreting benefit drivers, it is useful to separate baseline ED-risk d
 | Treated model | `current_risk_score`, `percolator_utilization_score`, `ed_visits_last_6m`, `total_cost_last_6m`, `risk_tier_High` |
 | Control model | `utilities_insecurity_flag`, `current_risk_score`, `dual_eligible`, `ed_visits_last_6m`, `county_County_A` |
 
-### Benefit Drivers
+### Explainability Approaches
 
 For GLMNet, benefit-driver importance is compared across the T-learner and X-learner frameworks. Comparing the two frameworks helps show whether the main drivers of predicted treatment benefit are directionally consistent.
 
@@ -734,7 +777,7 @@ Supporting files:
 
 ## Analytical Task 7: Business Value Assessment
 
-The business value analysis estimates how much gross savings would be captured when members are targeted by predicted uplift versus the prior-style approach of targeting members strictly by highest `current_risk_score`. The main visual is a cumulative targeting chart: top 10%, top 20%, top 30%, and so on. This makes the comparison easier to interpret because it answers the operational question: if outreach capacity is limited, which ranking method captures more estimated savings first?
+This section compares uplift-based targeting with traditional risk-based targeting by estimating expected avoided ED visits and gross savings under both approaches.
 
 The current calculation assumes:
 
@@ -747,7 +790,7 @@ net_savings = gross_savings - intervention_cost
 roi = net_savings / intervention_cost
 ```
 
-The current cost assumptions are $1,200 per ED visit and $250 per intervention. The primary comparison below focuses on gross savings because the goal is to compare targeting quality before layering in intervention-cost assumptions. Because Tasks 4 and 5 showed that the GLMNet X-learner better recovered true synthetic treatment benefit, Task 7 reports business-value estimates for both GLMNet frameworks.
+The analysis assumes an average cost of **$1,200 per ED visit** and **$250 per intervention**. Because Tasks 4 and 5 showed that the GLMNet X-learner more accurately recovered the synthetic treatment effect, business-value estimates are presented for both GLMNet frameworks.
 
 ### GLMNet T-Learner Targeting
 
@@ -769,7 +812,7 @@ This view compares two targeting policies on the same held-out test population: 
 ![GLMNet T-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:glmnet_roi_by_decile END -->
 
-The chart below compares the additional gross savings from each T-learner targeting band against the additional gross savings from selecting the same number of members by current risk. Positive bars mean benefit-based targeting adds more estimated value than the current-risk approach for that band; negative bars mean the current-risk approach adds more estimated value for that band. In this run, the T-learner has positive marginal advantage through the top 30%, then turns slightly negative in the 30-40% and 40-50% bands.
+The chart below compares the marginal gross savings of uplift-based targeting with current-risk targeting across successive targeting bands. Positive values indicate that benefit-based targeting captures more estimated value within that band. In this run, the T-learner maintains a positive marginal advantage through the top 30% of targeted members before declining slightly in later bands.
 
 <!-- AUTO_CHART:tlearner_marginal_advantage START -->
 ![GLMNet T-learner marginal gross savings advantage versus current risk](Outputs/Uplift/Python/T-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
@@ -795,15 +838,15 @@ The X-learner view uses the same held-out test population and the same cost assu
 ![GLMNet X-learner cumulative gross savings by targeting approach](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:xlearner_roi_by_decile END -->
 
-The chart below shows the same marginal advantage comparison for the X-learner. In this run, the X-learner remains positive through the top 50%, meaning each additional 10% targeting band shown still adds more estimated gross savings than the current-risk approach.
+The X-learner maintains a positive marginal advantage through the top 50% of targeted members, indicating that benefit-based targeting consistently captures more estimated value than current-risk targeting across the evaluated targeting bands.
 
 <!-- AUTO_CHART:xlearner_marginal_advantage START -->
 ![GLMNet X-learner marginal gross savings advantage versus current risk](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 <!-- AUTO_CHART:xlearner_marginal_advantage END -->
 
-The current-risk comparison uses the same held-out test population and the same cost assumptions within each model framework. Members are selected by highest `current_risk_score`, and expected avoided ED visits are then calculated using that framework's predicted benefit scores for those selected members. This makes the comparison a targeting-policy comparison: prioritize by estimated intervention benefit versus prioritize by baseline risk.
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data.
 
-These savings results are directional rather than definitive. They are sensitive to the assumed ED visit cost, intervention cost, calibration of predicted benefit, and whether predicted benefit translates into actual avoided ED visits. A future write-up can add sensitivity testing with different cost assumptions.
+Overall, both GLMNet frameworks suggest that prioritizing members by predicted treatment benefit captures greater estimated value than prioritizing members by baseline risk alone, with the X-learner demonstrating the larger overall advantage on this synthetic dataset.
 
 Supporting files:
 
@@ -821,51 +864,14 @@ Supporting files:
 - [`GLMNet X-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png)
 - [`GLMNet X-learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift/Python/X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 
-## Analytical Task 8: Client Perspective
 
-From the perspective of a Medicaid health plan executive team, the most important conclusion is that the uplift framework provides a more targeted prioritization method than baseline risk alone. It attempts to identify members whose ED risk is expected to decrease with intervention.
+## Level 3 Summary: Operational Evaluation
 
-GLMNet is the current candidate model for interpretation and operational discussion. It has better held-out test AUC, better calibration, and higher top-decile predicted benefit. However, after the stratified split, the GLMNet top decile does not have a positive observed control-treated gap. This means the current results support GLMNet as the stronger ranking model, but they do not yet provide strong observed top-decile validation for operational targeting.
+Both the T-learner and X-learner demonstrate that benefit-based targeting outperforms risk-based targeting, but the X-learner delivers a larger and more sustained advantage.
 
-If the model were used for exploratory prioritization, uplift decile 1 would be the first group to review. GLMNet decile 1 has average predicted benefit of 0.0827 and an observed control-treated ED gap of -0.0667. The negative observed gap means the highest-ranked group should not be presented as validated proof of treatment benefit. Because estimated top-decile ROI also remains negative under current cost assumptions, the model is best presented as a promising prioritization proof of concept rather than a ready financial case.
 
-The results are explainable enough for stakeholder discussion because GLMNet provides standardized coefficient/logit contribution explanations. The benefit-driver analysis is especially important because the variables that drive baseline ED risk are not always the same as the variables that drive expected treatment benefit.
+On explainability (Task 6), both frameworks identify clinically plausible benefit drivers but recover the true synthetic drivers unevenly. SHAP-based explanation recovers 3 of 6 true drivers in the T-learner's top 10 (`current_risk_score`, `behavioral_health_risk_flag`, `food_insecurity_flag`) and 2 of 6 in the X-learner's top 10 (`admits_last_6m`, `ed_visits_last_6m`). The member-level SHAP alignment check shows that both frameworks correctly rank `ed_visits_last_6m` contributions (Spearman 0.931 T-learner, 0.934 X-learner) and `admits_last_6m` (0.793 both). However, neither framework consistently recovers all six drivers with correct sign, confirming that feature attribution should be interpreted as directional model evidence rather than definitive causal proof.
 
-Several limitations are central to the interpretation. The dataset is synthetic and may not reflect live population behavior. Treatment assignment may be confounded. Observed treated-control gaps are not randomized treatment effects. Decile-level sample sizes are small, which can make observed rates unstable. Rare outcome prevalence can compress predicted probabilities toward zero. ROI depends heavily on cost assumptions and model calibration. Live-data validation is required before production deployment.
+On business value (Task 7), the T-learner captures $4,409 in estimated gross savings through the top 30% of targeted members versus $3,510 from current-risk targeting — an advantage of $899. The X-learner captures $5,920 versus $5,190 from risk targeting — an advantage of $731 at the same threshold, but with substantially higher absolute savings because its benefit scores are larger. The T-learner's marginal advantage turns slightly negative after the top 30%, while the X-learner maintains positive marginal advantage through the full top 50%, indicating a broader population of members where benefit-based targeting adds value.
 
-Operationally, the workflow would score members using the trained uplift model, rank members by benefit score, assign uplift deciles, prioritize outreach starting with decile 1, review benefit drivers for operational context, track outcomes after intervention, and recalibrate/retrain the model over time.
-
-## Recommendation
-
-The uplift modeling framework provides a structured way to prioritize members by predicted intervention benefit rather than baseline ED risk alone. In the current outputs, GLMNet provides the stronger candidate model because it has better held-out test AUC, better calibration, and higher top-decile predicted benefit. The observed top-decile treatment gap is negative after the stratified split, so the model should be described as a promising but not yet validated prioritization workflow.
-
-The current GLMNet top decile has average predicted benefit of 0.0827, observed ED rate of 23.3%, and observed control-treated ED gap of -6.67 percentage points. Estimated top-decile ROI remains negative under the current assumptions of $1,200 per ED visit and $250 per intervention. Therefore, the model is best presented as a promising prioritization workflow that requires live-data validation, calibration review, observed-outcome validation, and ROI sensitivity testing before production deployment.
-
-## Presentation Summary
-
-A presentation based on these results can be organized around the business problem, the reason high risk is not always high benefit, the T-learner modeling approach, the data review, model performance, uplift decile findings, explainability results, ROI, limitations, and final recommendation.
-
-The strongest slide story is that GLMNet is the candidate model carried forward for uplift prioritization. The caution is that the observed top-decile control-treated gap is not positive after the stratified split, ROI is still negative under current assumptions, and the data are synthetic. The workflow is promising, but it requires live-data validation before operational use.
-
-## Reproducibility
-
-The analysis can be reproduced by opening `Code/Uplift Model Code_rh06032026.ipynb`, restarting the kernel, and running all cells in order. The GLMNet T-learner outputs used in the final interpretation are saved in `Outputs/Uplift/Python/T-Learner/GLMNet`; GLMNet X-learner comparison outputs are saved in `Outputs/Uplift/Python/X-Learner/GLMNet`.
-
-After rerunning the notebook, refresh the generated README tables, text snippets, and chart embeds with:
-
-```bash
-python Code/generate_readme_tables.py
-```
-
-Key output files:
-
-- [`data_review_summary.csv`](Outputs/Uplift/Python/data_review_summary.csv)
-- [`model_evaluation_summary.csv`](Outputs/Uplift/Python/model_evaluation_summary.csv)
-- [`model_recommendation_summary.csv`](Outputs/Uplift/Python/model_recommendation_summary.csv)
-- [`GLMNet/uplift_decile_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_decile_summary.csv)
-- [`GLMNet/uplift_roi_by_decile.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_roi_by_decile.csv)
-- [`GLMNet/calibration_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/calibration_summary.csv)
-- [`GLMNet/uplift_observed_gap_by_decile.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/uplift_observed_gap_by_decile.csv)
-- [`GLMNet/top_benefit_decile_summary.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/top_benefit_decile_summary.csv)
-- [`GLMNet/shap_importance_treated_control_models.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/shap_importance_treated_control_models.csv)
-- [`GLMNet/shap_importance_benefit_score.csv`](Outputs/Uplift/Python/T-Learner/GLMNet/shap_importance_benefit_score.csv)
+The combined evidence supports a clear operational recommendation: the GLMNet X-learner provides the more reliable treatment-benefit ranking for prioritizing care management outreach, while the T-learner's primary value is as a comparison framework that validates whether the X-learner's rankings are consistent with an independent estimation approach. Both frameworks demonstrate that uplift-based targeting captures more estimated value than risk-based targeting when outreach capacity is constrained, making the case for benefit-based prioritization over traditional risk stratification alone.

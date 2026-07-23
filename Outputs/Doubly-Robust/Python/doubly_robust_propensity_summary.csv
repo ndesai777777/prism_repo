@@ -1,0 +1,12 @@
+metric,value
+Propensity source,shared_propensity_scores_member_id_merge
+Train treatment model AUC,0.7002751572327045
+Test treatment model AUC,0.592940957347737
+Mean propensity,0.4025420325595004
+Min propensity,0.1501186014387723
+5th percentile,0.23906204225857666
+Median propensity,0.384005411967242
+95th percentile,0.6054396336815453
+Max propensity,0.7743838304796942
+Members below 0.05,0
+Members above 0.95,0

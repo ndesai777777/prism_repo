@@ -1,0 +1,5 @@
+method,n_clusters,cluster_sizes,noise_points,silhouette
+Gaussian Mixture,2,54/86,0,0.12139509021467068
+K-Means,2,84/56,0,0.18308215445813822
+Agglomerative,2,44/96,0,0.19419858504002527
+"HDBSCAN (non-noise, n=40)",2,8/32 (+100 noise),100,0.35249409343431537
