@@ -1,2 +1,2 @@
-n_components,silhouette_score,davies_bouldin_index,calinski_harabasz_index,bootstrap_mean_ari,bootstrap_std_ari,bootstrap_min_ari,ari_gmm_vs_kmeans,ari_gmm_vs_agglomerative,stability_assessment
-2,0.011137732519219717,3.1863542165700522,7.764877030199797,0.17200600246929487,0.2414976050917511,-0.0975645795666416,-0.0131982688159076,0.09425923508680328,WEAK
+n_components,silhouette_score,bootstrap_mean_ari,bootstrap_std_ari,bootstrap_min_ari,ari_gmm_vs_kmeans,ari_gmm_vs_agglomerative,stability_assessment
+2,0.12139509021467068,0.2192107610670454,0.24292640526308407,-0.036448580666959926,0.004464333317930909,0.31760115926830623,WEAK
