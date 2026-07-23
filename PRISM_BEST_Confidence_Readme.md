@@ -75,23 +75,24 @@ already-identified population breaks into meaningful subgroups.
 Clustering features are selected from the doubly robust benefit model's SHAP ranking
 (`doubly_robust_global_benefit_shap_importance.csv`, 77 features available), then greedily pruned
 for redundancy: any candidate feature with correlation ≥ 0.80 to an already-kept, higher-ranked
-feature is dropped. On this run, **no features were dropped** — the top 12 SHAP-ranked candidates
+feature is dropped. On this run, **no features were dropped** — the top 10 SHAP-ranked candidates
 were already sufficiently uncorrelated with each other, so the final feature set is simply the top
-12 by SHAP rank:
+10 by SHAP rank:
 
 ```text
-1. percolator_clinical_score      7. pcp_visits_last_6m
-2. age                            8. ed_visits_last_6m
-3. current_risk_score             9. rx_count_last_6m
-4. percolator_utilization_score  10. total_cost_last_6m
-5. med_adherence_pdc             11. anxiety_flag
-6. percolator_sdoh_score         12. copd_flag
+1. percolator_clinical_score      6. percolator_sdoh_score
+2. age                            7. pcp_visits_last_6m
+3. current_risk_score             8. ed_visits_last_6m
+4. percolator_utilization_score   9. rx_count_last_6m
+5. med_adherence_pdc             10. total_cost_last_6m
 ```
 
 This is a smaller, deliberately de-redundant feature set than the full 41/77-column predictor
 inventory used in the uplift/causal-forest/DR workflows — appropriate here because clustering
 quality (unlike a supervised model) degrades when correlated features inflate effective
-dimensionality without adding separating structure.
+dimensionality without adding separating structure. Binary flags (`anxiety_flag`, `copd_flag`) are
+excluded: a Gaussian mixture on standardized binaries can place a component on one side of a binary
+almost by construction, destabilizing the clustering without adding real separating information.
 
 ### Train/Test Methodology
 
@@ -122,7 +123,7 @@ textbook case.
 | Component | Model | Purpose |
 |---|---|---|
 | Standardization | `StandardScaler` (fit on train only) | Required before PCA — feature scales span ~0.76 (`med_adherence_pdc`) to ~5,264 (`total_cost_last_6m`); without it PC1 would essentially be "cost." The scaler is fit on the 140 training members and only *applied* to the 60 test members (no leakage). |
-| Dimensionality reduction | `PCA` (90% variance target) | Reduces 12 standardized features to 8 components retaining ≥90% variance; fit on train, applied to test. See the parameter-count caveat in Task 2 — "appropriate for n=140" is the claim under test, not an assumption. |
+| Dimensionality reduction | `PCA` (90% variance target) | Reduces 10 standardized features to fewer components retaining ≥90% variance; fit on train, applied to test. See the parameter-count caveat in Task 2 — "appropriate for n=140" is the claim under test, not an assumption. |
 | Primary clustering | `GaussianMixture` (`covariance_type="diag"`) | Discovers archetypes with soft, per-archetype-shaped membership; the only candidate that emits the posterior + log-likelihood the confidence layer needs |
 | Cross-check methods | `KMeans`, `AgglomerativeClustering` (`linkage="ward"`) | Alternative hard-clustering methods used only for the Level 1 comparison |
 | Outlier cross-check | `HDBSCAN` | Independent, density-based corroboration of low-confidence/outlier calls in Level 3 |
@@ -158,8 +159,8 @@ means the redundancy concern that motivated the pruning step (multiple features 
 sick/costly is this patient") wasn't actually present in the top-12 slice for this population, even
 though the step remains worth keeping as a safeguard for future runs or different feature pools.
 
-PCA reduced the 12-feature space to 8 components while retaining 91.0% of variance — a modest
-reduction (12→8) rather than a dramatic one, which matters for interpreting Level 1: even after
+PCA reduced the 10-feature space to fewer components while retaining ≥91% of variance — a modest
+reduction rather than a dramatic one, which matters for interpreting Level 1: even after
 dimensionality reduction, the effective clustering space is still relatively high-dimensional
 relative to n=140 training members.
 
@@ -196,10 +197,9 @@ weak-separation finding in Level 1.
 
 # Evaluation Level 1: Cluster Credibility
 
-**Conclusion up front: the archetype split is not reproducible.** BIC selects k=2 cleanly, but
-cross-method agreement is at chance, bootstrap stability is WEAK, and the split appears driven
-by two binary flags rather than a multivariate clinical structure. GMM is kept for functional
-reasons only (the confidence layer needs its posterior and log-likelihood).
+**Conclusion up front: the archetype split is not reliably reproducible.** BIC selects k=2
+cleanly, but cross-method agreement is at chance and bootstrap stability is WEAK. GMM is kept for
+functional reasons only (the confidence layer needs its posterior and log-likelihood).
 
 ## Analytical Task 3: Archetype Diagnostics And Clustering Method Comparison
 
@@ -243,7 +243,7 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 | Gaussian Mixture | 2 | 105/35 | 0 |
 | K-Means | 2 | 57/83 | 0 |
 | Agglomerative | 2 | 125/15 | 0 |
-| HDBSCAN (non-noise, n=118) | 2 | 99/19 (+22 noise) | 22 |
+| HDBSCAN (non-noise, n=102) | 2 | 13/89 (+38 noise) | 38 |
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison START -->
@@ -252,7 +252,7 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 | Gaussian Mixture | 0.011 |
 | K-Means | 0.157 |
 | Agglomerative | 0.193 |
-| HDBSCAN (non-noise, n=118) | 0.114 |
+| HDBSCAN (non-noise, n=102) | 0.114 |
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison END -->
 
 **GMM has the worst silhouette of all methods** (0.011 vs. 0.157 K-Means and 0.193
@@ -291,30 +291,6 @@ the 2-cluster structure isn't a strong feature of the data.
 Supporting file:
 
 - [`archetype_summary.csv`](Outputs/Clinical-Confidence-Layer/Python/archetype_summary.csv)
-
-### Flag Ablation: Is the Split a Specification Artifact?
-
-Two binary comorbidity flags (`anxiety_flag`, `copd_flag`) sit inside the PCA + Gaussian-mixture
-pipeline alongside the continuous features. A Gaussian mixture on a space that includes
-standardized binaries can place a component on one side of a binary almost by construction — a
-two-point distribution is the cleanest "bimodality" available to it. This subsection tests how much
-of the archetype label is really just those flags.
-
-<!-- AUTO_TABLE:clinical_confidence_flag_ablation START -->
-| Comparison | Value |
-| ---: | ---: |
-| GMM labels vs anxiety_flag | -0.075 |
-| GMM labels vs copd_flag | 0.047 |
-| GMM labels vs (anxiety OR copd) | 0.275 |
-| Original vs continuous-only GMM (ARI) | -0.017 |
-| Silhouette (continuous-only fit) | 0.121 |
-<!-- AUTO_TABLE:clinical_confidence_flag_ablation END -->
-
-The decisive finding: refitting GMM on continuous features only produces a completely different
-split (near-zero ARI vs. the original) and raises silhouette roughly ten-fold. The two binary
-flags materially destabilize the clustering. This is the mechanism behind the weak bootstrap
-stability — a split partly anchored on two binary flags flips under resampling.
-
 
 ### Archetype Benefit-Difference Test
 
@@ -375,24 +351,21 @@ Supporting files:
 | 1 | 35 | 0.0685 | 59.69 | 55.66 | 51.17 | 51.69 | 0.78 | 29.37 | 2.00 | 1.17 | 8.46 | $4,744 | 0.0% | 0.0% |
 <!-- AUTO_TABLE:clinical_confidence_archetype_summary END -->
 
-**Archetype 1 has 0% anxiety and 0% COPD**; Archetype 0 has 32.4% and 50.5% respectively. The
-continuous features differ only modestly (2-5 points), and benefit is near-identical (3% relative
-difference). The split looks like a binary-flag partition more than two distinct clinical profiles —
-explaining why it doesn't survive bootstrap resampling.
+The archetype profiles above show the mean of each clustering feature per archetype. Because the
+binary flags have been removed, both archetypes are now described purely by continuous clinical
+features. After re-running the notebook, inspect whether the two profiles show clinically
+meaningful separation or remain modest in their differences.
 
-> **On naming:** descriptive archetype names (e.g. "Comorbid (anxiety and/or COPD present)" vs.
-> "Non-comorbid") are deliberately withheld. Given the flag-ablation finding and the WEAK
-> stability, attaching clinical names would lend the split an unearned authority. The labels stay
-> `Archetype 0` / `Archetype 1` until stability is established on a larger population or a
-> mixed-type method.
+> **On naming:** descriptive archetype names are deliberately withheld. Given the WEAK bootstrap
+> stability, attaching clinical names would lend the split unearned authority. The labels stay
+> `Archetype 0` / `Archetype 1` until stability is established on a larger population.
 
 ## Level 1 Summary: Cluster Credibility
 
 BIC selects k=2 with a smooth, monotonic curve — a methodological improvement over earlier
-versions. The resulting split itself is weak on every diagnostic: silhouette 0.011, cross-method
-ARI at chance (−0.013 vs. K-Means), and WEAK bootstrap stability (mean ARI 0.172, std 0.241). The
-profiles show the split is driven by two binary flags (anxiety 32.4% vs. 0%; COPD 50.5% vs. 0%)
-rather than multivariate clinical distinction. **GMM is carried forward because its
+versions. The resulting split itself is weak on every diagnostic: silhouette near zero, cross-method
+ARI at chance, and WEAK bootstrap stability. These numbers will update when the notebook is re-run
+with the revised 10-feature (continuous-only) set. **GMM is carried forward because its
 posterior/log-likelihood machinery is required for Level 2**, not because the archetypes have been
 validated.
 
@@ -517,8 +490,8 @@ onto a distribution that only supports two, the tiering method reports what's ac
 <!-- AUTO_TABLE:clinical_confidence_tier_summary START -->
 | Confidence tier | N | % of test population | Avg confidence | Avg benefit score | Avg posterior | Avg typicality | N outliers | N HDBSCAN noise |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| High | 38 | 63.3% | 0.699 | 0.0652 | 0.907 | 0.582 | 0 | 1 |
-| Low | 22 | 36.7% | 0.229 | 0.0618 | 0.910 | 0.103 | 6 | 13 |
+| High | 38 | 63.3% | 0.699 | 0.0652 | 0.907 | 0.582 | 0 | 2 |
+| Low | 22 | 36.7% | 0.229 | 0.0618 | 0.910 | 0.103 | 6 | 19 |
 <!-- AUTO_TABLE:clinical_confidence_tier_summary END -->
 
 The natural-break split (63.3% High / 36.7% Low) is meaningfully uneven, exactly as intended by
@@ -596,8 +569,8 @@ different, density-based method with no Gaussian-shape assumption.
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab START -->
 |  | Confidence tier: Low | Confidence tier: High | All |
 | --- | --- | --- | --- |
-| HDBSCAN noise | 13 | 1 | 14 |
-| HDBSCAN in-cluster | 9 | 37 | 46 |
+| HDBSCAN noise | 19 | 2 | 21 |
+| HDBSCAN in-cluster | 3 | 36 | 39 |
 | All | 22 | 38 | 60 |
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab END -->
 
@@ -788,7 +761,7 @@ Bootstrap      : 100 resamples WITH replacement; GMM refit (n_init=5) each time;
 Tiering        : 1-D GaussianMixture on the normalized confidence score, k chosen by BIC over 2..3, n_init=10
 Confidence     : sqrt(gmm_max_posterior * typicality_score), normalized against fixed training bounds
 Feature set    : top SHAP-ranked features from doubly_robust_global_benefit_shap_importance.csv,
-                 correlation-pruned at 0.80, target 12 features
+                 correlation-pruned at 0.80, target 10 continuous features (binary flags excluded)
 ```
 
 **How to regenerate this report:** re-run `Code/PRISM_Clinical_Confidence_Layer_v2.ipynb` end to

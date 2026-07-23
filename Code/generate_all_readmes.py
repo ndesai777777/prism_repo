@@ -268,15 +268,6 @@ def cc_combined_score_summary() -> str:
     return markdown_table(["Metric", "Value"], rows)
 
 
-def cc_flag_ablation() -> str:
-    path = CC_OUTPUT / "clinical_confidence_flag_ablation.csv"
-    if not path.exists():
-        return "_Pending: re-run notebook to export flag ablation CSV._"
-    df = pd.read_csv(path)
-    rows = [[r["comparison"], fnum(r["value"], 3)] for _, r in df.iterrows()]
-    return markdown_table(["Comparison", "Value"], rows)
-
-
 def cc_benefit_difference_test() -> str:
     path = CC_OUTPUT / "clinical_confidence_benefit_difference_test.csv"
     if not path.exists():
@@ -524,7 +515,6 @@ GENERATORS: list[tuple[Path, str, str, Callable[[], str]]] = [
     (CC_README, "TABLE", "clinical_confidence_hdbscan_tier_crosstab", cc_hdbscan_tier_crosstab),
     (CC_README, "TABLE", "clinical_confidence_tier_distribution", cc_tier_distribution),
     # New review-driven analyses
-    (CC_README, "TABLE", "clinical_confidence_flag_ablation", cc_flag_ablation),
     (CC_README, "TABLE", "clinical_confidence_benefit_difference_test", cc_benefit_difference_test),
     (CC_README, "TABLE", "clinical_confidence_true_benefit_by_tier", cc_true_benefit_by_tier),
     (CC_README, "TABLE", "clinical_confidence_typicality_generalization", cc_typicality_generalization),
