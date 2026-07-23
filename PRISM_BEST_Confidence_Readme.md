@@ -219,6 +219,7 @@ automatically rather than assuming one.
 <!-- AUTO_TABLE:clinical_confidence_bic_by_k START -->
 | Candidate archetype count (k) | BIC |
 | ---: | ---: |
+| 1 | 2,909.9 |
 | 2 | 2,943.2 |
 | 3 | 2,979.3 |
 | 4 | 3,017.9 |

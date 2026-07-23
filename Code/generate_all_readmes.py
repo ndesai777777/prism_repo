@@ -18,6 +18,10 @@ from typing import Callable
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # non-interactive backend for headless chart generation
+import matplotlib.pyplot as plt
+plt.ioff()
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "Code"))
@@ -525,6 +529,24 @@ GENERATORS: list[tuple[Path, str, str, Callable[[], str]]] = [
     (CC_README, "CHART", "clinical_confidence_archetype_scatter_3d", cc_archetype_scatter_3d),
     (CC_README, "CHART", "clinical_confidence_tier_scatter_3d", cc_tier_scatter_3d),
 ]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UPLIFT / INTERVENTION BENEFIT README GENERATORS (imported from generate_readme_tables)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from generate_readme_tables import (
+    README_PATH as UPLIFT_README,
+    TABLE_GENERATORS as UPLIFT_TABLE_GENERATORS,
+    TEXT_GENERATORS as UPLIFT_TEXT_GENERATORS,
+    CHART_GENERATORS as UPLIFT_CHART_GENERATORS,
+)
+
+for name, gen_fn in UPLIFT_TABLE_GENERATORS.items():
+    GENERATORS.append((UPLIFT_README, "TABLE", name, gen_fn))
+for name, gen_fn in UPLIFT_TEXT_GENERATORS.items():
+    GENERATORS.append((UPLIFT_README, "TEXT", name, gen_fn))
+for name, gen_fn in UPLIFT_CHART_GENERATORS.items():
+    GENERATORS.append((UPLIFT_README, "CHART", name, gen_fn))
 
 
 def process_readme(readme_path: Path, generators: list[tuple[str, str, Callable[[], str]]]) -> None:

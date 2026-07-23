@@ -1084,15 +1084,9 @@ def replace_block(text: str, kind: str, name: str, content: str) -> str:
 
 
 def main() -> None:
-    text = README_PATH.read_text(encoding="utf-8")
-    for name, generator in TABLE_GENERATORS.items():
-        text = replace_block(text, "TABLE", name, generator())
-    for name, generator in TEXT_GENERATORS.items():
-        text = replace_block(text, "TEXT", name, generator())
-    for name, generator in CHART_GENERATORS.items():
-        text = replace_block(text, "CHART", name, generator())
-    README_PATH.write_text(text, encoding="utf-8", newline="\n")
-    print(f"Updated generated README tables and charts in {README_PATH}")
+    """Standalone entry point for backward compatibility."""
+    from generate_all_readmes import main as unified_main
+    unified_main()
 
 
 if __name__ == "__main__":
