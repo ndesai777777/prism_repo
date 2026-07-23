@@ -497,6 +497,311 @@ def cc_tier_scatter_3d() -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# CAUSAL FOREST & DOUBLY ROBUST README GENERATORS (factory approach)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CF_README = ROOT / "PRISM_Causal_Forest_Modeling_README.md"
+CF_OUTPUT = ROOT / "Outputs" / "Causal-Forests" / "Python"
+DR_README = ROOT / "PRISM_Doubly_Robust_Modeling_README.md"
+DR_OUTPUT = ROOT / "Outputs" / "Doubly-Robust" / "Python"
+
+# Known synthetic drivers used across both models
+KNOWN_SYNTHETIC_DRIVERS = [
+    "ed_visits_last_6m", "admits_last_6m", "transportation_barrier_flag",
+    "current_risk_score", "food_insecurity_flag", "behavioral_health_risk_flag",
+]
+
+
+def _metric_value_table(csv_path: Path) -> str:
+    """Generic metric/value two-column table from a CSV."""
+    if not csv_path.exists():
+        return f"_Pending: re-run notebook to generate `{csv_path.name}`._"
+    df = pd.read_csv(csv_path)
+    if "metric" in df.columns and "value" in df.columns:
+        rows = [[r["metric"], r["value"]] for _, r in df.iterrows()]
+        return markdown_table(["Metric", "Value"], rows)
+    # Multi-column: render all columns with numeric formatting
+    rows = []
+    for _, r in df.iterrows():
+        row = []
+        for col in df.columns:
+            val = r[col]
+            if isinstance(val, (int, np.integer)):
+                row.append(f"{val:,}")
+            elif isinstance(val, (float, np.floating)):
+                row.append(fnum(val, 4))
+            else:
+                row.append(str(val))
+        rows.append(row)
+    return markdown_table(list(df.columns), rows)
+
+
+def _multi_column_table(csv_path: Path, top_n: int | None = None,
+                        sort_by: str | None = None) -> str:
+    """Multi-column table, optionally sorted and truncated to top_n rows."""
+    if not csv_path.exists():
+        return f"_Pending: re-run notebook to generate `{csv_path.name}`._"
+    df = pd.read_csv(csv_path)
+    if sort_by and sort_by in df.columns:
+        df = df.sort_values(sort_by, ascending=False)
+    if top_n:
+        df = df.head(top_n)
+    rows = []
+    for _, r in df.iterrows():
+        row = []
+        for col in df.columns:
+            val = r[col]
+            if isinstance(val, (int, np.integer)):
+                row.append(f"{val:,}")
+            elif isinstance(val, (float, np.floating)):
+                row.append(fnum(val, 4))
+            else:
+                row.append(str(val))
+        rows.append(row)
+    return markdown_table(list(df.columns), rows)
+
+
+def _chart_block(png_path: Path, alt: str) -> str:
+    """Return a markdown image link or pending message."""
+    if not png_path.exists():
+        return f"_Pending: re-run notebook to generate `{png_path.name}`._"
+    return markdown_image(alt, png_path.relative_to(ROOT).as_posix())
+
+
+def _shap_importance_table(csv_path: Path, top_n: int = 15) -> str:
+    """SHAP importance: top N features by mean_abs_benefit_shap."""
+    if not csv_path.exists():
+        return f"_Pending: re-run notebook to generate `{csv_path.name}`._"
+    df = pd.read_csv(csv_path)
+    df = df.sort_values("mean_abs_benefit_shap", ascending=False).head(top_n)
+    rows = []
+    for _, r in df.iterrows():
+        rows.append([
+            r["feature"],
+            fnum(r["mean_abs_benefit_shap"], 6),
+        ])
+    return markdown_table(["Feature", "Mean |SHAP|"], rows)
+
+
+def _shap_signed_table(csv_path: Path, top_n: int = 15) -> str:
+    """SHAP signed columns: top N features with directional impact."""
+    if not csv_path.exists():
+        return f"_Pending: re-run notebook to generate `{csv_path.name}`._"
+    df = pd.read_csv(csv_path)
+    df = df.sort_values("mean_abs_benefit_shap", ascending=False).head(top_n)
+    rows = []
+    for _, r in df.iterrows():
+        rows.append([
+            r["feature"],
+            fnum(r["mean_signed_benefit_shap"], 6),
+            fnum(r["mean_positive_benefit_shap"], 6),
+            fnum(r["mean_negative_benefit_shap"], 6),
+            pct(r["pct_positive_benefit_shap"]),
+            pct(r["pct_negative_benefit_shap"]),
+        ])
+    return markdown_table(
+        ["Feature", "Mean signed SHAP", "Mean positive", "Mean negative",
+         "% positive", "% negative"],
+        rows,
+    )
+
+
+def _shap_known_drivers_table(csv_path: Path) -> str:
+    """SHAP table filtered to known synthetic drivers only."""
+    if not csv_path.exists():
+        return f"_Pending: re-run notebook to generate `{csv_path.name}`._"
+    df = pd.read_csv(csv_path)
+    df = df[df["feature"].isin(KNOWN_SYNTHETIC_DRIVERS)]
+    df = df.sort_values("mean_abs_benefit_shap", ascending=False)
+    if df.empty:
+        return "_No known synthetic drivers found in SHAP output._"
+    rows = []
+    for _, r in df.iterrows():
+        rows.append([
+            r["feature"],
+            fnum(r["mean_abs_benefit_shap"], 6),
+            fnum(r["mean_signed_benefit_shap"], 6),
+            pct(r["pct_positive_benefit_shap"]),
+        ])
+    return markdown_table(
+        ["Known driver", "Mean |SHAP|", "Mean signed SHAP", "% positive"],
+        rows,
+    )
+
+
+def _make_causal_method_generators(
+    prefix: str, output_dir: Path, readme_path: Path
+) -> list[tuple[Path, str, str, Callable[[], str]]]:
+    """Factory: produce TABLE and CHART generators for a causal method README.
+
+    `prefix` is e.g. 'causal_forest' or 'doubly_robust'.
+    """
+    entries: list[tuple[Path, str, str, Callable[[], str]]] = []
+
+    # --- Metric/value tables (simple 2-column CSVs) ---
+    metric_value_markers = {
+        f"{prefix}_data_review_summary": f"{prefix}_data_review_summary.csv",
+        f"{prefix}_event_count_summary": f"{prefix}_event_count_summary.csv",
+        f"{prefix}_ate_summary": f"{prefix}_ate_summary.csv",
+        f"{prefix}_effect_distribution_summary": f"{prefix}_effect_distribution_summary.csv",
+    }
+    # Method-specific metric/value tables
+    if prefix == "causal_forest":
+        metric_value_markers[f"{prefix}_propensity_summary"] = f"{prefix}_propensity_summary.csv"
+    elif prefix == "doubly_robust":
+        metric_value_markers[f"{prefix}_pseudo_outcome_diagnostics"] = (
+            f"{prefix}_pseudo_outcome_summary.csv"
+        )
+
+    for marker, csv_name in metric_value_markers.items():
+        csv_path = output_dir / csv_name
+        entries.append((
+            readme_path, "TABLE", marker,
+            (lambda p=csv_path: _metric_value_table(p)),
+        ))
+
+    # --- Multi-column tables (render all columns) ---
+    multi_col_markers = {
+        f"{prefix}_true_benefit_validation": f"{prefix}_true_benefit_validation_summary.csv",
+        f"{prefix}_decile_summary": f"{prefix}_decile_summary.csv",
+        f"{prefix}_targeting_comparison": f"{prefix}_targeting_summary.csv",
+    }
+    # Method-specific multi-column tables
+    if prefix == "doubly_robust":
+        multi_col_markers[f"{prefix}_cross_method_consistency"] = (
+            f"{prefix}_cross_method_consistency_summary.csv"
+        )
+
+    for marker, csv_name in multi_col_markers.items():
+        csv_path = output_dir / csv_name
+        entries.append((
+            readme_path, "TABLE", marker,
+            (lambda p=csv_path: _multi_column_table(p)),
+        ))
+
+    # --- Variable importance (top 15) ---
+    vi_csv = output_dir / f"{prefix}_variable_importance.csv"
+    entries.append((
+        readme_path, "TABLE", f"{prefix}_variable_importance",
+        (lambda p=vi_csv: _multi_column_table(p, top_n=15, sort_by="importance")),
+    ))
+
+    # --- SHAP tables ---
+    shap_csv = output_dir / f"{prefix}_global_benefit_shap_importance.csv"
+    entries.append((
+        readme_path, "TABLE", f"{prefix}_shap_importance",
+        (lambda p=shap_csv: _shap_importance_table(p, top_n=15)),
+    ))
+    entries.append((
+        readme_path, "TABLE", f"{prefix}_shap_signed",
+        (lambda p=shap_csv: _shap_signed_table(p, top_n=15)),
+    ))
+    entries.append((
+        readme_path, "TABLE", f"{prefix}_known_driver_alignment",
+        (lambda p=shap_csv: _shap_known_drivers_table(p)),
+    ))
+
+    # --- Spearman CSV (render if exists) ---
+    spearman_csv = output_dir / f"{prefix}_true_driver_shap_spearman.csv"
+    entries.append((
+        readme_path, "TABLE", f"{prefix}_true_driver_shap_spearman",
+        (lambda p=spearman_csv: _multi_column_table(p)),
+    ))
+
+    return entries
+
+
+def _make_cf_chart_generators() -> list[tuple[Path, str, str, Callable[[], str]]]:
+    """Causal Forest chart generators."""
+    charts = [
+        ("causal_forest_propensity_overlap",
+         "dashboard_propensity_overlap.png",
+         "Propensity score overlap between treatment and control"),
+        ("causal_forest_effect_distribution",
+         "dashboard_causal_forest_effect_distribution.png",
+         "Causal forest estimated treatment effect distribution"),
+        ("causal_forest_avg_benefit_by_decile",
+         "dashboard_causal_forest_avg_benefit_by_decile.png",
+         "Average benefit by decile"),
+        ("causal_forest_risk_tier_by_benefit_group",
+         "dashboard_causal_forest_risk_tier_by_benefit_group.png",
+         "Risk tier composition by benefit group"),
+        ("causal_forest_variable_importance_chart",
+         "dashboard_causal_forest_variable_importance.png",
+         "Causal forest variable importance"),
+        ("causal_forest_global_benefit_shap",
+         "dashboard_causal_forest_global_benefit_shap.png",
+         "Global benefit SHAP importance"),
+        ("causal_forest_roi_by_decile",
+         "dashboard_cumulative_gross_savings_targeting.png",
+         "Cumulative gross savings by targeting decile"),
+        ("causal_forest_marginal_advantage",
+         "dashboard_marginal_gross_savings_advantage_vs_current_risk.png",
+         "Marginal gross savings advantage vs current risk targeting"),
+    ]
+    entries = []
+    for marker, png_name, alt in charts:
+        png_path = CF_OUTPUT / png_name
+        entries.append((
+            CF_README, "CHART", marker,
+            (lambda p=png_path, a=alt: _chart_block(p, a)),
+        ))
+    return entries
+
+
+def _make_dr_chart_generators() -> list[tuple[Path, str, str, Callable[[], str]]]:
+    """Doubly Robust chart generators."""
+    charts = [
+        ("doubly_robust_pseudo_outcome_distribution",
+         "dashboard_doubly_robust_pseudo_outcome_distribution.png",
+         "Doubly robust pseudo-outcome distribution"),
+        ("doubly_robust_effect_distribution",
+         "dashboard_doubly_robust_effect_distribution.png",
+         "Doubly robust estimated treatment effect distribution"),
+        ("doubly_robust_avg_benefit_by_decile",
+         "dashboard_doubly_robust_avg_benefit_by_decile.png",
+         "Average benefit by decile"),
+        ("doubly_robust_risk_tier_by_benefit_group",
+         "dashboard_doubly_robust_risk_tier_by_benefit_group.png",
+         "Risk tier composition by benefit group"),
+        ("doubly_robust_cross_method_agreement",
+         "dashboard_doubly_robust_cross_method_agreement.png",
+         "Cross-method agreement between doubly robust approaches"),
+        ("doubly_robust_variable_importance_chart",
+         "dashboard_doubly_robust_variable_importance.png",
+         "Doubly robust variable importance"),
+        ("doubly_robust_global_benefit_shap",
+         "dashboard_doubly_robust_global_benefit_shap.png",
+         "Global benefit SHAP importance"),
+        ("doubly_robust_cumulative_gross_savings",
+         "dashboard_doubly_robust_cumulative_gross_savings_targeting.png",
+         "Cumulative gross savings by targeting decile"),
+        ("doubly_robust_marginal_advantage",
+         "dashboard_doubly_robust_marginal_gross_savings_advantage.png",
+         "Marginal gross savings advantage vs current risk targeting"),
+    ]
+    entries = []
+    for marker, png_name, alt in charts:
+        png_path = DR_OUTPUT / png_name
+        entries.append((
+            DR_README, "CHART", marker,
+            (lambda p=png_path, a=alt: _chart_block(p, a)),
+        ))
+    return entries
+
+
+# Build all CF and DR generators via factory
+_CF_GENERATORS = (
+    _make_causal_method_generators("causal_forest", CF_OUTPUT, CF_README)
+    + _make_cf_chart_generators()
+)
+_DR_GENERATORS = (
+    _make_causal_method_generators("doubly_robust", DR_OUTPUT, DR_README)
+    + _make_dr_chart_generators()
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # REGISTRY AND MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -528,6 +833,10 @@ GENERATORS: list[tuple[Path, str, str, Callable[[], str]]] = [
     (CC_README, "CHART", "clinical_confidence_bootstrap_ari_distribution", cc_bootstrap_ari_distribution),
     (CC_README, "CHART", "clinical_confidence_archetype_scatter_3d", cc_archetype_scatter_3d),
     (CC_README, "CHART", "clinical_confidence_tier_scatter_3d", cc_tier_scatter_3d),
+    # --- Causal Forest ---
+    *_CF_GENERATORS,
+    # --- Doubly Robust ---
+    *_DR_GENERATORS,
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
