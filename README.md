@@ -47,6 +47,7 @@ prism_repo/
 ├── Outputs/
 │   ├── Uplift/Python/                                 ← T-Learner & X-Learner outputs
 │   │   ├── T-Learner/GLMNet/                          ← Scored members, decile summaries, charts
+|   |   ├── T-Learner/XGBoost/                         ← Scored members, decile summaries, charts
 │   │   ├── X-Learner/GLMNet/                          ← Scored members, decile summaries, charts
 │   │   └── X-Learner/XGBoost/                         ← Scored members, decile summaries, charts
 │   ├── Causal-Forests/Python/                         ← Scored outputs, SHAP, targeting summaries
