@@ -1,6 +1,329 @@
 # PRISM Feature Importance Dashboard — LLM Explainability Plan
 
-## Three-Layer Explainability Architecture
+---
+
+## Part 1: Overall Dashboard System Architecture
+
+### Purpose
+
+The explainability dashboard should be designed as a complete decision-support application rather
+than simply a visualization tool.
+
+Its purpose is to combine:
+
+- Uplift modeling
+- Clinical confidence estimation
+- Explainability analytics
+- LLM-generated narratives
+
+into a single workflow that supports outreach prioritization for care management teams.
+
+The dashboard should **not** perform model training. Instead, it should consume outputs from the
+trained DR Learner pipeline and transform those outputs into actionable clinical explanations.
+
+---
+
+### End-to-End Application Workflow
+
+```text
+Historical Data
+        │
+        ▼
+Train DR Learner
+        │
+        ▼
+Persist Trained Model
+        │
+──────────────────────────────────────────────────────────────
+        Production Scoring Begins
+──────────────────────────────────────────────────────────────
+        │
+Receive New Member Population
+        │
+        ▼
+Run DR Learner Predictions
+        │
+        ▼
+Generate Benefit Scores
+        │
+        ▼
+Generate Clinical Confidence Scores
+        │
+        ▼
+Generate Local Feature Attribution
+        │
+        ▼
+Load Global Model Statistics
+        │
+        ▼
+Calculate Explanation Priority Scores
+        │
+        ▼
+Store Structured Dashboard Data
+        │
+        ▼
+Dashboard Application
+        │
+        ▼
+LLM Narrative Generation
+        │
+        ▼
+Care Manager Reviews Recommendation
+```
+
+---
+
+### Step 1: Model Training
+
+The DR Learner should be trained offline using historical intervention data. Once model development
+is complete, the selected production model should be frozen and versioned.
+
+The dashboard should never retrain the model. Instead, it should simply load the approved
+production model.
+
+---
+
+### Step 2: Population Scoring
+
+Whenever a new population of members becomes available, the production DR Learner should score
+every member.
+
+For each member the model should estimate:
+
+| Output | Description |
+|--------|-------------|
+| Predicted ED risk without intervention | μ₀(x) |
+| Predicted ED risk with intervention | μ₁(x) |
+| Estimated intervention benefit | μ₀(x) − μ₁(x) |
+
+Where:
+
+```
+benefit_score = predicted ED risk without intervention − predicted ED risk with intervention
+```
+
+Every member therefore receives an estimated treatment benefit.
+
+---
+
+### Step 3: Outreach Budget Selection
+
+The dashboard should allow a program manager to determine how many members can realistically
+receive intervention.
+
+Rather than using a fixed treatment threshold, the dashboard should support operational constraints
+such as:
+
+- Maximum number of outreach slots
+- Outreach budget
+- Percentage of the population to target
+
+**Example:**
+
+```
+Available outreach capacity: 25,000 members
+```
+
+The application should then automatically select the highest-ranked members according to predicted
+intervention benefit. This allows the targeting strategy to adapt to changing operational resources
+without modifying the underlying model.
+
+---
+
+### Step 4: Clinical Confidence Assessment
+
+For every selected outreach candidate, the dashboard should calculate a clinical confidence score
+using the confidence estimation methodology developed separately.
+
+Benefit and confidence represent different concepts:
+
+| Concept | What it estimates |
+|---------|-------------------|
+| Benefit | Expected intervention impact |
+| Confidence | Reliability of that prediction |
+
+Both values should always be displayed together.
+
+| Benefit | Confidence | Interpretation |
+|---------|------------|----------------|
+| High | High | Strong recommendation |
+| High | Low | Potential outreach candidate requiring greater clinical review |
+
+---
+
+### Step 5: Local Attribution
+
+For every scored member, the attribution pipeline should estimate feature-level contributions
+explaining why the model predicted the observed intervention benefit.
+
+Depending on the selected implementation, this may be based on:
+
+- GLMNet contribution differences
+- SHAP-style probability contributions
+- Another approved additive attribution method
+
+The output should be **one signed contribution per feature**:
+
+- Positive contributions increase estimated intervention benefit
+- Negative contributions decrease estimated intervention benefit
+
+---
+
+### Step 6: Global Model Statistics
+
+Separately from member scoring, the system should maintain global model statistics describing
+feature behavior across the full scored population.
+
+| Statistic | Description |
+|-----------|-------------|
+| Global feature importance | Raw mean absolute contribution |
+| Normalized feature importance | Scaled 0–1 relative to top feature |
+| Average signed contribution | Population mean signed SHAP |
+| Mean absolute contribution | Population mean |SHAP| |
+| Clinical category | Feature grouping |
+| Preferred display name | Human-readable label |
+
+These statistics should only change when the production model is retrained.
+
+---
+
+### Step 7: Explanation Priority Calculation
+
+The dashboard should not ask the LLM to determine which features are important. Instead, the
+analytics pipeline should calculate explanation priorities before any LLM interaction.
+
+**Recommended calculation:**
+
+```
+signed_driver_priority = local_signed_contribution × normalized_global_importance
+```
+
+Additional metrics computed at this stage:
+
+| Metric | Purpose |
+|--------|---------|
+| Absolute driver strength | Determines which features deserve attention |
+| Difference from average contribution | Contextualizes the member vs. population |
+| Contribution ratio | Relative magnitude vs. average |
+| Population percentile | Member's feature value rank |
+
+These values become structured evidence for the LLM.
+
+---
+
+### Step 8: Dashboard Data Layer
+
+Before the dashboard is displayed, all analytics should already be complete. The dashboard should
+load structured data rather than recompute model outputs.
+
+**Recommended data assets:**
+
+| Asset | Contents |
+|-------|----------|
+| Global Model Knowledge | One record per feature |
+| Member Attribution | One record per member |
+| Explanation Priority | Ranked explanation drivers for each member |
+| LLM Explanation Input | Curated structured information sent to the language model |
+
+This separation allows analytics and visualization to evolve independently.
+
+---
+
+### Step 9: Dashboard User Experience
+
+The dashboard should present information in the following order.
+
+#### Population View
+
+Displays:
+
+- Distribution of benefit scores
+- Distribution of confidence scores
+- Benefit deciles
+- Risk tiers
+- Number of members selected for outreach
+
+Program managers first determine outreach capacity. The application then identifies the
+highest-ranked members.
+
+#### Member Selection
+
+After selecting a member, the dashboard retrieves:
+
+- Benefit prediction
+- Confidence score
+- Attribution data
+- Ranked explanation drivers
+
+No model computation occurs at this stage. All values have already been generated by the analytics
+pipeline.
+
+#### Explainability View
+
+The dashboard displays:
+
+| Section | Content |
+|---------|---------|
+| Member summary | Benefit score, confidence score, risk tier, predicted ED risk with/without intervention |
+| Waterfall plot | Positive drivers, negative drivers |
+| Feature comparisons | Member values versus population distribution |
+| Global importance | Population-level feature ranking |
+| Explanation priority | Derived ranking for this member |
+
+The dashboard should expose both raw attribution values and the derived explanation ranking.
+
+---
+
+### Step 10: LLM Narrative Generation
+
+The LLM represents the **final stage** of the application. It is not part of the predictive model.
+
+Its responsibility is to translate structured analytics into clinician-friendly language.
+
+The LLM should receive four structured inputs:
+
+1. Global Model Knowledge
+2. Member Attribution
+3. Explanation Priority
+4. Member Summary (benefit, confidence, risk, predictions)
+
+**The LLM should never:**
+
+- Compute feature rankings
+- Perform statistical calculations
+- Select important features
+- Infer causal relationships
+
+Instead, it should describe the evidence produced by the analytics pipeline. This design makes
+every statement in the narrative traceable to structured model outputs.
+
+---
+
+### Recommended Technology Stack
+
+**Prototype implementation:**
+
+| Component | Technology |
+|-----------|------------|
+| Backend analytics | Python (Pandas, NumPy, SHAP or GLMNet attribution) |
+| Development environment | VS Code |
+| Predictive model | DR Learner (persisted) |
+| LLM integration | OpenAI API |
+| Dashboard frontend | Streamlit |
+
+The dashboard should initially operate as a local application:
+
+- The Python backend performs all analytics
+- The Streamlit frontend displays dashboard components
+- The OpenAI API is called only when a member explanation is requested
+
+This architecture minimizes LLM costs while ensuring that explanations always reflect the latest
+structured analytics.
+
+---
+---
+
+## Part 2: Three-Layer Explainability Architecture
 
 ### Overview
 
@@ -19,14 +342,14 @@ This architecture makes explanations **deterministic**, **auditable**, and **eas
 
 ---
 
-## Layer 1: Global Model Knowledge
+### Layer 1: Global Model Knowledge
 
 The first layer captures information that is true for the model as a whole and changes only when
 the model is retrained.
 
 This dataset should contain **one record per feature**.
 
-### Recommended Fields
+#### Recommended Fields
 
 | Field | Description |
 |-------|-------------|
@@ -40,7 +363,7 @@ This dataset should contain **one record per feature**.
 | Mean absolute contribution | Mean |SHAP| across the population |
 | Whether the feature is allowed in LLM explanations | Boolean governance flag |
 
-### Example
+#### Example
 
 ```json
 {
@@ -58,13 +381,13 @@ member.
 
 ---
 
-## Layer 2: Member Attribution
+### Layer 2: Member Attribution
 
 The second layer stores member-specific model outputs.
 
 This layer contains **one JSON object for each scored member**.
 
-### Recommended Information
+#### Recommended Information
 
 | Field | Description |
 |-------|-------------|
@@ -80,7 +403,7 @@ This layer contains **one JSON object for each scored member**.
 | Feature values | Actual observed feature values |
 | Population comparison statistics | Percentile, z-score, difference from mean |
 
-### Example
+#### Example
 
 ```json
 {
@@ -104,13 +427,13 @@ This layer contains only facts about the selected member. **No feature ranking s
 
 ---
 
-## Layer 3: Explanation Priority
+### Layer 3: Explanation Priority
 
 The third layer determines which features deserve emphasis in the explanation.
 
 This layer combines global model knowledge with member-specific attribution.
 
-### Recommended Calculations
+#### Recommended Calculations
 
 **Weighted priority:**
 
@@ -125,7 +448,7 @@ Two values should be computed:
 | `absolute_driver_strength` | `abs(local_contribution) × normalized_global_importance` | Determines which features deserve attention |
 | `signed_driver_priority` | `local_signed_contribution × normalized_global_importance` | Preserves whether a feature increases or decreases estimated benefit |
 
-### Explanation Roles
+#### Explanation Roles
 
 Each feature should be assigned an explanation role based on its priority scores:
 
@@ -142,7 +465,7 @@ values or become a new feature importance metric.
 
 ---
 
-## LLM Design Philosophy
+### LLM Design Philosophy
 
 The LLM should **never** calculate rankings or statistical metrics.
 
@@ -160,7 +483,7 @@ The LLM simply combines these three sources into a readable explanation.
 
 ---
 
-## Statistical Context
+### Statistical Context
 
 The LLM should have access to both the weighted priority score and the raw local contribution.
 These values answer different questions:
@@ -180,7 +503,7 @@ Because both values are available, the LLM can generate explanations such as:
 The LLM should not infer statistical relationships itself. Instead, all comparison metrics should
 be computed before the prompt is generated.
 
-### Pre-Computed Comparison Metrics
+#### Pre-Computed Comparison Metrics
 
 | Metric | Description |
 |--------|-------------|
@@ -193,7 +516,7 @@ These derived metrics should be included as structured fields whenever possible.
 
 ---
 
-## Clinical Confidence Integration
+### Clinical Confidence Integration
 
 The clinical confidence score should become a **first-class input** to the explainability pipeline
 rather than simply another dashboard metric.
@@ -209,13 +532,13 @@ Every member explanation should include:
 The LLM should explain not only **why** a member is predicted to benefit from intervention, but
 also **how confident** the model is in that recommendation.
 
-### High Confidence Example
+#### High Confidence Example
 
 > This member is classified as a high-benefit outreach candidate with high prediction confidence.
 > The estimated benefit is supported by stable treatment-effect estimates and strong agreement
 > among the primary explanatory features.
 
-### Lower Confidence Example
+#### Lower Confidence Example
 
 > Although this member is predicted to have a high intervention benefit, the confidence associated
 > with this estimate is moderate. The recommendation should therefore be interpreted alongside
@@ -226,11 +549,11 @@ concepts**.
 
 ---
 
-## Separation of Responsibilities
+### Separation of Responsibilities
 
 The explainability system should clearly separate responsibilities:
 
-### Analytics Layer
+#### Analytics Layer
 
 Responsible for:
 
@@ -242,7 +565,7 @@ Responsible for:
 - Computing comparison statistics
 - Assigning explanation roles
 
-### LLM Layer
+#### LLM Layer
 
 Responsible only for:
 
@@ -257,7 +580,7 @@ operations belong entirely within the analytics pipeline.
 
 ---
 
-## Benefits of This Architecture
+### Benefits of This Architecture
 
 | Benefit | Description |
 |---------|-------------|
@@ -279,7 +602,9 @@ operations belong entirely within the analytics pipeline.
 | 3 | Build explanation priority calculator (Layer 3 logic) |
 | 4 | Design LLM prompt template consuming all three layers |
 | 5 | Integrate clinical confidence score as first-class input |
-| 6 | Dashboard integration and user testing |
+| 6 | Build Streamlit dashboard prototype (population view → member view → explanation view) |
+| 7 | Connect OpenAI API for on-demand narrative generation |
+| 8 | User testing with care management analysts |
 
 ---
 
