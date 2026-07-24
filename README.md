@@ -232,13 +232,13 @@ This script contains **91 generator functions** that read output CSVs and produc
 
 ### Cross-Method Comparison
 
-| Metric | T-Learner (GLMNet) | X-Learner (GLMNet) | X-Learner (XGBoost) | Causal Forest | Doubly Robust |
-|--------|--------------------|--------------------|---------------------|---------------|---------------|
-| Estimation approach | Two separate models | Counterfactual imputation | Counterfactual imputation | Honest forest splitting | Doubly robust AIPW |
-| Regularization | Elastic net | Elastic net | Tree-based | Honest splitting | Linear final stage |
-| SHAP importance | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Confidence intervals | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Cross-method agreement | — | — | — | Spearman ρ ≈ 0.9 (vs DR) | Spearman ρ ≈ 0.9 (vs CF) |
+| Metric | T-Learner (GLMNet) | T-Learner (XGBoost) | X-Learner (GLMNet) | X-Learner (XGBoost) | Causal Forest | Doubly Robust |
+|--------|--------------------|--------------------|--------------------|--------------------|---------------|---------------|
+| Estimation approach | Two separate models | Two separate models | Counterfactual imputation | Counterfactual imputation | Honest forest splitting | Doubly robust AIPW |
+| Regularization | Elastic net | Tree-based | Elastic net | Tree-based | Honest splitting | Linear final stage |
+| SHAP importance | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Confidence intervals | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Cross-method agreement | — | — | — | — | Spearman ρ ≈ 0.9 (vs DR) | Spearman ρ ≈ 0.9 (vs CF) |
 
 ### Consistent Findings Across Methods
 
