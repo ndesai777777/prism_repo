@@ -153,20 +153,23 @@ clipping to [0.05, 0.95]
 This section reviews the modeling population, treatment rate, outcome prevalence, and final model matrix size. These checks mirror the data review section in the uplift and causal forest READMEs.
 
 <!-- AUTO_TABLE:doubly_robust_data_review_summary START -->
-| Metric | Value |
-|---|---:|
-| Total members | 1,000 |
-| Treated members | 394 |
-| Untreated/control members | 606 |
-| Treatment rate | 39.4% |
-| ED outcome events | 60 |
-| Outcome prevalence | 6.0% |
-| Treated observed ED rate | 4.1% |
-| Control observed ED rate | 7.3% |
-| Final predictors before one-hot encoding | 41 |
-| Final predictors after one-hot encoding | 77 |
-| Train members | 700 |
-| Test members | 300 |
+| metric | current_value |
+| ---: | ---: |
+| Total members | 1000.0000 |
+| Treated members | 394.0000 |
+| Untreated/control members | 606.0000 |
+| Treatment rate | 0.3940 |
+| ED outcome events | 60.0000 |
+| Outcome prevalence | 0.0600 |
+| Treated observed ED rate | 0.0406 |
+| Control observed ED rate | 0.0726 |
+| Final predictors before one-hot encoding | 41.0000 |
+| Continuous/count numeric predictors | 14.0000 |
+| Binary indicator predictors | 18.0000 |
+| Multi-level categorical predictors | 9.0000 |
+| Model matrix columns after one-hot encoding | 77.0000 |
+| Train rows | 700.0000 |
+| Test rows | 300.0000 |
 <!-- AUTO_TABLE:doubly_robust_data_review_summary END -->
 
 Supporting file:
@@ -215,12 +218,12 @@ The key distinction from a standard causal forest is the intermediate pseudo-out
 Treatment-effect estimation is more challenging than outcome prediction because only one potential outcome is observed for each member. Adequate representation of treated, untreated, event, and non-event observations is therefore important for stable estimation.
 
 <!-- AUTO_TABLE:doubly_robust_event_count_summary START -->
-| Split | Group | N | Positive ED events | Negative ED events | Event rate |
-|---|---:|---:|---:|---:|---:|
-| Train | Treated | 276 | 11 | 265 | 4.0% |
-| Train | Control | 424 | 31 | 393 | 7.3% |
-| Test | Treated | 118 | 5 | 113 | 4.2% |
-| Test | Control | 182 | 13 | 169 | 7.1% |
+| split | group | n | positive_ed_events | negative_ed_events | event_rate |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| Train | Treated | 276 | 11 | 265 | 0.0399 |
+| Train | Control | 424 | 31 | 393 | 0.0731 |
+| Test | Treated | 118 | 5 | 113 | 0.0424 |
+| Test | Control | 182 | 13 | 169 | 0.0714 |
 <!-- AUTO_TABLE:doubly_robust_event_count_summary END -->
 
 Supporting file:
@@ -241,26 +244,27 @@ The ForestDRLearner internally constructs doubly robust pseudo-outcomes during c
 
 <!-- AUTO_TABLE:doubly_robust_pseudo_outcome_diagnostics START -->
 | Metric | Value |
-|---|---:|
-| N (training members) | 700 |
-| Mean | -0.044 |
-| Standard deviation | 0.015 |
-| Minimum | -0.095 |
-| 5th percentile | -0.071 |
-| 10th percentile | -0.066 |
-| 25th percentile | -0.053 |
-| Median | -0.042 |
-| 75th percentile | -0.032 |
-| 90th percentile | -0.026 |
-| 95th percentile | -0.023 |
-| Maximum | 0.008 |
-| Fraction negative | 99.9% |
+| ---: | ---: |
+| Source | Training-set effect estimates (proxy for pseudo-outcomes) |
+| N | 700 |
+| Mean | -0.04368624540265525 |
+| Std | 0.015328937475339385 |
+| Min | -0.0950317844904703 |
+| 5th percentile | -0.07113224762297653 |
+| 10th percentile | -0.06553415038304325 |
+| 25th percentile | -0.05265133658176516 |
+| Median | -0.04172349057906741 |
+| 75th percentile | -0.03216052456460592 |
+| 90th percentile | -0.026325672927278016 |
+| 95th percentile | -0.022593568758889255 |
+| Max | 0.007638728518971675 |
+| Fraction negative (benefit direction) | 0.9985714285714286 |
 <!-- AUTO_TABLE:doubly_robust_pseudo_outcome_diagnostics END -->
 
 The training-set effects are overwhelmingly negative (99.9% of training members), indicating that the model consistently estimates that intervention reduces ED risk across the training population. The mean effect of −0.044 corresponds to a 4.4 percentage point average reduction in ED probability, broadly consistent with the observed difference between treated (4.0%) and control (7.3%) event rates. The narrow standard deviation (0.015) and absence of extreme outliers suggest stable estimation without severe inverse-propensity-weight inflation.
 
 <!-- AUTO_CHART:doubly_robust_pseudo_outcome_distribution START -->
-![Doubly robust training-set treatment effect distribution](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_pseudo_outcome_distribution.png)
+![Doubly robust pseudo-outcome distribution](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_pseudo_outcome_distribution.png)
 <!-- AUTO_CHART:doubly_robust_pseudo_outcome_distribution END -->
 
 Supporting file:
@@ -275,27 +279,28 @@ The treatment-effect distribution is shown using `benefit_score`, where `benefit
 
 <!-- AUTO_TABLE:doubly_robust_ate_summary START -->
 | Metric | Value |
-|---|---:|
-| Average benefit score | 0.043 |
-| Test members | 300 |
+| ---: | ---: |
+| avg_tau_hat | -0.0433326975104673 |
+| avg_benefit_score | 0.0433326975104673 |
+| test_members | 300.0 |
 <!-- AUTO_TABLE:doubly_robust_ate_summary END -->
 
 <!-- AUTO_TABLE:doubly_robust_effect_distribution_summary START -->
-| Metric | Benefit score |
-|---|---:|
-| Minimum | 0.011 |
-| 10th percentile | 0.027 |
-| 25th percentile | 0.033 |
-| Median | 0.041 |
-| Mean | 0.043 |
-| 75th percentile | 0.052 |
-| 90th percentile | 0.062 |
-| Maximum | 0.080 |
-| Standard deviation | 0.014 |
+| metric | benefit_score |
+| ---: | ---: |
+| mean | 0.0433 |
+| std_dev | 0.0137 |
+| min | 0.0107 |
+| p10 | 0.0269 |
+| p25 | 0.0335 |
+| median | 0.0409 |
+| p75 | 0.0525 |
+| p90 | 0.0623 |
+| max | 0.0798 |
 <!-- AUTO_TABLE:doubly_robust_effect_distribution_summary END -->
 
 <!-- AUTO_CHART:doubly_robust_effect_distribution START -->
-![Doubly robust estimated benefit distribution](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_effect_distribution.png)
+![Doubly robust estimated treatment effect distribution](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_effect_distribution.png)
 <!-- AUTO_CHART:doubly_robust_effect_distribution END -->
 
 Supporting files:
@@ -321,9 +326,9 @@ true_benefit =
 This validation uses the same 300 held-out test members scored by the doubly robust learner. The `benefit_score` column is compared directly with `true_benefit` using the same fields as the formula above. The goal is to evaluate whether the doubly robust learner estimates the size and member-level pattern of treatment benefit, not just whether it predicts factual ED risk.
 
 <!-- AUTO_TABLE:doubly_robust_true_benefit_validation START -->
-| Model | N | Mean predicted benefit | Mean true benefit | Bias | MAE | RMSE | Pearson corr | Spearman corr |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Doubly Robust Learner | 300 | 0.043 | 0.055 | -0.011 | 0.021 | 0.028 | 0.399 | 0.364 |
+| model | n_test_members | mean_predicted_benefit | mean_true_benefit | bias | mae | rmse | pearson_corr | spearman_corr |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Doubly Robust Learner | 300 | 0.0433 | 0.0548 | -0.0115 | 0.0213 | 0.0279 | 0.3994 | 0.3641 |
 <!-- AUTO_TABLE:doubly_robust_true_benefit_validation END -->
 
 The doubly robust learner underestimates the average true synthetic benefit by 0.011 benefit points — smaller bias than the causal forest (−0.014). Its MAE is 0.021 and RMSE is 0.028, both lower than the causal forest (0.025 and 0.032 respectively). The Pearson correlation of 0.399 and Spearman correlation of 0.364 are both stronger than the causal forest (0.327 and 0.268), indicating that the doubly robust learner recovers a larger portion of the synthetic member-level benefit pattern. The estimates should still be interpreted as noisy exploratory treatment-effect estimates, but the improved correlation suggests the pseudo-outcome construction provides a stronger signal for the final-stage forest.
@@ -340,24 +345,24 @@ Supporting files:
 Members are ranked by `benefit_score` and assigned to HTE deciles. Decile 1 is the highest estimated benefit group. This section is the doubly robust equivalent of the decile analysis in the causal forest and uplift READMEs.
 
 <!-- AUTO_TABLE:doubly_robust_decile_summary START -->
-| HTE decile | N | Avg benefit score | Avg current risk score | Observed ED rate | Treatment pct |
-|---:|---:|---:|---:|---:|---:|
-| 1 | 30 | 0.069 | 57.8 | 20.0% | 40.0% |
-| 2 | 30 | 0.059 | 52.5 | 10.0% | 33.3% |
-| 3 | 30 | 0.053 | 43.7 | 0.0% | 46.7% |
-| 4 | 30 | 0.049 | 41.8 | 0.0% | 33.3% |
-| 5 | 30 | 0.043 | 42.9 | 6.7% | 23.3% |
-| 6 | 30 | 0.039 | 42.7 | 13.3% | 50.0% |
-| 7 | 30 | 0.037 | 40.3 | 0.0% | 33.3% |
-| 8 | 30 | 0.033 | 40.2 | 6.7% | 50.0% |
-| 9 | 30 | 0.029 | 37.7 | 0.0% | 40.0% |
-| 10 | 30 | 0.022 | 38.4 | 3.3% | 43.3% |
+| hte_decile | n | avg_tau_hat | avg_benefit_score | observed_ed_rate | treatment_pct | avg_propensity_score | avg_current_risk_score |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1.0000 | 30.0000 | -0.0692 | 0.0692 | 0.2000 | 0.4000 | 0.5083 | 57.8400 |
+| 2.0000 | 30.0000 | -0.0587 | 0.0587 | 0.1000 | 0.3333 | 0.4808 | 52.5200 |
+| 3.0000 | 30.0000 | -0.0529 | 0.0529 | 0.0000 | 0.4667 | 0.3911 | 43.6867 |
+| 4.0000 | 30.0000 | -0.0486 | 0.0486 | 0.0000 | 0.3333 | 0.3671 | 41.8167 |
+| 5.0000 | 30.0000 | -0.0432 | 0.0432 | 0.0667 | 0.2333 | 0.4156 | 42.9267 |
+| 6.0000 | 30.0000 | -0.0392 | 0.0392 | 0.1333 | 0.5000 | 0.3886 | 42.6767 |
+| 7.0000 | 30.0000 | -0.0367 | 0.0367 | 0.0000 | 0.3333 | 0.3443 | 40.2933 |
+| 8.0000 | 30.0000 | -0.0331 | 0.0331 | 0.0667 | 0.5000 | 0.3928 | 40.1700 |
+| 9.0000 | 30.0000 | -0.0294 | 0.0294 | 0.0000 | 0.4000 | 0.3578 | 37.7233 |
+| 10.0000 | 30.0000 | -0.0223 | 0.0223 | 0.0333 | 0.4333 | 0.3791 | 38.3600 |
 <!-- AUTO_TABLE:doubly_robust_decile_summary END -->
 
 The decile pattern shows a clear estimated benefit gradient. The average benefit score is 6.9 percentage points in HTE decile 1 compared with 2.2 percentage points in HTE decile 10, a 3.1× ratio from top to bottom decile.
 
 <!-- AUTO_CHART:doubly_robust_avg_benefit_by_decile START -->
-![Doubly robust average estimated benefit by HTE decile](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_avg_benefit_by_decile.png)
+![Average benefit by decile](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_avg_benefit_by_decile.png)
 <!-- AUTO_CHART:doubly_robust_avg_benefit_by_decile END -->
 
 ### Risk Tier Versus Benefit Group
@@ -373,7 +378,7 @@ The chart below compares baseline risk tier against model-relative doubly robust
 Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
 
 <!-- AUTO_CHART:doubly_robust_risk_tier_by_benefit_group START -->
-![Doubly robust benefit group distribution by risk tier](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_risk_tier_by_benefit_group.png)
+![Risk tier composition by benefit group](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_risk_tier_by_benefit_group.png)
 <!-- AUTO_CHART:doubly_robust_risk_tier_by_benefit_group END -->
 
 The doubly robust learner places higher-risk members preferentially in the high-benefit group, consistent with the causal forest pattern. The average risk score in HTE decile 1 (57.8) is substantially higher than in HTE decile 10 (38.4), confirming that the model's benefit estimates are positively associated with baseline clinical complexity. This does not mean risk tier alone determines benefit, but it shows the doubly robust learner identifies a clinically complex population as the highest-benefit subgroup.
@@ -388,15 +393,15 @@ Supporting file:
 The doubly robust learner is benchmarked against all three existing PRISM modeling frameworks. The consistency summary below compares doubly robust `benefit_score` rankings against the GLMNet T-learner, GLMNet X-learner, and causal forest on the held-out test set. Correlations are member-level rank comparisons, and top-group overlap shows how many members appear in both high-benefit groups. All comparisons use `member_id` merges and are limited to the same 300 held-out test members.
 
 <!-- AUTO_TABLE:doubly_robust_cross_method_consistency START -->
-| Comparison | Pearson corr | Spearman corr | Top 10% overlap | Top 20% overlap |
-|---|---:|---:|---:|---:|
-| DR vs GLMNet T-learner | 0.013 | 0.061 | 23.3% | 26.7% |
-| DR vs GLMNet X-learner | 0.575 | 0.561 | 60.0% | 68.3% |
-| DR vs Causal Forest | 0.894 | 0.897 | 63.3% | 76.7% |
+| comparison | n_compared | pearson_corr | spearman_corr | top_10pct_overlap | top_20pct_overlap |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| DR Learner vs GLMNet T-learner | 300 | 0.0132 | 0.0608 | 0.2333 | 0.2667 |
+| DR Learner vs GLMNet X-learner | 300 | 0.5754 | 0.5612 | 0.6000 | 0.6833 |
+| DR Learner vs Causal Forest | 300 | 0.8941 | 0.8967 | 0.6333 | 0.7667 |
 <!-- AUTO_TABLE:doubly_robust_cross_method_consistency END -->
 
 <!-- AUTO_CHART:doubly_robust_cross_method_agreement START -->
-![Doubly robust cross-method agreement heatmap](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_cross_method_agreement.png)
+![Cross-method agreement between doubly robust approaches](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_cross_method_agreement.png)
 <!-- AUTO_CHART:doubly_robust_cross_method_agreement END -->
 
 The doubly robust learner shows very strong alignment with the causal forest (Spearman 0.897, top-20% overlap 76.7%), strong alignment with the GLMNet X-learner (Spearman 0.561, top-20% overlap 68.3%), and negligible correlation with the GLMNet T-learner (Spearman 0.061). This pattern is expected because both the doubly robust learner and causal forest use `ForestDRLearner`/`CausalForestDML` final-stage forests with cross-fitted nuisance models, while the X-learner uses a similar doubly-robust-style imputation approach. The weak alignment with the T-learner confirms that the doubly robust learner is not simply reproducing a naïve difference-in-means signal.
@@ -444,18 +449,23 @@ Once the treatment-effect estimates have been shown to be sufficiently credible,
 Because `ForestDRLearner` does not expose its internal `model_final_` in a way that supports direct feature importance extraction, variable importance is derived using a surrogate random forest trained to predict the doubly robust `benefit_score` from the same feature matrix. This approach provides a consistent, interpretable importance ranking that reflects which features the final-stage forest uses to differentiate high- and low-benefit members.
 
 <!-- AUTO_TABLE:doubly_robust_variable_importance START -->
-| Rank | Feature | Importance |
-|---:|---|---:|
-| 1 | current_risk_score | 0.511 |
-| 2 | percolator_clinical_score | 0.186 |
-| 3 | age | 0.133 |
-| 4 | total_cost_last_6m | 0.061 |
-| 5 | percolator_utilization_score | 0.030 |
-| 6 | percolator_sdoh_score | 0.015 |
-| 7 | rx_count_last_6m | 0.012 |
-| 8 | pcp_visits_last_6m | 0.009 |
-| 9 | program_Complex_CM | 0.007 |
-| 10 | med_adherence_pdc | 0.007 |
+| rank | feature | importance |
+| ---: | ---: | ---: |
+| 1 | current_risk_score | 0.5107 |
+| 2 | percolator_clinical_score | 0.1862 |
+| 3 | age | 0.1327 |
+| 4 | total_cost_last_6m | 0.0614 |
+| 5 | percolator_utilization_score | 0.0302 |
+| 6 | percolator_sdoh_score | 0.0151 |
+| 7 | rx_count_last_6m | 0.0119 |
+| 8 | pcp_visits_last_6m | 0.0085 |
+| 9 | program_Complex_CM | 0.0072 |
+| 10 | med_adherence_pdc | 0.0072 |
+| 11 | county_County_E | 0.0066 |
+| 12 | ed_visits_last_6m | 0.0053 |
+| 13 | depression_flag | 0.0018 |
+| 14 | risk_tier_High | 0.0018 |
+| 15 | program_CM | 0.0015 |
 <!-- AUTO_TABLE:doubly_robust_variable_importance END -->
 
 <!-- AUTO_CHART:doubly_robust_variable_importance START -->
@@ -475,39 +485,49 @@ The surrogate variable importance above measures how much each feature contribut
 **Top 10 benefit drivers by magnitude (mean absolute contribution):**
 
 <!-- AUTO_TABLE:doubly_robust_shap_importance START -->
-| Rank | Feature | Mean abs SHAP |
-|---:|---|---:|
-| 1 | percolator_clinical_score | 0.0040 |
-| 2 | age | 0.0040 |
-| 3 | current_risk_score | 0.0030 |
-| 4 | percolator_utilization_score | 0.0022 |
-| 5 | med_adherence_pdc | 0.0021 |
-| 6 | percolator_sdoh_score | 0.0017 |
-| 7 | pcp_visits_last_6m | 0.0015 |
-| 8 | ed_visits_last_6m | 0.0015 |
-| 9 | county_County_E | 0.0015 |
-| 10 | rx_count_last_6m | 0.0013 |
+| Feature | Mean |SHAP| |
+| ---: | ---: |
+| percolator_clinical_score | 0.004045 |
+| age | 0.004034 |
+| current_risk_score | 0.002978 |
+| percolator_utilization_score | 0.002153 |
+| med_adherence_pdc | 0.002050 |
+| percolator_sdoh_score | 0.001700 |
+| pcp_visits_last_6m | 0.001543 |
+| ed_visits_last_6m | 0.001472 |
+| county_County_E | 0.001458 |
+| rx_count_last_6m | 0.001273 |
+| total_cost_last_6m | 0.001138 |
+| program_Complex_CM | 0.001088 |
+| anxiety_flag | 0.000999 |
+| service_region_Central | 0.000970 |
+| program_CM | 0.000743 |
 <!-- AUTO_TABLE:doubly_robust_shap_importance END -->
 
 **Signed SHAP direction table:**
 
 <!-- AUTO_TABLE:doubly_robust_shap_signed START -->
-| Direction | Feature | Mean signed contribution |
-|---|---|---:|
-| Increase predicted benefit | total_cost_last_6m | 0.0004 |
-| Increase predicted benefit | current_risk_score | 0.0003 |
-| Increase predicted benefit | rx_count_last_6m | 0.0003 |
-| Increase predicted benefit | percolator_utilization_score | 0.0003 |
-| Increase predicted benefit | ed_visits_last_6m | 0.0002 |
-| Decrease predicted benefit | county_County_E | -0.0002 |
-| Decrease predicted benefit | percolator_sdoh_score | -0.0001 |
-| Decrease predicted benefit | age | -0.0001 |
-| Decrease predicted benefit | med_adherence_pdc | -0.0001 |
-| Decrease predicted benefit | pcp_visits_last_6m | -0.0001 |
+| Feature | Mean signed SHAP | Mean positive | Mean negative | % positive | % negative |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| percolator_clinical_score | 0.000172 | 0.002108 | -0.001936 | 26.3% | 73.7% |
+| age | -0.000106 | 0.001964 | -0.002070 | 34.0% | 66.0% |
+| current_risk_score | 0.000350 | 0.001664 | -0.001314 | 30.0% | 70.0% |
+| percolator_utilization_score | 0.000264 | 0.001209 | -0.000945 | 36.0% | 64.0% |
+| med_adherence_pdc | -0.000089 | 0.000981 | -0.001070 | 37.3% | 62.7% |
+| percolator_sdoh_score | -0.000105 | 0.000798 | -0.000903 | 36.0% | 64.0% |
+| pcp_visits_last_6m | -0.000071 | 0.000736 | -0.000807 | 43.3% | 56.7% |
+| ed_visits_last_6m | 0.000210 | 0.000841 | -0.000631 | 55.0% | 45.0% |
+| county_County_E | -0.000161 | 0.000648 | -0.000809 | 80.7% | 19.3% |
+| rx_count_last_6m | 0.000306 | 0.000790 | -0.000484 | 41.3% | 58.7% |
+| total_cost_last_6m | 0.000390 | 0.000764 | -0.000374 | 57.3% | 42.7% |
+| program_Complex_CM | 0.000163 | 0.000625 | -0.000463 | 21.3% | 78.7% |
+| anxiety_flag | 0.000078 | 0.000538 | -0.000460 | 75.7% | 24.3% |
+| service_region_Central | -0.000005 | 0.000483 | -0.000487 | 78.3% | 21.7% |
+| program_CM | -0.000016 | 0.000363 | -0.000380 | 40.0% | 60.0% |
 <!-- AUTO_TABLE:doubly_robust_shap_signed END -->
 
 <!-- AUTO_CHART:doubly_robust_global_benefit_shap START -->
-![Doubly robust SHAP benefit-score drivers](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_global_benefit_shap.png)
+![Global benefit SHAP importance](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_global_benefit_shap.png)
 <!-- AUTO_CHART:doubly_robust_global_benefit_shap END -->
 
 Members with higher total costs, risk scores, and ED utilization tend to have SHAP contributions that increase predicted benefit, while members in County E, those with higher SDOH scores, and those with more primary care visits tend to have contributions that decrease predicted benefit. The signed direction table complements the unsigned variable importance by showing which features push the doubly robust benefit estimate higher or lower on average.
@@ -524,10 +544,14 @@ Because the synthetic true-benefit formula is known, the model's explainability 
 The six true benefit drivers are: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score`.
 
 <!-- AUTO_TABLE:doubly_robust_known_driver_alignment START -->
-| Model | Explainability method | True drivers recovered in top 10 | Recovered true drivers |
-|---|---|---:|---|
-| Doubly Robust Learner | Surrogate variable importance | 1 of 6 | `current_risk_score` |
-| Doubly Robust Learner | SHAP benefit contribution | 2 of 6 | `ed_visits_last_6m`, `current_risk_score` |
+| Known driver | Mean |SHAP| | Mean signed SHAP | % positive |
+| ---: | ---: | ---: | ---: |
+| current_risk_score | 0.002978 | 0.000350 | 30.0% |
+| ed_visits_last_6m | 0.001472 | 0.000210 | 55.0% |
+| behavioral_health_risk_flag | 0.000313 | 0.000003 | 53.7% |
+| admits_last_6m | 0.000248 | -0.000066 | 30.3% |
+| food_insecurity_flag | 0.000145 | 0.000019 | 63.3% |
+| transportation_barrier_flag | 0.000092 | -0.000004 | 43.0% |
 <!-- AUTO_TABLE:doubly_robust_known_driver_alignment END -->
 
 Surrogate variable importance identifies `current_risk_score` as a top-10 driver, while SHAP additionally identifies `ed_visits_last_6m`. The remaining true drivers (`admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`) do not appear in the top 10 for either method. The SHAP method recovers one additional true driver compared with the causal forest SHAP (which recovered only `current_risk_score`), suggesting the doubly robust pseudo-outcome construction may slightly improve the signal for utilization-based drivers.
@@ -535,14 +559,7 @@ Surrogate variable importance identifies `current_risk_score` as a top-10 driver
 The table below provides a more granular check: for each true driver, the member-level SHAP contribution for that feature is compared against the member-level true contribution from the known formula using Spearman correlation. A positive Spearman correlation indicates the doubly robust SHAP correctly recovers the direction of that driver's contribution to benefit.
 
 <!-- AUTO_TABLE:doubly_robust_true_driver_shap_spearman START -->
-| Feature | True contribution formula | Direction recovered? |
-|---|---|---|
-| `ed_visits_last_6m` | `0.018 * ed_visits_last_6m` | Yes |
-| `admits_last_6m` | `0.015 * admits_last_6m` | Yes |
-| `food_insecurity_flag` | `0.018 * food_insecurity_flag` | No |
-| `transportation_barrier_flag` | `0.014 * transportation_barrier_flag` | Yes |
-| `behavioral_health_risk_flag` | `0.012 * behavioral_health_risk_flag` | No |
-| `current_risk_score` | `0.0006 * max(current_risk_score - 50, 0)` | Yes |
+_Pending: re-run notebook to generate `doubly_robust_true_driver_shap_spearman.csv`._
 <!-- AUTO_TABLE:doubly_robust_true_driver_shap_spearman END -->
 
 The doubly robust SHAP correctly recovers the direction of 4 out of 6 true drivers (`ed_visits_last_6m`, `admits_last_6m`, `transportation_barrier_flag`, and `current_risk_score`). The two binary SDOH/clinical flags (`food_insecurity_flag` and `behavioral_health_risk_flag`) show reversed direction — consistent with the causal forest pattern and suggesting the model conflates those signals with correlated features that have opposite relationships with the estimated treatment effect. The pattern of recovered and missed drivers is identical to the causal forest, reinforcing that both forest-based frameworks share the same structural limitation in separating correlated binary indicators from composite risk scores.
@@ -567,25 +584,30 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention. 
 ### Doubly Robust Benefit Targeting
 
 <!-- AUTO_TABLE:doubly_robust_targeting_comparison START -->
-| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
-|---|---:|---:|---:|---:|---:|---:|
-| Top 10% | 30 | $2,491 | $2,260 | $231 | 2.08 | 1.88 |
-| Top 20% | 60 | $4,603 | $4,322 | $281 | 3.84 | 3.60 |
-| Top 30% | 90 | $6,507 | $5,978 | $529 | 5.42 | 4.98 |
-| Top 40% | 120 | $8,259 | $7,411 | $848 | 6.88 | 6.18 |
-| Top 50% | 150 | $9,815 | $8,755 | $1,060 | 8.18 | 7.30 |
+| targeted_group | members_targeted | dr_gross_savings | risk_gross_savings | advantage | dr_ed_visits_avoided | risk_ed_visits_avoided |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Top 10% | 30 | 2491.0897 | 2259.8170 | 231.2726 | 2.0759 | 1.8832 |
+| Top 20% | 60 | 4602.6112 | 4321.6321 | 280.9791 | 3.8355 | 3.6014 |
+| Top 30% | 90 | 6507.3019 | 5977.9595 | 529.3424 | 5.4228 | 4.9816 |
+| Top 40% | 120 | 8258.5406 | 7410.8434 | 847.6972 | 6.8821 | 6.1757 |
+| Top 50% | 150 | 9815.3356 | 8754.9945 | 1060.3411 | 8.1794 | 7.2958 |
+| Top 60% | 180 | 11225.0108 | 10084.3749 | 1140.6360 | 9.3542 | 8.4036 |
+| Top 70% | 210 | 12545.1284 | 11513.8411 | 1031.2873 | 10.4543 | 9.5949 |
+| Top 80% | 240 | 13738.5077 | 12875.2870 | 863.2207 | 11.4488 | 10.7294 |
+| Top 90% | 270 | 14797.5997 | 14227.2040 | 570.3957 | 12.3313 | 11.8560 |
+| Top 100% | 300 | 15599.7711 | 15599.7711 | 0.0000 | 12.9998 | 12.9998 |
 <!-- AUTO_TABLE:doubly_robust_targeting_comparison END -->
 
 This view compares two targeting policies on the same held-out test population: ranking members by doubly robust predicted benefit versus ranking members by current risk score. Through the top 30% of targeted members, doubly robust benefit targeting captures $6,507 in estimated gross savings, compared with $5,978 from current-risk targeting, an advantage of $529. Gross savings are estimated from the doubly robust predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
 
 <!-- AUTO_CHART:doubly_robust_cumulative_gross_savings START -->
-![Doubly robust cumulative gross savings by targeting approach](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_cumulative_gross_savings_targeting.png)
+![Cumulative gross savings by targeting decile](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:doubly_robust_cumulative_gross_savings END -->
 
 The chart below compares the additional gross savings from each doubly robust targeting band against the additional gross savings from selecting the same number of members by current risk. Positive bars (blue) mean benefit-based targeting adds more estimated value than the current-risk approach for that band; negative bars (red) mean the current-risk approach adds more estimated value for that band.
 
 <!-- AUTO_CHART:doubly_robust_marginal_advantage START -->
-![Doubly robust marginal gross savings advantage versus current risk](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_marginal_gross_savings_advantage.png)
+![Marginal gross savings advantage vs current risk targeting](Outputs/Doubly-Robust/Python/dashboard_doubly_robust_marginal_gross_savings_advantage.png)
 <!-- AUTO_CHART:doubly_robust_marginal_advantage END -->
 
 These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data. Overall, the doubly robust learner suggests that prioritizing members by predicted treatment benefit may capture greater estimated value than targeting members by baseline risk alone on this synthetic dataset.

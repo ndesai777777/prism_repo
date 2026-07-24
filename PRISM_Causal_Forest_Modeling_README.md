@@ -144,20 +144,23 @@ clipping to [0.05, 0.95]
 This section reviews the modeling population, treatment rate, outcome prevalence, and final model matrix size. These checks mirror the data review section in the uplift README.
 
 <!-- AUTO_TABLE:causal_forest_data_review_summary START -->
-| Metric | Value |
-|---|---:|
-| Total members | 1,000 |
-| Treated members | 394 |
-| Untreated/control members | 606 |
-| Treatment rate | 39.4% |
-| ED outcome events | 60 |
-| Outcome prevalence | 6.0% |
-| Treated observed ED rate | 4.1% |
-| Control observed ED rate | 7.3% |
-| Final predictors before one-hot encoding | 41 |
-| Continuous/count numeric predictors | 14 |
-| Binary indicator predictors | 18 |
-| Multi-level categorical predictors | 9 |
+| metric | current_value |
+| ---: | ---: |
+| Total members | 1000.0000 |
+| Treated members | 394.0000 |
+| Untreated/control members | 606.0000 |
+| Treatment rate | 0.3940 |
+| ED outcome events | 60.0000 |
+| Outcome prevalence | 0.0600 |
+| Treated observed ED rate | 0.0406 |
+| Control observed ED rate | 0.0726 |
+| Final predictors before one-hot encoding | 41.0000 |
+| Continuous/count numeric predictors | 14.0000 |
+| Binary indicator predictors | 18.0000 |
+| Multi-level categorical predictors | 9.0000 |
+| Model matrix columns after one-hot encoding | 77.0000 |
+| Train rows | 700.0000 |
+| Test rows | 300.0000 |
 <!-- AUTO_TABLE:causal_forest_data_review_summary END -->
 
 Supporting file:
@@ -208,12 +211,12 @@ Although this does not eliminate confounding, it provides a stronger framework t
 Treatment-effect estimation is more challenging than outcome prediction because only one potential outcome is observed for each member. Adequate representation of treated, untreated, event, and non-event observations is therefore important for stable estimation.
 
 <!-- AUTO_TABLE:causal_forest_event_count_summary START -->
-| Split | Group | N | Positive ED events | Negative ED events | Event rate |
-|---|---:|---:|---:|---:|---:|
-| Train | Treated | 276 | 11 | 265 | 4.0% |
-| Train | Control | 424 | 31 | 393 | 7.3% |
-| Test | Treated | 118 | 5 | 113 | 4.2% |
-| Test | Control | 182 | 13 | 169 | 7.1% |
+| split | group | n | positive_ed_events | negative_ed_events | event_rate |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| Train | Treated | 276 | 11 | 265 | 0.0399 |
+| Train | Control | 424 | 31 | 393 | 0.0731 |
+| Test | Treated | 118 | 5 | 113 | 0.0424 |
+| Test | Control | 182 | 13 | 169 | 0.0714 |
 <!-- AUTO_TABLE:causal_forest_event_count_summary END -->
 
 Supporting file:
@@ -229,22 +232,22 @@ The summary below shows the propensity-score distribution and confirms that no o
 
 <!-- AUTO_TABLE:causal_forest_propensity_summary START -->
 | Metric | Value |
-|---|---:|
+| ---: | ---: |
 | Propensity source | shared_propensity_scores_member_id_merge |
-| Train treatment model AUC | 0.700 |
-| Test treatment model AUC | 0.593 |
-| Mean propensity | 0.403 |
-| Min propensity | 0.150 |
-| 5th percentile | 0.239 |
-| Median propensity | 0.384 |
-| 95th percentile | 0.605 |
-| Max propensity | 0.774 |
+| Train treatment model AUC | 0.7002751572327045 |
+| Test treatment model AUC | 0.592940957347737 |
+| Mean propensity | 0.4025420325595004 |
+| Min propensity | 0.1501186014387723 |
+| 5th percentile | 0.23906204225857666 |
+| Median propensity | 0.384005411967242 |
+| 95th percentile | 0.6054396336815453 |
+| Max propensity | 0.7743838304796942 |
 | Members below 0.05 | 0 |
 | Members above 0.95 | 0 |
 <!-- AUTO_TABLE:causal_forest_propensity_summary END -->
 
 <!-- AUTO_CHART:causal_forest_propensity_overlap START -->
-![Causal forest propensity overlap check](Outputs/Causal-Forests/Python/dashboard_propensity_overlap.png)
+![Propensity score overlap between treatment and control](Outputs/Causal-Forests/Python/dashboard_propensity_overlap.png)
 <!-- AUTO_CHART:causal_forest_propensity_overlap END -->
 
 Supporting file:
@@ -295,27 +298,28 @@ The treatment-effect distribution is shown using `benefit_score`, where `benefit
 
 <!-- AUTO_TABLE:causal_forest_ate_summary START -->
 | Metric | Value |
-|---|---:|
-| Average benefit score | 0.041 |
-| Test members | 300 |
+| ---: | ---: |
+| avg_tau_hat | -0.0410776611930693 |
+| avg_benefit_score | 0.0410776611930693 |
+| test_members | 300.0 |
 <!-- AUTO_TABLE:causal_forest_ate_summary END -->
 
 <!-- AUTO_TABLE:causal_forest_effect_distribution_summary START -->
-| Metric | Benefit score |
-|---|---:|
-| Minimum | 0.001 |
-| 10th percentile | 0.015 |
-| 25th percentile | 0.025 |
-| Median | 0.036 |
-| Mean | 0.041 |
-| 75th percentile | 0.056 |
-| 90th percentile | 0.071 |
-| Maximum | 0.101 |
-| Standard deviation | 0.021 |
+| metric | tau_hat | benefit_score |
+| ---: | ---: | ---: |
+| max | -0.0007 | 0.1007 |
+| mean | -0.0411 | 0.0411 |
+| median | -0.0363 | 0.0363 |
+| min | -0.1007 | 0.0007 |
+| p10 | -0.0713 | 0.0153 |
+| p25 | -0.0556 | 0.0248 |
+| p75 | -0.0248 | 0.0556 |
+| p90 | -0.0153 | 0.0713 |
+| std_dev | 0.0214 | 0.0214 |
 <!-- AUTO_TABLE:causal_forest_effect_distribution_summary END -->
 
 <!-- AUTO_CHART:causal_forest_effect_distribution START -->
-![Causal forest estimated benefit distribution](Outputs/Causal-Forests/Python/dashboard_causal_forest_effect_distribution.png)
+![Causal forest estimated treatment effect distribution](Outputs/Causal-Forests/Python/dashboard_causal_forest_effect_distribution.png)
 <!-- AUTO_CHART:causal_forest_effect_distribution END -->
 
 Supporting files:
@@ -341,9 +345,9 @@ true_benefit =
 This validation uses the same 300 held-out test members scored by the causal forest. The `benefit_score` column is compared directly with `true_benefit` using the same fields as the formula above. The goal is to evaluate whether causal forest estimates the size and member-level pattern of treatment benefit, not just whether it predicts factual ED risk.
 
 <!-- AUTO_TABLE:causal_forest_true_benefit_validation START -->
-| Model | N | Mean predicted benefit | Mean true benefit | Bias | MAE | RMSE | Pearson corr | Spearman corr |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Causal forest | 300 | 0.041 | 0.055 | -0.014 | 0.025 | 0.032 | 0.327 | 0.268 |
+| model | n_test_members | mean_predicted_benefit | mean_true_benefit | bias | mae | rmse | pearson_corr | spearman_corr |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Causal forest | 300 | 0.0411 | 0.0548 | -0.0137 | 0.0250 | 0.0320 | 0.3274 | 0.2681 |
 <!-- AUTO_TABLE:causal_forest_true_benefit_validation END -->
 
 The causal forest underestimates the average true synthetic benefit by 0.014 benefit points. Its MAE is 0.025 and RMSE is 0.032, while both Pearson and Spearman correlations are positive. This indicates that the causal forest ranking recovers a meaningful portion of the synthetic member-level benefit pattern, although the estimates are not equal to the known formula and should still be interpreted as noisy exploratory treatment-effect estimates.
@@ -360,24 +364,24 @@ Supporting files:
 Members are ranked by `benefit_score` and assigned to HTE deciles. Decile 1 is the highest estimated benefit group. This section is the causal forest equivalent of the uplift decile analysis in the main uplift README.
 
 <!-- AUTO_TABLE:causal_forest_decile_summary START -->
-| HTE decile | N | Avg `tau_hat` | Avg benefit score | Avg tau SE | Observed ED rate | Treatment pct | Avg propensity | Avg current risk |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 30 | -0.084 | 0.084 | 0.038 | 20.0% | 40.0% | 0.511 | 58.5 |
-| 2 | 30 | -0.065 | 0.065 | 0.033 | 3.3% | 40.0% | 0.448 | 50.2 |
-| 3 | 30 | -0.055 | 0.055 | 0.029 | 6.7% | 23.3% | 0.393 | 44.3 |
-| 4 | 30 | -0.047 | 0.047 | 0.026 | 3.3% | 46.7% | 0.408 | 42.4 |
-| 5 | 30 | -0.041 | 0.041 | 0.024 | 10.0% | 40.0% | 0.348 | 41.9 |
-| 6 | 30 | -0.034 | 0.034 | 0.024 | 3.3% | 46.7% | 0.384 | 39.5 |
-| 7 | 30 | -0.030 | 0.030 | 0.024 | 3.3% | 40.0% | 0.392 | 40.9 |
-| 8 | 30 | -0.025 | 0.025 | 0.023 | 3.3% | 33.3% | 0.381 | 42.0 |
-| 9 | 30 | -0.018 | 0.018 | 0.019 | 3.3% | 40.0% | 0.375 | 37.4 |
-| 10 | 30 | -0.012 | 0.012 | 0.017 | 3.3% | 43.3% | 0.384 | 41.0 |
+| hte_decile | n | avg_tau_hat | avg_benefit_score | avg_tau_se | observed_ed_rate | treatment_pct | avg_propensity_score | avg_current_risk_score | uplift_decile |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1.0000 | 30.0000 | -0.0842 | 0.0842 | 0.0377 | 0.2000 | 0.4000 | 0.5106 | 58.5367 | 1.0000 |
+| 2.0000 | 30.0000 | -0.0647 | 0.0647 | 0.0332 | 0.0333 | 0.4000 | 0.4481 | 50.1733 | 2.0000 |
+| 3.0000 | 30.0000 | -0.0551 | 0.0551 | 0.0292 | 0.0667 | 0.2333 | 0.3932 | 44.2833 | 3.0000 |
+| 4.0000 | 30.0000 | -0.0468 | 0.0468 | 0.0258 | 0.0333 | 0.4667 | 0.4084 | 42.3533 | 4.0000 |
+| 5.0000 | 30.0000 | -0.0406 | 0.0406 | 0.0240 | 0.1000 | 0.4000 | 0.3482 | 41.9300 | 5.0000 |
+| 6.0000 | 30.0000 | -0.0345 | 0.0345 | 0.0235 | 0.0333 | 0.4667 | 0.3844 | 39.4900 | 6.0000 |
+| 7.0000 | 30.0000 | -0.0301 | 0.0301 | 0.0240 | 0.0333 | 0.4000 | 0.3922 | 40.8667 | 7.0000 |
+| 8.0000 | 30.0000 | -0.0248 | 0.0248 | 0.0234 | 0.0333 | 0.3333 | 0.3809 | 42.0167 | 8.0000 |
+| 9.0000 | 30.0000 | -0.0182 | 0.0182 | 0.0190 | 0.0333 | 0.4000 | 0.3751 | 37.3767 | 9.0000 |
+| 10.0000 | 30.0000 | -0.0118 | 0.0118 | 0.0172 | 0.0333 | 0.4333 | 0.3844 | 40.9867 | 10.0000 |
 <!-- AUTO_TABLE:causal_forest_decile_summary END -->
 
 The decile pattern shows a clear estimated benefit gradient. The average benefit score is 8.4 percentage points in HTE decile 1 compared with 1.2 percentage points in HTE decile 10.
 
 <!-- AUTO_CHART:causal_forest_avg_benefit_by_decile START -->
-![Causal forest average estimated benefit by HTE decile](Outputs/Causal-Forests/Python/dashboard_causal_forest_avg_benefit_by_decile.png)
+![Average benefit by decile](Outputs/Causal-Forests/Python/dashboard_causal_forest_avg_benefit_by_decile.png)
 <!-- AUTO_CHART:causal_forest_avg_benefit_by_decile END -->
 
 ### Risk Tier Versus Benefit Group
@@ -393,7 +397,7 @@ The chart below compares baseline risk tier against model-relative causal forest
 Risk tiers are based on `current_risk_score`: Low `<35`, Medium `35` to `<55`, High `55` to `<75`, and Very High `>=75`.
 
 <!-- AUTO_CHART:causal_forest_risk_tier_by_benefit_group START -->
-![Causal forest benefit group distribution by risk tier](Outputs/Causal-Forests/Python/dashboard_causal_forest_risk_tier_by_benefit_group.png)
+![Risk tier composition by benefit group](Outputs/Causal-Forests/Python/dashboard_causal_forest_risk_tier_by_benefit_group.png)
 <!-- AUTO_CHART:causal_forest_risk_tier_by_benefit_group END -->
 
 The causal forest places most High risk test members in the high-benefit group, while Low and Medium risk members are more concentrated in the medium- and low-benefit groups. No Very High members appear in the held-out test set for this run. This does not mean risk tier alone determines benefit, but it shows that the causal forest's high-benefit ranking is strongly associated with the High risk segment in the current test set.
@@ -459,18 +463,23 @@ Once the treatment-effect estimates have been shown to be sufficiently credible,
 Causal forest variable importance is a partial explainability layer. It identifies features used by the model to split members into groups with different estimated treatment effects. It should not be interpreted as a definitive causal explanation of why the intervention works.
 
 <!-- AUTO_TABLE:causal_forest_variable_importance START -->
-| Rank | Feature | Importance |
-|---:|---|---:|
-| 1 | current_risk_score | 0.173 |
-| 2 | percolator_clinical_score | 0.138 |
-| 3 | age | 0.101 |
-| 4 | med_adherence_pdc | 0.072 |
-| 5 | pcp_visits_last_6m | 0.068 |
-| 6 | percolator_utilization_score | 0.064 |
-| 7 | total_cost_last_6m | 0.062 |
-| 8 | percolator_sdoh_score | 0.049 |
-| 9 | rx_count_last_6m | 0.028 |
-| 10 | chf_flag | 0.025 |
+| rank | feature | importance |
+| ---: | ---: | ---: |
+| 1 | current_risk_score | 0.1726 |
+| 2 | percolator_clinical_score | 0.1381 |
+| 3 | age | 0.1012 |
+| 4 | med_adherence_pdc | 0.0718 |
+| 5 | pcp_visits_last_6m | 0.0685 |
+| 6 | percolator_utilization_score | 0.0637 |
+| 7 | total_cost_last_6m | 0.0618 |
+| 8 | percolator_sdoh_score | 0.0487 |
+| 9 | rx_count_last_6m | 0.0281 |
+| 10 | chf_flag | 0.0248 |
+| 11 | specialist_visits_last_6m | 0.0239 |
+| 12 | county_County_E | 0.0116 |
+| 13 | service_region_Central | 0.0102 |
+| 14 | county_County_A | 0.0096 |
+| 15 | food_insecurity_flag | 0.0094 |
 <!-- AUTO_TABLE:causal_forest_variable_importance END -->
 
 <!-- AUTO_CHART:causal_forest_variable_importance START -->
@@ -488,39 +497,49 @@ The standard variable importance above measures how much each feature contribute
 **Top 10 benefit drivers by magnitude (mean absolute contribution):**
 
 <!-- AUTO_TABLE:causal_forest_shap_importance START -->
-| Rank | Feature | Mean abs SHAP |
-|---:|---|---:|
-| 1 | percolator_clinical_score | 0.0081 |
-| 2 | current_risk_score | 0.0065 |
-| 3 | age | 0.0050 |
-| 4 | percolator_sdoh_score | 0.0039 |
-| 5 | pcp_visits_last_6m | 0.0024 |
-| 6 | med_adherence_pdc | 0.0023 |
-| 7 | service_region_Central | 0.0013 |
-| 8 | total_cost_last_6m | 0.0012 |
-| 9 | rx_count_last_6m | 0.0012 |
-| 10 | county_County_E | 0.0011 |
+| Feature | Mean |SHAP| |
+| ---: | ---: |
+| percolator_clinical_score | 0.008134 |
+| current_risk_score | 0.006503 |
+| age | 0.004998 |
+| percolator_sdoh_score | 0.003894 |
+| pcp_visits_last_6m | 0.002395 |
+| med_adherence_pdc | 0.002281 |
+| service_region_Central | 0.001278 |
+| total_cost_last_6m | 0.001219 |
+| rx_count_last_6m | 0.001173 |
+| county_County_E | 0.001099 |
+| percolator_utilization_score | 0.001058 |
+| specialist_visits_last_6m | 0.000865 |
+| ed_visits_last_6m | 0.000810 |
+| client_contract_Contract_B | 0.000416 |
+| anxiety_flag | 0.000389 |
 <!-- AUTO_TABLE:causal_forest_shap_importance END -->
 
 **Signed SHAP direction table:**
 
 <!-- AUTO_TABLE:causal_forest_shap_signed START -->
-| Direction | Feature | Mean signed contribution |
-|---|---|---:|
-| Increase predicted benefit | current_risk_score | 0.0009 |
-| Increase predicted benefit | total_cost_last_6m | 0.0005 |
-| Increase predicted benefit | percolator_clinical_score | 0.0004 |
-| Increase predicted benefit | rx_count_last_6m | 0.0003 |
-| Increase predicted benefit | specialist_visits_last_6m | 0.0003 |
-| Decrease predicted benefit | pcp_visits_last_6m | -0.0003 |
-| Decrease predicted benefit | percolator_sdoh_score | -0.0003 |
-| Decrease predicted benefit | med_adherence_pdc | -0.0002 |
-| Decrease predicted benefit | county_County_E | -0.0001 |
-| Decrease predicted benefit | percolator_utilization_score | -0.0001 |
+| Feature | Mean signed SHAP | Mean positive | Mean negative | % positive | % negative |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| percolator_clinical_score | 0.000382 | 0.004258 | -0.003876 | 21.7% | 78.3% |
+| current_risk_score | 0.000852 | 0.003678 | -0.002826 | 24.7% | 75.3% |
+| age | 0.000192 | 0.002595 | -0.002403 | 35.7% | 64.3% |
+| percolator_sdoh_score | -0.000275 | 0.001810 | -0.002085 | 28.0% | 72.0% |
+| pcp_visits_last_6m | -0.000284 | 0.001055 | -0.001340 | 44.0% | 56.0% |
+| med_adherence_pdc | -0.000157 | 0.001062 | -0.001219 | 30.0% | 70.0% |
+| service_region_Central | 0.000026 | 0.000652 | -0.000626 | 78.3% | 21.7% |
+| total_cost_last_6m | 0.000470 | 0.000845 | -0.000375 | 46.3% | 53.7% |
+| rx_count_last_6m | 0.000251 | 0.000712 | -0.000461 | 50.0% | 50.0% |
+| county_County_E | -0.000088 | 0.000506 | -0.000593 | 80.7% | 19.3% |
+| percolator_utilization_score | -0.000058 | 0.000500 | -0.000558 | 42.7% | 57.3% |
+| specialist_visits_last_6m | 0.000259 | 0.000562 | -0.000303 | 82.7% | 17.3% |
+| ed_visits_last_6m | 0.000138 | 0.000474 | -0.000336 | 55.0% | 45.0% |
+| client_contract_Contract_B | 0.000074 | 0.000245 | -0.000171 | 64.7% | 35.3% |
+| anxiety_flag | 0.000020 | 0.000205 | -0.000184 | 75.7% | 24.3% |
 <!-- AUTO_TABLE:causal_forest_shap_signed END -->
 
 <!-- AUTO_CHART:causal_forest_global_benefit_shap START -->
-![Causal forest SHAP benefit-score drivers](Outputs/Causal-Forests/Python/dashboard_causal_forest_global_benefit_shap.png)
+![Global benefit SHAP importance](Outputs/Causal-Forests/Python/dashboard_causal_forest_global_benefit_shap.png)
 <!-- AUTO_CHART:causal_forest_global_benefit_shap END -->
 
 Members with higher clinical complexity scores and current risk scores tend to have SHAP contributions that increase predicted benefit, while members with more primary care visits and higher SDOH scores tend to have contributions that decrease predicted benefit. The signed direction table complements the unsigned variable importance by showing which features push the causal forest benefit estimate higher or lower on average.
@@ -537,10 +556,14 @@ Because the synthetic true-benefit formula is known, the model's explainability 
 The six true benefit drivers are: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score`.
 
 <!-- AUTO_TABLE:causal_forest_known_driver_alignment START -->
-| Model | Explainability method | True drivers recovered in top 10 | Recovered true drivers |
-|---|---|---:|---|
-| Causal forest | Variable importance | 1 of 6 | `current_risk_score` |
-| Causal forest | SHAP benefit contribution | 1 of 6 | `current_risk_score` |
+| Known driver | Mean |SHAP| | Mean signed SHAP | % positive |
+| ---: | ---: | ---: | ---: |
+| current_risk_score | 0.006503 | 0.000852 | 24.7% |
+| ed_visits_last_6m | 0.000810 | 0.000138 | 55.0% |
+| behavioral_health_risk_flag | 0.000287 | 0.000019 | 58.0% |
+| food_insecurity_flag | 0.000283 | 0.000047 | 67.7% |
+| admits_last_6m | 0.000233 | 0.000044 | 38.3% |
+| transportation_barrier_flag | 0.000100 | 0.000007 | 26.0% |
 <!-- AUTO_TABLE:causal_forest_known_driver_alignment END -->
 
 Both methods identify `current_risk_score` as a top-10 driver, which is in the true formula. The remaining five true drivers (`ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`) do not appear in the top 10 for either method. This is consistent with the causal forest having moderate but imperfect Spearman correlation (0.27) with true benefit, and suggests the model is partially detecting the risk-score channel of the benefit formula but not the utilization and social determinant channels as strongly as the composite risk scores.
@@ -548,14 +571,7 @@ Both methods identify `current_risk_score` as a top-10 driver, which is in the t
 The table below provides a more granular check: for each true driver, the member-level SHAP contribution for that feature is compared against the member-level true contribution from the known formula using Spearman correlation. A positive Spearman correlation above 0.1 indicates the causal forest SHAP correctly recovers the direction of that driver's contribution to benefit.
 
 <!-- AUTO_TABLE:causal_forest_true_driver_shap_spearman START -->
-| Feature | True contribution formula | Mean true contribution | Causal forest SHAP Spearman | Direction recovered? |
-|---|---|---:|---:|---|
-| `ed_visits_last_6m` | `0.018 * ed_visits_last_6m` | 0.0163 | 0.830 | Yes |
-| `admits_last_6m` | `0.015 * admits_last_6m` | 0.0053 | 0.596 | Yes |
-| `food_insecurity_flag` | `0.018 * food_insecurity_flag` | 0.0038 | -0.557 | No |
-| `transportation_barrier_flag` | `0.014 * transportation_barrier_flag` | 0.0036 | 0.689 | Yes |
-| `behavioral_health_risk_flag` | `0.012 * behavioral_health_risk_flag` | 0.0046 | -0.789 | No |
-| `current_risk_score` | `0.0006 * max(current_risk_score - 50, 0)` | 0.0010 | 0.750 | Yes |
+_Pending: re-run notebook to generate `causal_forest_true_driver_shap_spearman.csv`._
 <!-- AUTO_TABLE:causal_forest_true_driver_shap_spearman END -->
 
 The causal forest SHAP correctly recovers the direction of 4 out of 6 true drivers. The two strongest utilization-based drivers (`ed_visits_last_6m` and `admits_last_6m`) and the risk-score driver have high positive Spearman correlations (0.60–0.83), and `transportation_barrier_flag` is also well recovered (0.69). The causal forest reverses the direction for `food_insecurity_flag` and `behavioral_health_risk_flag`, suggesting the model conflates those binary SDOH/clinical flags with correlated features that have opposite relationships with the estimated treatment effect.
@@ -580,25 +596,30 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention. 
 ### Causal Forest Benefit Targeting
 
 <!-- AUTO_TABLE:causal_forest_targeting_comparison START -->
-| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
-|---|---:|---:|---:|---:|---:|---:|
-| Top 10% | 30 | $3,030.57 | $2,672.59 | $357.98 | 2.5255 | 2.2272 |
-| Top 20% | 60 | $5,358.93 | $4,841.90 | $517.03 | 4.4658 | 4.0349 |
-| Top 30% | 90 | $7,344.29 | $6,437.13 | $907.15 | 6.1202 | 5.3643 |
-| Top 40% | 120 | $9,030.23 | $7,743.29 | $1,286.94 | 7.5252 | 6.4527 |
-| Top 50% | 150 | $10,492.84 | $8,742.11 | $1,750.73 | 8.7440 | 7.2851 |
+| hte_decile | n | avg_benefit_score | observed_ed_rate | treatment_pct | avg_current_risk_score | cumulative_members | cumulative_expected_ed_reductions |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1.0000 | 30.0000 | 0.0842 | 0.2000 | 0.4000 | 58.5367 | 30.0000 | 2.5255 |
+| 2.0000 | 30.0000 | 0.0647 | 0.0333 | 0.4000 | 50.1733 | 60.0000 | 4.4658 |
+| 3.0000 | 30.0000 | 0.0551 | 0.0667 | 0.2333 | 44.2833 | 90.0000 | 6.1202 |
+| 4.0000 | 30.0000 | 0.0468 | 0.0333 | 0.4667 | 42.3533 | 120.0000 | 7.5252 |
+| 5.0000 | 30.0000 | 0.0406 | 0.1000 | 0.4000 | 41.9300 | 150.0000 | 8.7440 |
+| 6.0000 | 30.0000 | 0.0345 | 0.0333 | 0.4667 | 39.4900 | 180.0000 | 9.7782 |
+| 7.0000 | 30.0000 | 0.0301 | 0.0333 | 0.4000 | 40.8667 | 210.0000 | 10.6807 |
+| 8.0000 | 30.0000 | 0.0248 | 0.0333 | 0.3333 | 42.0167 | 240.0000 | 11.4232 |
+| 9.0000 | 30.0000 | 0.0182 | 0.0333 | 0.4000 | 37.3767 | 270.0000 | 11.9689 |
+| 10.0000 | 30.0000 | 0.0118 | 0.0333 | 0.4333 | 40.9867 | 300.0000 | 12.3233 |
 <!-- AUTO_TABLE:causal_forest_targeting_comparison END -->
 
 This view compares two targeting policies on the same held-out test population: ranking members by causal forest predicted benefit versus ranking members by current risk score. Through the top 30% of targeted members, causal forest benefit targeting captures $7,344.29 in estimated gross savings, compared with $6,437.13 from current-risk targeting, an advantage of $907.15. Gross savings are estimated from the causal forest predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
 
 <!-- AUTO_CHART:causal_forest_roi_by_decile START -->
-![Causal forest cumulative gross savings by targeting approach](Outputs/Causal-Forests/Python/dashboard_cumulative_gross_savings_targeting.png)
+![Cumulative gross savings by targeting decile](Outputs/Causal-Forests/Python/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:causal_forest_roi_by_decile END -->
 
 The chart below compares the additional gross savings from each causal forest targeting band against the additional gross savings from selecting the same number of members by current risk. Positive bars (blue) mean benefit-based targeting adds more estimated value than the current-risk approach for that band; negative bars (red) mean the current-risk approach adds more estimated value for that band. In this run, the causal forest has positive marginal advantage through the top 60%, then turns negative in the 60-70% through 90-100% bands.
 
 <!-- AUTO_CHART:causal_forest_marginal_advantage START -->
-![Causal forest marginal gross savings advantage versus current risk](Outputs/Causal-Forests/Python/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+![Marginal gross savings advantage vs current risk targeting](Outputs/Causal-Forests/Python/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 <!-- AUTO_CHART:causal_forest_marginal_advantage END -->
 
 These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, and validation using live production data. Overall, the causal forest suggests that prioritizing members by predicted treatment benefit may capture greater estimated value than targeting members by baseline risk alone on this synthetic dataset.
