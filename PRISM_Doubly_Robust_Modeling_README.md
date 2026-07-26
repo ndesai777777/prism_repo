@@ -247,17 +247,17 @@ The ForestDRLearner internally constructs doubly robust pseudo-outcomes during c
 | ---: | ---: |
 | Source | Training-set effect estimates (proxy for pseudo-outcomes) |
 | N | 700 |
-| Mean | -0.04368624540265525 |
-| Std | 0.015328937475339385 |
-| Min | -0.0950317844904703 |
-| 5th percentile | -0.07113224762297653 |
-| 10th percentile | -0.06553415038304325 |
-| 25th percentile | -0.05265133658176516 |
-| Median | -0.04172349057906741 |
-| 75th percentile | -0.03216052456460592 |
-| 90th percentile | -0.026325672927278016 |
-| 95th percentile | -0.022593568758889255 |
-| Max | 0.007638728518971675 |
+| Mean | -0.04368146325324275 |
+| Std | 0.015343450566767013 |
+| Min | -0.09530756332930261 |
+| 5th percentile | -0.07125244250022479 |
+| 10th percentile | -0.0653650592501064 |
+| 25th percentile | -0.05264781004748467 |
+| Median | -0.041714735804337294 |
+| 75th percentile | -0.03214380820484882 |
+| 90th percentile | -0.026437646764700257 |
+| 95th percentile | -0.02261737899565423 |
+| Max | 0.007638728518971735 |
 | Fraction negative (benefit direction) | 0.9985714285714286 |
 <!-- AUTO_TABLE:doubly_robust_pseudo_outcome_diagnostics END -->
 
@@ -280,8 +280,8 @@ The treatment-effect distribution is shown using `benefit_score`, where `benefit
 <!-- AUTO_TABLE:doubly_robust_ate_summary START -->
 | Metric | Value |
 | ---: | ---: |
-| avg_tau_hat | -0.0433326975104673 |
-| avg_benefit_score | 0.0433326975104673 |
+| avg_tau_hat | -0.0433229163211751 |
+| avg_benefit_score | 0.0433229163211751 |
 | test_members | 300.0 |
 <!-- AUTO_TABLE:doubly_robust_ate_summary END -->
 
@@ -295,7 +295,7 @@ The treatment-effect distribution is shown using `benefit_score`, where `benefit
 | p25 | 0.0335 |
 | median | 0.0409 |
 | p75 | 0.0525 |
-| p90 | 0.0623 |
+| p90 | 0.0625 |
 | max | 0.0798 |
 <!-- AUTO_TABLE:doubly_robust_effect_distribution_summary END -->
 
@@ -328,7 +328,7 @@ This validation uses the same 300 held-out test members scored by the doubly rob
 <!-- AUTO_TABLE:doubly_robust_true_benefit_validation START -->
 | model | n_test_members | mean_predicted_benefit | mean_true_benefit | bias | mae | rmse | pearson_corr | spearman_corr |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Doubly Robust Learner | 300 | 0.0433 | 0.0548 | -0.0115 | 0.0213 | 0.0279 | 0.3994 | 0.3641 |
+| Doubly Robust Learner | 300 | 0.0433 | 0.0548 | -0.0115 | 0.0213 | 0.0279 | 0.4006 | 0.3640 |
 <!-- AUTO_TABLE:doubly_robust_true_benefit_validation END -->
 
 The doubly robust learner underestimates the average true synthetic benefit by 0.011 benefit points — smaller bias than the causal forest (−0.014). Its MAE is 0.021 and RMSE is 0.028, both lower than the causal forest (0.025 and 0.032 respectively). The Pearson correlation of 0.399 and Spearman correlation of 0.364 are both stronger than the causal forest (0.327 and 0.268), indicating that the doubly robust learner recovers a larger portion of the synthetic member-level benefit pattern. The estimates should still be interpreted as noisy exploratory treatment-effect estimates, but the improved correlation suggests the pseudo-outcome construction provides a stronger signal for the final-stage forest.
@@ -347,14 +347,14 @@ Members are ranked by `benefit_score` and assigned to HTE deciles. Decile 1 is t
 <!-- AUTO_TABLE:doubly_robust_decile_summary START -->
 | hte_decile | n | avg_tau_hat | avg_benefit_score | observed_ed_rate | treatment_pct | avg_propensity_score | avg_current_risk_score |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1.0000 | 30.0000 | -0.0692 | 0.0692 | 0.2000 | 0.4000 | 0.5083 | 57.8400 |
+| 1.0000 | 30.0000 | -0.0693 | 0.0693 | 0.2000 | 0.4000 | 0.5083 | 57.8400 |
 | 2.0000 | 30.0000 | -0.0587 | 0.0587 | 0.1000 | 0.3333 | 0.4808 | 52.5200 |
 | 3.0000 | 30.0000 | -0.0529 | 0.0529 | 0.0000 | 0.4667 | 0.3911 | 43.6867 |
-| 4.0000 | 30.0000 | -0.0486 | 0.0486 | 0.0000 | 0.3333 | 0.3671 | 41.8167 |
-| 5.0000 | 30.0000 | -0.0432 | 0.0432 | 0.0667 | 0.2333 | 0.4156 | 42.9267 |
-| 6.0000 | 30.0000 | -0.0392 | 0.0392 | 0.1333 | 0.5000 | 0.3886 | 42.6767 |
-| 7.0000 | 30.0000 | -0.0367 | 0.0367 | 0.0000 | 0.3333 | 0.3443 | 40.2933 |
-| 8.0000 | 30.0000 | -0.0331 | 0.0331 | 0.0667 | 0.5000 | 0.3928 | 40.1700 |
+| 4.0000 | 30.0000 | -0.0486 | 0.0486 | 0.0000 | 0.3333 | 0.3774 | 41.8600 |
+| 5.0000 | 30.0000 | -0.0432 | 0.0432 | 0.0667 | 0.2333 | 0.4052 | 42.8833 |
+| 6.0000 | 30.0000 | -0.0391 | 0.0391 | 0.1333 | 0.4667 | 0.3834 | 42.5800 |
+| 7.0000 | 30.0000 | -0.0366 | 0.0366 | 0.0000 | 0.3667 | 0.3495 | 40.2900 |
+| 8.0000 | 30.0000 | -0.0331 | 0.0331 | 0.0667 | 0.5000 | 0.3928 | 40.2700 |
 | 9.0000 | 30.0000 | -0.0294 | 0.0294 | 0.0000 | 0.4000 | 0.3578 | 37.7233 |
 | 10.0000 | 30.0000 | -0.0223 | 0.0223 | 0.0333 | 0.4333 | 0.3791 | 38.3600 |
 <!-- AUTO_TABLE:doubly_robust_decile_summary END -->
@@ -395,9 +395,9 @@ The doubly robust learner is benchmarked against all three existing PRISM modeli
 <!-- AUTO_TABLE:doubly_robust_cross_method_consistency START -->
 | comparison | n_compared | pearson_corr | spearman_corr | top_10pct_overlap | top_20pct_overlap |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| DR Learner vs GLMNet T-learner | 300 | 0.0132 | 0.0608 | 0.2333 | 0.2667 |
-| DR Learner vs GLMNet X-learner | 300 | 0.5754 | 0.5612 | 0.6000 | 0.6833 |
-| DR Learner vs Causal Forest | 300 | 0.8941 | 0.8967 | 0.6333 | 0.7667 |
+| DR Learner vs GLMNet T-learner | 300 | 0.0108 | 0.0586 | 0.2333 | 0.2667 |
+| DR Learner vs GLMNet X-learner | 300 | 0.5762 | 0.5603 | 0.6000 | 0.6833 |
+| DR Learner vs Causal Forest | 300 | 0.8941 | 0.8968 | 0.6333 | 0.7667 |
 <!-- AUTO_TABLE:doubly_robust_cross_method_consistency END -->
 
 <!-- AUTO_CHART:doubly_robust_cross_method_agreement START -->
@@ -451,21 +451,21 @@ Because `ForestDRLearner` does not expose its internal `model_final_` in a way t
 <!-- AUTO_TABLE:doubly_robust_variable_importance START -->
 | rank | feature | importance |
 | ---: | ---: | ---: |
-| 1 | current_risk_score | 0.5107 |
-| 2 | percolator_clinical_score | 0.1862 |
-| 3 | age | 0.1327 |
-| 4 | total_cost_last_6m | 0.0614 |
-| 5 | percolator_utilization_score | 0.0302 |
-| 6 | percolator_sdoh_score | 0.0151 |
-| 7 | rx_count_last_6m | 0.0119 |
-| 8 | pcp_visits_last_6m | 0.0085 |
+| 1 | current_risk_score | 0.5134 |
+| 2 | percolator_clinical_score | 0.1851 |
+| 3 | age | 0.1325 |
+| 4 | total_cost_last_6m | 0.0597 |
+| 5 | percolator_utilization_score | 0.0307 |
+| 6 | percolator_sdoh_score | 0.0148 |
+| 7 | rx_count_last_6m | 0.0123 |
+| 8 | pcp_visits_last_6m | 0.0088 |
 | 9 | program_Complex_CM | 0.0072 |
-| 10 | med_adherence_pdc | 0.0072 |
-| 11 | county_County_E | 0.0066 |
-| 12 | ed_visits_last_6m | 0.0053 |
+| 10 | med_adherence_pdc | 0.0071 |
+| 11 | county_County_E | 0.0067 |
+| 12 | ed_visits_last_6m | 0.0052 |
 | 13 | depression_flag | 0.0018 |
-| 14 | risk_tier_High | 0.0018 |
-| 15 | program_CM | 0.0015 |
+| 14 | program_CM | 0.0014 |
+| 15 | client_contract_Contract_B | 0.0013 |
 <!-- AUTO_TABLE:doubly_robust_variable_importance END -->
 
 <!-- AUTO_CHART:doubly_robust_variable_importance START -->
@@ -487,21 +487,21 @@ The surrogate variable importance above measures how much each feature contribut
 <!-- AUTO_TABLE:doubly_robust_shap_importance START -->
 | Feature | Mean |SHAP| |
 | ---: | ---: |
-| percolator_clinical_score | 0.004045 |
-| age | 0.004034 |
-| current_risk_score | 0.002978 |
+| percolator_clinical_score | 0.004018 |
+| age | 0.004014 |
+| current_risk_score | 0.002835 |
 | percolator_utilization_score | 0.002153 |
-| med_adherence_pdc | 0.002050 |
-| percolator_sdoh_score | 0.001700 |
-| pcp_visits_last_6m | 0.001543 |
-| ed_visits_last_6m | 0.001472 |
-| county_County_E | 0.001458 |
-| rx_count_last_6m | 0.001273 |
-| total_cost_last_6m | 0.001138 |
-| program_Complex_CM | 0.001088 |
-| anxiety_flag | 0.000999 |
-| service_region_Central | 0.000970 |
-| program_CM | 0.000743 |
+| med_adherence_pdc | 0.002045 |
+| percolator_sdoh_score | 0.001690 |
+| pcp_visits_last_6m | 0.001570 |
+| ed_visits_last_6m | 0.001499 |
+| county_County_E | 0.001468 |
+| rx_count_last_6m | 0.001295 |
+| total_cost_last_6m | 0.001109 |
+| program_Complex_CM | 0.001081 |
+| anxiety_flag | 0.000997 |
+| service_region_Central | 0.000959 |
+| program_CM | 0.000759 |
 <!-- AUTO_TABLE:doubly_robust_shap_importance END -->
 
 **Signed SHAP direction table:**
@@ -509,21 +509,21 @@ The surrogate variable importance above measures how much each feature contribut
 <!-- AUTO_TABLE:doubly_robust_shap_signed START -->
 | Feature | Mean signed SHAP | Mean positive | Mean negative | % positive | % negative |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| percolator_clinical_score | 0.000172 | 0.002108 | -0.001936 | 26.3% | 73.7% |
-| age | -0.000106 | 0.001964 | -0.002070 | 34.0% | 66.0% |
-| current_risk_score | 0.000350 | 0.001664 | -0.001314 | 30.0% | 70.0% |
-| percolator_utilization_score | 0.000264 | 0.001209 | -0.000945 | 36.0% | 64.0% |
-| med_adherence_pdc | -0.000089 | 0.000981 | -0.001070 | 37.3% | 62.7% |
-| percolator_sdoh_score | -0.000105 | 0.000798 | -0.000903 | 36.0% | 64.0% |
-| pcp_visits_last_6m | -0.000071 | 0.000736 | -0.000807 | 43.3% | 56.7% |
-| ed_visits_last_6m | 0.000210 | 0.000841 | -0.000631 | 55.0% | 45.0% |
-| county_County_E | -0.000161 | 0.000648 | -0.000809 | 80.7% | 19.3% |
-| rx_count_last_6m | 0.000306 | 0.000790 | -0.000484 | 41.3% | 58.7% |
-| total_cost_last_6m | 0.000390 | 0.000764 | -0.000374 | 57.3% | 42.7% |
-| program_Complex_CM | 0.000163 | 0.000625 | -0.000463 | 21.3% | 78.7% |
-| anxiety_flag | 0.000078 | 0.000538 | -0.000460 | 75.7% | 24.3% |
-| service_region_Central | -0.000005 | 0.000483 | -0.000487 | 78.3% | 21.7% |
-| program_CM | -0.000016 | 0.000363 | -0.000380 | 40.0% | 60.0% |
+| percolator_clinical_score | 0.000209 | 0.002114 | -0.001904 | 25.0% | 75.0% |
+| age | -0.000122 | 0.001946 | -0.002068 | 33.3% | 66.7% |
+| current_risk_score | 0.000309 | 0.001572 | -0.001263 | 29.3% | 70.7% |
+| percolator_utilization_score | 0.000256 | 0.001204 | -0.000949 | 35.3% | 64.7% |
+| med_adherence_pdc | -0.000119 | 0.000963 | -0.001082 | 36.3% | 63.7% |
+| percolator_sdoh_score | -0.000118 | 0.000786 | -0.000904 | 35.0% | 65.0% |
+| pcp_visits_last_6m | -0.000084 | 0.000743 | -0.000827 | 42.0% | 58.0% |
+| ed_visits_last_6m | 0.000226 | 0.000863 | -0.000636 | 55.0% | 45.0% |
+| county_County_E | -0.000177 | 0.000645 | -0.000822 | 80.7% | 19.3% |
+| rx_count_last_6m | 0.000310 | 0.000802 | -0.000493 | 43.0% | 57.0% |
+| total_cost_last_6m | 0.000402 | 0.000756 | -0.000353 | 58.3% | 41.7% |
+| program_Complex_CM | 0.000164 | 0.000623 | -0.000459 | 21.3% | 78.7% |
+| anxiety_flag | 0.000090 | 0.000544 | -0.000454 | 75.7% | 24.3% |
+| service_region_Central | 0.000006 | 0.000483 | -0.000477 | 78.3% | 21.7% |
+| program_CM | -0.000015 | 0.000372 | -0.000387 | 41.3% | 58.7% |
 <!-- AUTO_TABLE:doubly_robust_shap_signed END -->
 
 <!-- AUTO_CHART:doubly_robust_global_benefit_shap START -->
@@ -546,12 +546,12 @@ The six true benefit drivers are: `ed_visits_last_6m`, `admits_last_6m`, `food_i
 <!-- AUTO_TABLE:doubly_robust_known_driver_alignment START -->
 | Known driver | Mean |SHAP| | Mean signed SHAP | % positive |
 | ---: | ---: | ---: | ---: |
-| current_risk_score | 0.002978 | 0.000350 | 30.0% |
-| ed_visits_last_6m | 0.001472 | 0.000210 | 55.0% |
-| behavioral_health_risk_flag | 0.000313 | 0.000003 | 53.7% |
-| admits_last_6m | 0.000248 | -0.000066 | 30.3% |
-| food_insecurity_flag | 0.000145 | 0.000019 | 63.3% |
-| transportation_barrier_flag | 0.000092 | -0.000004 | 43.0% |
+| current_risk_score | 0.002835 | 0.000309 | 29.3% |
+| ed_visits_last_6m | 0.001499 | 0.000226 | 55.0% |
+| behavioral_health_risk_flag | 0.000314 | 0.000007 | 54.3% |
+| admits_last_6m | 0.000240 | -0.000055 | 31.0% |
+| food_insecurity_flag | 0.000151 | 0.000019 | 66.3% |
+| transportation_barrier_flag | 0.000099 | -0.000006 | 40.7% |
 <!-- AUTO_TABLE:doubly_robust_known_driver_alignment END -->
 
 Surrogate variable importance identifies `current_risk_score` as a top-10 driver, while SHAP additionally identifies `ed_visits_last_6m`. The remaining true drivers (`admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`) do not appear in the top 10 for either method. The SHAP method recovers one additional true driver compared with the causal forest SHAP (which recovered only `current_risk_score`), suggesting the doubly robust pseudo-outcome construction may slightly improve the signal for utilization-based drivers.
@@ -586,16 +586,16 @@ The current cost assumptions are $1,200 per ED visit and $250 per intervention. 
 <!-- AUTO_TABLE:doubly_robust_targeting_comparison START -->
 | targeted_group | members_targeted | dr_gross_savings | risk_gross_savings | advantage | dr_ed_visits_avoided | risk_ed_visits_avoided |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Top 10% | 30 | 2491.0897 | 2259.8170 | 231.2726 | 2.0759 | 1.8832 |
-| Top 20% | 60 | 4602.6112 | 4321.6321 | 280.9791 | 3.8355 | 3.6014 |
-| Top 30% | 90 | 6507.3019 | 5977.9595 | 529.3424 | 5.4228 | 4.9816 |
-| Top 40% | 120 | 8258.5406 | 7410.8434 | 847.6972 | 6.8821 | 6.1757 |
-| Top 50% | 150 | 9815.3356 | 8754.9945 | 1060.3411 | 8.1794 | 7.2958 |
-| Top 60% | 180 | 11225.0108 | 10084.3749 | 1140.6360 | 9.3542 | 8.4036 |
-| Top 70% | 210 | 12545.1284 | 11513.8411 | 1031.2873 | 10.4543 | 9.5949 |
-| Top 80% | 240 | 13738.5077 | 12875.2870 | 863.2207 | 11.4488 | 10.7294 |
-| Top 90% | 270 | 14797.5997 | 14227.2040 | 570.3957 | 12.3313 | 11.8560 |
-| Top 100% | 300 | 15599.7711 | 15599.7711 | 0.0000 | 12.9998 | 12.9998 |
+| Top 10% | 30 | 2493.7773 | 2263.6326 | 230.1446 | 2.0781 | 1.8864 |
+| Top 20% | 60 | 4607.0788 | 4323.6532 | 283.4256 | 3.8392 | 3.6030 |
+| Top 30% | 90 | 6510.1700 | 5978.1217 | 532.0483 | 5.4251 | 4.9818 |
+| Top 40% | 120 | 8259.6028 | 7408.8753 | 850.7275 | 6.8830 | 6.1741 |
+| Top 50% | 150 | 9814.7957 | 8752.7968 | 1061.9989 | 8.1790 | 7.2940 |
+| Top 60% | 180 | 11222.2606 | 10092.0142 | 1130.2464 | 9.3519 | 8.4100 |
+| Top 70% | 210 | 12540.9213 | 11508.5172 | 1032.4041 | 10.4508 | 9.5904 |
+| Top 80% | 240 | 13733.1746 | 12869.0469 | 864.1277 | 11.4443 | 10.7242 |
+| Top 90% | 270 | 14793.2228 | 14222.5897 | 570.6331 | 12.3277 | 11.8522 |
+| Top 100% | 300 | 15596.2499 | 15596.2499 | 0.0000 | 12.9969 | 12.9969 |
 <!-- AUTO_TABLE:doubly_robust_targeting_comparison END -->
 
 This view compares two targeting policies on the same held-out test population: ranking members by doubly robust predicted benefit versus ranking members by current risk score. Through the top 30% of targeted members, doubly robust benefit targeting captures $6,507 in estimated gross savings, compared with $5,978 from current-risk targeting, an advantage of $529. Gross savings are estimated from the doubly robust predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
