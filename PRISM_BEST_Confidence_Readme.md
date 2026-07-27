@@ -219,7 +219,6 @@ automatically rather than assuming one.
 <!-- AUTO_TABLE:clinical_confidence_bic_by_k START -->
 | Candidate archetype count (k) | BIC |
 | ---: | ---: |
-| 1 | 2,909.9 |
 | 2 | 2,943.2 |
 | 3 | 2,979.3 |
 | 4 | 3,017.9 |
@@ -244,7 +243,7 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 | Gaussian Mixture | 2 | 54/86 | 0 |
 | K-Means | 2 | 84/56 | 0 |
 | Agglomerative | 2 | 44/96 | 0 |
-| HDBSCAN (non-noise, n=40) | 2 | 8/32 (+100 noise) | 100 |
+| HDBSCAN (non-noise, n=35) | 2 | 7/28 (+105 noise) | 105 |
 <!-- AUTO_TABLE:clinical_confidence_clustering_method_comparison END -->
 
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison START -->
@@ -253,7 +252,7 @@ GMM, K-Means, Agglomerative, and HDBSCAN were all fit in the same 8-component PC
 | Gaussian Mixture | 0.121 |
 | K-Means | 0.183 |
 | Agglomerative | 0.194 |
-| HDBSCAN (non-noise, n=40) | 0.352 |
+| HDBSCAN (non-noise, n=35) | 0.379 |
 <!-- AUTO_TABLE:clinical_confidence_internal_validation_comparison END -->
 
 **GMM's silhouette (0.121) improved substantially** after dropping binary flags (was 0.011).
@@ -481,7 +480,7 @@ onto a distribution that only supports two, the tiering method reports what's ac
 <!-- AUTO_TABLE:clinical_confidence_tier_summary START -->
 | Confidence tier | N | % of test population | Avg confidence | Avg benefit score | Avg posterior | Avg typicality | N outliers | N HDBSCAN noise |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| High | 46 | 76.7% | 0.648 | 0.0652 | 0.838 | 0.532 | 0 | 32 |
+| High | 46 | 76.7% | 0.648 | 0.0652 | 0.838 | 0.532 | 0 | 35 |
 | Low | 14 | 23.3% | 0.103 | 0.0598 | 0.845 | 0.041 | 8 | 14 |
 <!-- AUTO_TABLE:clinical_confidence_tier_summary END -->
 
@@ -560,8 +559,8 @@ different, density-based method with no Gaussian-shape assumption.
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab START -->
 |  | Confidence tier: Low | Confidence tier: High | All |
 | --- | --- | --- | --- |
-| HDBSCAN noise | 14 | 32 | 46 |
-| HDBSCAN in-cluster | 0 | 14 | 14 |
+| HDBSCAN noise | 14 | 35 | 49 |
+| HDBSCAN in-cluster | 0 | 11 | 11 |
 | All | 14 | 46 | 60 |
 <!-- AUTO_TABLE:clinical_confidence_hdbscan_tier_crosstab END -->
 

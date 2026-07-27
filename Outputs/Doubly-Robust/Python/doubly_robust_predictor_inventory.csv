@@ -1,14 +1,14 @@
 feature,category,included_in_model,reason_if_excluded,source_dtype,unique_values
-client_contract,demographics,True,,str,3
-service_region,demographics,True,,str,5
-program,demographics,True,,str,3
-case_manager_name,demographics,True,,str,15
+client_contract,demographics,True,,object,3
+service_region,demographics,True,,object,5
+program,demographics,True,,object,3
+case_manager_name,demographics,True,,object,15
 age,demographics,True,,int64,72
-gender,demographics,True,,str,2
+gender,demographics,True,,object,2
 dual_eligible,demographics,True,,int64,2
-county,demographics,True,,str,6
-plan_type,demographics,True,,str,4
-language,demographics,True,,str,3
+county,demographics,True,,object,6
+plan_type,demographics,True,,object,4
+language,demographics,True,,object,3
 living_alone_flag,demographics,True,,int64,2
 diabetes_flag,clinical_conditions,True,,int64,2
 chf_flag,clinical_conditions,True,,int64,2
@@ -18,6 +18,7 @@ depression_flag,clinical_conditions,True,,int64,2
 anxiety_flag,clinical_conditions,True,,int64,2
 substance_use_flag,clinical_conditions,True,,int64,2
 ckd_flag,clinical_conditions,True,,int64,2
+pregnancy_flag,clinical_conditions,True,,int64,1
 behavioral_health_risk_flag,clinical_conditions,True,,int64,2
 food_insecurity_flag,sdoh,True,,int64,2
 housing_instability_flag,sdoh,True,,int64,2
@@ -39,4 +40,18 @@ percolator_utilization_score,risk_scores,True,,float64,418
 percolator_clinical_score,risk_scores,True,,float64,442
 percolator_sdoh_score,risk_scores,True,,float64,445
 current_risk_score,risk_scores,True,,float64,352
-risk_tier,risk_scores,True,,str,4
+risk_tier,risk_scores,True,,object,4
+intervention_type,intervention_process,False,Column not present in source data,missing,0
+intervention_days_active,intervention_process,False,Column not present in source data,missing,0
+touches_per_month,intervention_process,False,Column not present in source data,missing,0
+outreach_attempts,intervention_process,False,Column not present in source data,missing,0
+successful_contacts,intervention_process,False,Column not present in source data,missing,0
+avg_call_duration_min,intervention_process,False,Column not present in source data,missing,0
+max_call_duration_min,intervention_process,False,Column not present in source data,missing,0
+notes_escalation_flag,intervention_process,False,Column not present in source data,missing,0
+community_referral_flag,intervention_process,False,Column not present in source data,missing,0
+pharmacy_review_flag,intervention_process,False,Column not present in source data,missing,0
+engagement_level,intervention_process,False,Column not present in source data,missing,0
+days_to_intervention_start,date_features,True,,float64,0
+intervention_start_month,date_features,True,,float64,0
+intervention_start_wday,date_features,True,,float64,0
