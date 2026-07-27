@@ -497,7 +497,7 @@ The standard variable importance above measures how much each feature contribute
 **Top 10 benefit drivers by magnitude (mean absolute contribution):**
 
 <!-- AUTO_TABLE:causal_forest_shap_importance START -->
-| Feature | Mean |SHAP| |
+| Feature | Mean Abs SHAP |
 | ---: | ---: |
 | percolator_clinical_score | 0.008134 |
 | current_risk_score | 0.006503 |

@@ -580,7 +580,7 @@ def _shap_importance_table(csv_path: Path, top_n: int = 15) -> str:
             r["feature"],
             fnum(r["mean_abs_benefit_shap"], 6),
         ])
-    return markdown_table(["Feature", "Mean |SHAP|"], rows)
+    return markdown_table(["Feature", "Mean Abs SHAP"], rows)
 
 
 def _shap_signed_table(csv_path: Path, top_n: int = 15) -> str:

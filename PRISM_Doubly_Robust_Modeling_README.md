@@ -485,7 +485,7 @@ The surrogate variable importance above measures how much each feature contribut
 **Top 10 benefit drivers by magnitude (mean absolute contribution):**
 
 <!-- AUTO_TABLE:doubly_robust_shap_importance START -->
-| Feature | Mean |SHAP| |
+| Feature | Mean Abs SHAP |
 | ---: | ---: |
 | age | 0.004071 |
 | percolator_clinical_score | 0.004014 |
