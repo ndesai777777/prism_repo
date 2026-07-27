@@ -556,7 +556,7 @@ Because the synthetic true-benefit formula is known, the model's explainability 
 The six true benefit drivers are: `ed_visits_last_6m`, `admits_last_6m`, `food_insecurity_flag`, `transportation_barrier_flag`, `behavioral_health_risk_flag`, and `current_risk_score`.
 
 <!-- AUTO_TABLE:causal_forest_known_driver_alignment START -->
-| Known driver | Mean |SHAP| | Mean signed SHAP | % positive |
+| Known driver | Mean Abs SHAP | Mean signed SHAP | % positive |
 | ---: | ---: | ---: | ---: |
 | current_risk_score | 0.006503 | 0.000852 | 24.7% |
 | ed_visits_last_6m | 0.000810 | 0.000138 | 55.0% |

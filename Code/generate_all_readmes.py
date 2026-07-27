@@ -624,7 +624,7 @@ def _shap_known_drivers_table(csv_path: Path) -> str:
             pct(r["pct_positive_benefit_shap"]),
         ])
     return markdown_table(
-        ["Known driver", "Mean |SHAP|", "Mean signed SHAP", "% positive"],
+        ["Known driver", "Mean Abs SHAP", "Mean signed SHAP", "% positive"],
         rows,
     )
 
