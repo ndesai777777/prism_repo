@@ -1,4 +1,4 @@
 member_profile,member_id,benefit_score,true_benefit,current_risk_score,hte_decile
 Highest benefit,620,0.07978848260497848,0.0803,60.5,1
 Lowest benefit,746,0.01074548861625624,0.034,39.2,10
-"Low risk, high benefit",699,0.06406139080493026,0.05,42.2,1
+"Low risk, high benefit",699,0.06404734703804989,0.05,42.2,1

@@ -2,8 +2,8 @@ risk_tier,benefit_group,n
 High,High benefit,37
 High,Medium benefit,5
 Low,High benefit,2
-Low,Medium benefit,26
-Low,Low benefit,23
+Low,Medium benefit,27
+Low,Low benefit,22
 Medium,High benefit,21
-Medium,Medium benefit,119
-Medium,Low benefit,67
+Medium,Medium benefit,118
+Medium,Low benefit,68
