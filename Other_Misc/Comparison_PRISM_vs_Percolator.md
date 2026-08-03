@@ -73,45 +73,25 @@ Baseline information used for adjustment will include:
 > **Note:** This analysis does **not** compare identical time windows before and after treatment. The baseline utilization variables are used to adjust for differences in patient severity prior to intervention, while the primary outcome remains the observed 90-day ED outcome after intervention.
 
 ---
-# Statistical Analysis
-
-A simple comparison of the average 90-day ED outcome between the two groups would likely be biased because the PRISM-selected and Percolator-selected cohorts may differ in important baseline characteristics.
-
-To account for these differences, the primary analysis will use a multivariable regression model.
-
 ## Conceptual Model
 
-The conceptual regression model is:
+The analysis will estimate the 90-day ED outcome as a function of:
 
 ```text
-ED Outcome (90 Days) =
-    β0
-  + β1(PRISM Cohort)
-  + β2(Baseline 30-Day Utilization)
-  + β3(Other Baseline Utilization)
-  + β4(Baseline Risk Score)
-  + β5(Age)
-  + ...
-  + Error
+90-Day ED Outcome =
+    Intercept
+  + PRISM Cohort Indicator
+  + Baseline 30-Day Utilization
+  + Other Baseline Utilization Measures
+  + Baseline Risk Score
+  + Age
+  + Other Clinical Characteristics
+  + Random Error
 ```
 
-where:
+The primary quantity of interest is the coefficient associated with the **PRISM Cohort Indicator**.
 
-| Variable | Description |
-|----------|-------------|
-| **ED Outcome (90 Days)** | Observed 90-day ED outcome after intervention |
-| **PRISM Cohort** | Indicator that the patient belongs to the PRISM-selected cohort rather than the Percolator cohort |
-| **Baseline 30-Day Utilization** | Utilization during the 30 days prior to intervention |
-| **Other Baseline Utilization** | Additional utilization variables measured before intervention |
-| **Baseline Risk Score** | Patient risk score prior to intervention |
-| **Age** | Patient age |
-| **Error** | Unexplained variation in the outcome |
-
-The primary parameter of interest is the coefficient associated with the **PRISM Cohort** indicator.
-
-If this coefficient is statistically significant and indicates a lower adjusted 90-day ED outcome for the PRISM cohort, it would suggest that PRISM identifies patients who historically experienced better outcomes following care management, after accounting for differences in baseline patient characteristics.
----
-
+If this coefficient is statistically significant and indicates a lower adjusted 90-day ED outcome, it would suggest that PRISM identifies patients who historically experienced better outcomes following care management than those prioritized by Percolator.
 # Planned Outputs
 
 ## 1. Cohort Summary
