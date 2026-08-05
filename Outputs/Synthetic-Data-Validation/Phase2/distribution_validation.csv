@@ -1,0 +1,71 @@
+variable,metric,original,revised,absolute_difference
+age,mean,50.9167,50.9167,0.0
+age,std,17.8789688422651,17.8789688422651,0.0
+age,median,52.0,52.0,0.0
+age,p05,22.0,22.0,0.0
+age,p95,79.04999999999927,79.04999999999927,0.0
+Clinical Score,mean,2.0565,2.0565,0.0
+Clinical Score,std,4.2431955199851545,4.2431955199851545,0.0
+Clinical Score,median,0.0,0.0,0.0
+Clinical Score,p05,0.0,0.0,0.0
+Clinical Score,p95,13.0,13.0,0.0
+SDOH Score,mean,0.728,0.728,0.0
+SDOH Score,std,1.5434552877950636,1.0896489037636607,0.45380638403140283
+SDOH Score,median,0.0,0.0,0.0
+SDOH Score,p05,0.0,0.0,0.0
+SDOH Score,p95,4.0,3.0,1.0
+utilization_score,mean,4.0213,4.0213,0.0
+utilization_score,std,3.3650228302144978,3.3650228302144978,0.0
+utilization_score,median,3.0,3.0,0.0
+utilization_score,p05,1.0,1.0,0.0
+utilization_score,p95,11.0,11.0,0.0
+currentRiskScore,mean,34.0119,34.0119,0.0
+currentRiskScore,std,25.920677972318828,25.920677972318824,3.552713678800501e-15
+currentRiskScore,median,25.0,25.0,0.0
+currentRiskScore,p05,5.0,5.0,0.0
+currentRiskScore,p95,90.0,90.0,0.0
+pcp_visits_last_6m,mean,3.568,3.568,0.0
+pcp_visits_last_6m,std,2.648938973960853,2.648938973960853,0.0
+pcp_visits_last_6m,median,3.0,3.0,0.0
+pcp_visits_last_6m,p05,1.0,1.0,0.0
+pcp_visits_last_6m,p95,9.0,9.0,0.0
+specialist_visits_last_6m,mean,2.7221,2.7221,0.0
+specialist_visits_last_6m,std,2.748277077132011,2.748277077132011,0.0
+specialist_visits_last_6m,median,2.0,2.0,0.0
+specialist_visits_last_6m,p05,0.0,0.0,0.0
+specialist_visits_last_6m,p95,9.0,9.0,0.0
+ed_visits_last_30d,mean,0.1626,0.1626,0.0
+ed_visits_last_30d,std,0.7647350665244775,0.7647350665244775,0.0
+ed_visits_last_30d,median,0.0,0.0,0.0
+ed_visits_last_30d,p05,0.0,0.0,0.0
+ed_visits_last_30d,p95,1.0,1.0,0.0
+ed_visits_last_6m,mean,0.565,0.565,0.0
+ed_visits_last_6m,std,1.1143155611930544,1.1143155611930544,0.0
+ed_visits_last_6m,median,0.0,0.0,0.0
+ed_visits_last_6m,p05,0.0,0.0,0.0
+ed_visits_last_6m,p95,3.0,3.0,0.0
+admits_last_6m,mean,0.2503,0.2503,0.0
+admits_last_6m,std,0.7675342473675609,0.7675342473675609,0.0
+admits_last_6m,median,0.0,0.0,0.0
+admits_last_6m,p05,0.0,0.0,0.0
+admits_last_6m,p95,1.0499999999992724,1.0499999999992724,0.0
+observation_stays_last_6m,mean,0.2095,0.2095,0.0
+observation_stays_last_6m,std,0.7630648575302624,0.7630648575302624,0.0
+observation_stays_last_6m,median,0.0,0.0,0.0
+observation_stays_last_6m,p05,0.0,0.0,0.0
+observation_stays_last_6m,p95,1.0499999999992724,1.0499999999992724,0.0
+total_cost_last_6m,mean,15011.207219999998,15011.207219999998,0.0
+total_cost_last_6m,std,15891.805919664737,15891.805919664737,0.0
+total_cost_last_6m,median,13104.025,13104.025,0.0
+total_cost_last_6m,p05,0.0,0.0,0.0
+total_cost_last_6m,p95,45699.969999999994,45699.969999999994,0.0
+rx_count_last_6m,mean,10.7742,10.7742,0.0
+rx_count_last_6m,std,10.062650746895939,10.062650746895939,0.0
+rx_count_last_6m,median,8.0,8.0,0.0
+rx_count_last_6m,p05,0.0,0.0,0.0
+rx_count_last_6m,p95,35.04999999999927,35.04999999999927,0.0
+med_adherence_pdc,mean,0.786892,0.786892,0.0
+med_adherence_pdc,std,0.16205099934477066,0.16205099934477066,0.0
+med_adherence_pdc,median,0.83,0.83,0.0
+med_adherence_pdc,p05,0.5,0.5,0.0
+med_adherence_pdc,p95,0.98,0.98,0.0

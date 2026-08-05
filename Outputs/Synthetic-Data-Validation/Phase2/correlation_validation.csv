@@ -1,0 +1,11 @@
+feature_1,feature_2,original_correlation,revised_correlation
+food_insecurity_flag,housing_instability_flag,1.0,0.3504661597571126
+food_insecurity_flag,transportation_barrier_flag,1.0,0.3377038609312441
+food_insecurity_flag,utilities_insecurity_flag,1.0,0.3356887611166333
+depression_flag,anxiety_flag,1.0,0.43718613194846684
+depression_flag,behavioral_health_risk_flag,1.0,0.47691416969328115
+depression_flag,substance_use_flag,0.9382032630394963,0.3923540605179865
+diabetes_flag,ckd_flag,1.0,0.4047058823529401
+chf_flag,high_cost_drug_flag,0.9999999999999998,0.08333333333333341
+polypharmacy_flag,rx_count_last_6m,-0.4912072646525106,0.5086289927902493
+program,polypharmacy_flag,0.9999999999999999,-0.22687500000000047

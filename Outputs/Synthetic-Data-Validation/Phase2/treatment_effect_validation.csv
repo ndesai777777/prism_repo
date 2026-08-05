@@ -1,0 +1,12 @@
+metric,value
+legacy_effect_mean,0.21772199999999997
+revised_effect_mean,0.020673552685605206
+revised_effect_std,0.04661704712624776
+revised_effect_min,0.0009620941576229522
+revised_effect_max,0.2877698324505923
+legacy_revised_spearman,0.8346168024545894
+revised_ATT,0.031354510511592396
+revised_ATC,0.013890550691469456
+max_mu_identity_error,0.0
+mu0_mean,0.09217809188270247
+mu1_mean,0.07150453919709726

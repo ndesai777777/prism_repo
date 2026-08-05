@@ -1,0 +1,23 @@
+{
+  "baseline_path": "C:\\Users\\i.Nikesh.Desai\\OneDrive - Acentra\\Documents\\GitHub\\prism_repo\\prism_repo\\DataSets\\Genrocket_10k_seed1_updated.csv",
+  "revised_path": "C:\\Users\\i.Nikesh.Desai\\OneDrive - Acentra\\Documents\\GitHub\\prism_repo\\prism_repo\\DataSets\\Genrocket_10k_seed1_causal_revised.csv",
+  "validation_output_dir": "C:\\Users\\i.Nikesh.Desai\\OneDrive - Acentra\\Documents\\GitHub\\prism_repo\\prism_repo\\Outputs\\Synthetic-Data-Validation\\Phase2",
+  "rows": 10000,
+  "columns": 72,
+  "rng_seed": 20260805,
+  "outcome_draw_seed": 20360810,
+  "treatment_prevalence": 0.3884,
+  "outcome_prevalence": 0.08,
+  "mean_propensity": 0.3884,
+  "propensity_min": 0.1812491675332369,
+  "propensity_max": 0.8345390287764671,
+  "ed30_zero_event_rate": 0.02826086956521739,
+  "ed30_positive_event_rate": 0.675,
+  "ed30_auc": 0.8242116847826088,
+  "ate": 0.020673552685605206,
+  "att": 0.031354510511592396,
+  "atc": 0.013890550691469456,
+  "legacy_effect_spearman": 0.8346168024545894,
+  "max_mu_identity_error": 0.0,
+  "outcome_intercept": -3.847888502054383
+}

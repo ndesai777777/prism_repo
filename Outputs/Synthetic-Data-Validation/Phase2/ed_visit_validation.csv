@@ -1,0 +1,3 @@
+dataset,overall_event_rate,event_rate_ed30_zero,event_rate_ed30_positive,events_ed30_zero,non_events_ed30_positive,ed30_auc,ed30_outcome_correlation
+original,0.08,0.0,1.0,0,0,1.0,0.7210745577203758
+revised,0.08,0.02826086956521739,0.675,260,260,0.8242116847826088,0.49837785892176784
