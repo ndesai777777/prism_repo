@@ -49,6 +49,13 @@ cell2 = "".join(notebook["cells"][2]["source"])
 cell2 = cell2.replace("    'openpyxl': 'openpyxl',\n", "")
 set_cell(notebook, 2, cell2)
 
+cell4 = "".join(notebook["cells"][4]["source"])
+cell4 = cell4.replace(
+    "from sklearn.linear_model import ElasticNetCV, LogisticRegressionCV\n",
+    "from sklearn.linear_model import ElasticNetCV, LogisticRegression, LogisticRegressionCV\n",
+)
+set_cell(notebook, 4, cell4)
+
 cell8 = "".join(notebook["cells"][8]["source"])
 old_fit_elastic_net = '''def fit_elastic_net(x_matrix, y, alpha_grid=np.round(np.arange(0, 1.01, 0.1), 1), nfolds=5, seed=123, prefit_scaler=None):
     y_array = np.asarray(y, dtype=float)
@@ -111,77 +118,72 @@ old_fit_elastic_net = '''def fit_elastic_net(x_matrix, y, alpha_grid=np.round(np
         'search_results': pd.DataFrame(results).sort_values('cv_auc', ascending=False).reset_index(drop=True),
     }
 '''
-new_fit_elastic_net = '''def fit_elastic_net(x_matrix, y, alpha_grid=np.round(np.arange(0, 1.01, 0.1), 1), nfolds=5, seed=123, prefit_scaler=None):
+new_fit_elastic_net = '''def fit_elastic_net(x_matrix, y, alpha=0.5, lambda_value=1.0, seed=123, prefit_scaler=None):
     y_array = np.asarray(y, dtype=float)
-    class_counts = pd.Series(y_array).value_counts()
-    folds = int(min(nfolds, class_counts.min())) if len(class_counts) > 1 else 0
-    if folds < 2:
-        raise ValueError('Need at least two outcome classes with at least two rows each for elastic-net CV.')
+    if pd.Series(y_array).nunique() < 2:
+        raise ValueError('Need both outcome classes to fit the fixed elastic-net model.')
 
     if not RUN_CPU_ONLY_COMPARISON_MODELS:
         raise RuntimeError(
-            'fit_elastic_net uses sklearn LogisticRegressionCV, which trains on CPU. '
+            'fit_elastic_net uses sklearn LogisticRegression, which trains on CPU. '
             'Set RUN_CPU_ONLY_COMPARISON_MODELS = True to run this CPU comparison model.'
         )
 
-    # Fit every alpha (l1_ratio) in one call so sklearn can reuse coefficient paths
-    # and distribute the cross-validation work across all available CPU cores.
-    alpha_values = np.asarray(alpha_grid, dtype=float)
-    c_values = np.logspace(-4, 4, 30)
-    cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
-    cv_model = LogisticRegressionCV(
-        Cs=c_values,
-        cv=cv,
+    # Fixed standard elastic-net specification: no CV and no hyperparameter search.
+    # sklearn uses C = 1 / lambda, so lambda=1 corresponds to its default C=1.
+    model = LogisticRegression(
+        C=float(1 / lambda_value),
         penalty='elasticnet',
         solver='saga',
-        l1_ratios=alpha_values.tolist(),
-        scoring='roc_auc',
-        max_iter=10000,
+        l1_ratio=float(alpha),
+        max_iter=2000,
+        tol=1e-3,
         random_state=seed,
-        refit=True,
-        n_jobs=-1,
     )
 
     if prefit_scaler is None:
-        pipeline = make_pipeline(StandardScaler(), cv_model)
-        pipeline.fit(x_matrix, y_array)
-        fitted = pipeline.named_steps['logisticregressioncv']
+        scaler = StandardScaler().fit(x_matrix)
     else:
-        x_scaled = prefit_scaler.transform(x_matrix)
-        cv_model.fit(x_scaled, y_array)
-        fitted = cv_model
-        pipeline = PrefitScaledLogisticPipeline(prefit_scaler, fitted)
-
-    # For binary classification, scores have shape (fold, C, l1_ratio).
-    positive_class = next(key for key in fitted.scores_ if float(key) == 1.0)
-    scores = np.asarray(fitted.scores_[positive_class], dtype=float)
-    if scores.ndim == 2:
-        scores = scores[:, :, np.newaxis]
-    mean_scores = np.nanmean(scores, axis=0)
-    results = []
-    for alpha_index, alpha in enumerate(alpha_values):
-        best_c_index = int(np.nanargmax(mean_scores[:, alpha_index]))
-        results.append({
-            'alpha': float(alpha),
-            'lambda': float(1 / c_values[best_c_index]),
-            'cv_auc': float(mean_scores[best_c_index, alpha_index]),
-        })
-
-    best_alpha = float(np.asarray(fitted.l1_ratio_).ravel()[0])
-    best_lambda = float(1 / np.asarray(fitted.C_).ravel()[0])
-    best_auc = float(max(row['cv_auc'] for row in results))
+        scaler = prefit_scaler
+    model.fit(scaler.transform(x_matrix), y_array)
+    pipeline = PrefitScaledLogisticPipeline(scaler, model)
+    fixed_specification = pd.DataFrame([{
+        'alpha': float(alpha),
+        'lambda': float(lambda_value),
+        'cv_auc': np.nan,
+        'selection_method': 'fixed_no_tuning',
+    }])
     return {
         'best_model': pipeline,
-        'best_alpha': best_alpha,
-        'best_lambda': best_lambda,
-        'best_auc': best_auc,
-        'search_results': pd.DataFrame(results).sort_values('cv_auc', ascending=False).reset_index(drop=True),
+        'best_alpha': float(alpha),
+        'best_lambda': float(lambda_value),
+        'best_auc': np.nan,
+        'search_results': fixed_specification,
     }
 '''
 if old_fit_elastic_net not in cell8:
     raise RuntimeError("Could not locate the source GLMNet tuning function.")
 cell8 = cell8.replace(old_fit_elastic_net, new_fit_elastic_net)
 set_cell(notebook, 8, cell8)
+
+cell45 = "".join(notebook["cells"][45]["source"])
+cell45 = cell45.replace(
+    "Training GLMNET comparison models on CPU with sklearn LogisticRegressionCV.",
+    "Training fixed GLMNET comparison models on CPU without hyperparameter tuning.",
+)
+cell45 = cell45.replace("Best treated alpha:", "Fixed treated alpha:")
+cell45 = cell45.replace("Best treated lambda:", "Fixed treated lambda:")
+cell45 = cell45.replace(
+    "    print('Best treated CV AUC:', round(enet_treated['best_auc'], 4))\n",
+    "    print('Treated CV AUC: not calculated (hyperparameter tuning disabled)')\n",
+)
+cell45 = cell45.replace("Best control alpha:", "Fixed control alpha:")
+cell45 = cell45.replace("Best control lambda:", "Fixed control lambda:")
+cell45 = cell45.replace(
+    "    print('Best control CV AUC:', round(enet_control['best_auc'], 4))\n",
+    "    print('Control CV AUC: not calculated (hyperparameter tuning disabled)')\n",
+)
+set_cell(notebook, 45, cell45)
 
 set_cell(
     notebook,
