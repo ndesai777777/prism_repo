@@ -94,6 +94,8 @@ Use an explicit baseline predictor allowlist or an equally strict leakage-safe s
 - baseline risk scores and risk tier
 - the derived binary death flag
 
+For Funds Combined, preserve valid `risk_tier` assignments exactly as the ordered values 1 through 5, where 1 is lowest risk and 5 is highest risk. Do not derive, relabel, or collapse these tiers from `current_risk_score`. Treat missing values and values outside 1-5 as unassigned rather than fabricating a tier.
+
 Do not model `member_id`. Handle categorical variables, binary flags, missing numeric values, missing categorical values, and zero-variance predictors consistently with the source notebook.
 
 Produce a preprocessing audit that reports:
@@ -134,7 +136,7 @@ Keep the same methods and settings as the source notebook unless a change is str
 - maximum 500 boosting rounds
 - early stopping after 20 rounds
 - selection by validation AUC
-- GLMNet-style elastic-net logistic comparison using the same alpha grid, lambda/C search, scaling, folds, seed, and evaluation rules
+- GLMNet-style elastic-net comparisons using fixed standard parameters (`l1_ratio = 0.5`, `lambda = 1.0`) with no GLMNet hyperparameter cross-validation, while retaining scaling, seed, held-out evaluation, Brier scores, and calibration
 - T-learner scoring definitions and benefit-score direction
 - X-learner methods and propensity modeling
 - all factual model diagnostics

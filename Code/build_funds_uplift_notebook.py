@@ -366,10 +366,13 @@ set_cell(
     death_text = df['date_of_death'].astype('string').str.strip()
     df['death_within_90d_flag'] = (death_text.notna() & death_text.ne('')).astype(float)
 
-    risk_numeric = pd.to_numeric(df.get('risk_tier'), errors='coerce')
-    if risk_numeric.notna().any():
-        risk_map = {0: 'Low', 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Very High', 5: 'Very High'}
-        df['risk_tier'] = risk_numeric.map(risk_map).fillna('Missing')
+    risk_numeric = pd.to_numeric(df['risk_tier'], errors='coerce')
+    missing_risk_tier_rows = int(risk_numeric.isna().sum())
+    invalid_risk_tier_rows = int((risk_numeric.notna() & ~risk_numeric.isin([1, 2, 3, 4, 5])).sum())
+    valid_risk_tier = risk_numeric.where(risk_numeric.isin([1, 2, 3, 4, 5]))
+    # Preserve the original Funds tier assignments. Values outside 1-5 are unassigned,
+    # not recoded from current_risk_score or collapsed into PRP risk labels.
+    df['risk_tier'] = valid_risk_tier.astype('Int64').astype('string').fillna('Missing')
 
     print('Treatment derivation cross-tab:')
     display(pd.crosstab(
@@ -382,6 +385,10 @@ set_cell(
     print('Missing outcomes filled with zero:', missing_outcome_before_fill)
     print('Members with one or more ED visits after binarization:', positive_counts_binarized)
     print('Duplicate member_id observations retained:', duplicate_member_count)
+    print('Original Funds risk-tier distribution (1 = lowest, 5 = highest):')
+    display(df['risk_tier'].value_counts(dropna=False).reindex(['1', '2', '3', '4', '5', 'Missing'], fill_value=0))
+    print('Missing source risk tiers:', missing_risk_tier_rows)
+    print('Out-of-range source risk tiers treated as unassigned:', invalid_risk_tier_rows)
     print('Death flag distribution:')
     display(df['death_within_90d_flag'].value_counts(dropna=False).sort_index())
     """,
@@ -597,6 +604,8 @@ set_cell(
         'outcome_positive_rows': int((model_df['outcome_ed_90d'] == 1).sum()),
         'outcome_zero_rows': int((model_df['outcome_ed_90d'] == 0).sum()),
         'death_flag_rows_retained': int(model_df['death_within_90d_flag'].sum()),
+        'missing_source_risk_tier_rows': missing_risk_tier_rows,
+        'out_of_range_source_risk_tier_rows': invalid_risk_tier_rows,
         'train_rows': len(train_df),
         'test_rows': len(test_df),
         'retained_predictor_count': len(feature_cols),
@@ -658,6 +667,129 @@ set_cell(
     display(synthetic_true_benefit_validation_status)
     """,
 )
+
+cell89 = "".join(notebook["cells"][89]["source"])
+cell89 = cell89.replace(
+    "risk_tier_order = ['Low', 'Medium', 'High', 'Very High']\n",
+    "risk_tier_order = ['1', '2', '3', '4', '5']\n"
+    "risk_tier_display = {\n"
+    "    '1': 'Tier 1 (lowest risk)',\n"
+    "    '2': 'Tier 2',\n"
+    "    '3': 'Tier 3',\n"
+    "    '4': 'Tier 4',\n"
+    "    '5': 'Tier 5 (highest risk)',\n"
+    "}\n",
+)
+old_thresholds = '''risk_tier_thresholds = pd.DataFrame(
+    [
+        {
+            'risk_tier': 'Low',
+            'current_risk_score_rule': '< 35',
+            'lower_bound_inclusive': np.nan,
+            'upper_bound_exclusive': 35,
+        },
+        {
+            'risk_tier': 'Medium',
+            'current_risk_score_rule': '35 to < 55',
+            'lower_bound_inclusive': 35,
+            'upper_bound_exclusive': 55,
+        },
+        {
+            'risk_tier': 'High',
+            'current_risk_score_rule': '55 to < 75',
+            'lower_bound_inclusive': 55,
+            'upper_bound_exclusive': 75,
+        },
+        {
+            'risk_tier': 'Very High',
+            'current_risk_score_rule': '>= 75',
+            'lower_bound_inclusive': 75,
+            'upper_bound_exclusive': np.nan,
+        },
+    ]
+)
+'''
+new_thresholds = '''risk_tier_thresholds = pd.DataFrame(
+    [
+        {
+            'risk_tier': tier,
+            'risk_tier_label': risk_tier_display[tier],
+            'current_risk_score_rule': 'Not derived from current_risk_score',
+            'source_definition': 'Original Funds Combined risk_tier assignment',
+        }
+        for tier in risk_tier_order
+    ]
+)
+'''
+if old_thresholds not in cell89:
+    raise RuntimeError("Could not locate the PRP risk-tier threshold table.")
+cell89 = cell89.replace(old_thresholds, new_thresholds)
+
+old_population_summary = '''risk_tier_population_summary = (
+    scored_full_glmnet.groupby('risk_tier', observed=False)
+    .agg(
+        members=('risk_tier', 'size'),
+        pct_population=('risk_tier', lambda s: len(s) / len(scored_full_glmnet)),
+        min_current_risk_score=('current_risk_score', 'min'),
+        max_current_risk_score=('current_risk_score', 'max'),
+        avg_current_risk_score=('current_risk_score', 'mean'),
+    )
+    .reindex(risk_tier_order)
+    .reset_index()
+)
+'''
+new_population_summary = '''valid_risk_tier_population = scored_full_glmnet.loc[
+    scored_full_glmnet['risk_tier'].isin(risk_tier_order)
+].copy()
+unassigned_risk_tier_members = int(len(scored_full_glmnet) - len(valid_risk_tier_population))
+
+risk_tier_population_summary = (
+    valid_risk_tier_population.groupby('risk_tier', observed=False)
+    .agg(
+        members=('risk_tier', 'size'),
+        pct_population=(
+            'risk_tier',
+            lambda s: len(s) / len(valid_risk_tier_population),
+        ),
+        min_current_risk_score=('current_risk_score', 'min'),
+        max_current_risk_score=('current_risk_score', 'max'),
+        avg_current_risk_score=('current_risk_score', 'mean'),
+    )
+    .reindex(risk_tier_order)
+    .reset_index()
+)
+risk_tier_population_summary.insert(
+    1,
+    'risk_tier_label',
+    risk_tier_population_summary['risk_tier'].map(risk_tier_display),
+)
+'''
+if old_population_summary not in cell89:
+    raise RuntimeError("Could not locate the PRP risk-tier population summary.")
+cell89 = cell89.replace(old_population_summary, new_population_summary)
+cell89 = cell89.replace(
+    "    df = scored_df.copy()\n\n    df['risk_tier'] = pd.Categorical(\n",
+    "    df = scored_df.loc[scored_df['risk_tier'].isin(risk_tier_order)].copy()\n\n"
+    "    df['risk_tier'] = pd.Categorical(\n",
+)
+cell89 = cell89.replace(
+    "        [f'{tier} risk\\n(n={counts.loc[tier]})' for tier in risk_tier_order]\n",
+    "        [f'{risk_tier_display[tier]}\\n(n={counts.loc[tier]})' for tier in risk_tier_order]\n",
+)
+cell89 = cell89.replace(
+    "ax.set_xlabel('Risk tier based on current_risk_score', labelpad=14)",
+    "ax.set_xlabel('Original Funds risk tier (1 = lowest, 5 = highest)', labelpad=14)",
+)
+cell89 = cell89.replace(
+    "print('Risk tier thresholds:')\n",
+    "print('Funds risk-tier definitions (original assignments; no current_risk_score derivation):')\n",
+)
+cell89 = cell89.replace(
+    "print('Risk tier population summary:')\n",
+    "print('Members excluded from the 1-5 risk-tier population summary because tier was missing or invalid:', unassigned_risk_tier_members)\n"
+    "print('Risk tier population summary (original Funds tiers 1-5):')\n",
+)
+set_cell(notebook, 89, cell89)
 
 cell91 = "".join(notebook["cells"][91]["source"])
 cell91 = cell91.replace(
