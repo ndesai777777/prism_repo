@@ -52,7 +52,7 @@ set_cell(notebook, 2, cell2)
 cell4 = "".join(notebook["cells"][4]["source"])
 cell4 = cell4.replace(
     "from sklearn.linear_model import ElasticNetCV, LogisticRegressionCV\n",
-    "from sklearn.linear_model import ElasticNetCV, LogisticRegression, LogisticRegressionCV\n",
+    "from sklearn.linear_model import ElasticNet, ElasticNetCV, LogisticRegression, LogisticRegressionCV\n",
 )
 set_cell(notebook, 4, cell4)
 
@@ -184,6 +184,94 @@ cell45 = cell45.replace(
     "    print('Control CV AUC: not calculated (hyperparameter tuning disabled)')\n",
 )
 set_cell(notebook, 45, cell45)
+
+cell53 = "".join(notebook["cells"][53]["source"])
+old_xlearner_glmnet_regression = '''def fit_glmnet_regression_model(x_matrix, y, seed=123, prefit_scaler=None):
+    y_array = np.asarray(y, dtype=float)
+    folds = int(min(5, len(y_array)))
+    if folds < 2:
+        raise ValueError('Need at least two rows for GLMNET X-learner regression.')
+    reg_model = ElasticNetCV(
+        l1_ratio=np.round(np.arange(0.0, 1.01, 0.1), 1),
+        alphas=np.logspace(-4, 2, 50),
+        cv=folds,
+        max_iter=10000,
+        random_state=seed,
+    )
+    if prefit_scaler is None:
+        pipeline = make_pipeline(StandardScaler(), reg_model)
+        pipeline.fit(x_matrix, y_array)
+    else:
+        x_scaled = prefit_scaler.transform(x_matrix)
+        reg_model.fit(x_scaled, y_array)
+        pipeline = PrefitScaledRegressionPipeline(prefit_scaler, reg_model)
+    return pipeline
+'''
+new_xlearner_glmnet_regression = '''def fit_glmnet_regression_model(x_matrix, y, seed=123, prefit_scaler=None):
+    y_array = np.asarray(y, dtype=float)
+    if len(y_array) < 2:
+        raise ValueError('Need at least two rows for GLMNET X-learner regression.')
+    reg_model = ElasticNet(
+        alpha=1.0,
+        l1_ratio=0.5,
+        max_iter=2000,
+        tol=1e-3,
+        random_state=seed,
+    )
+    if prefit_scaler is None:
+        scaler = StandardScaler().fit(x_matrix)
+    else:
+        scaler = prefit_scaler
+    reg_model.fit(scaler.transform(x_matrix), y_array)
+    return PrefitScaledRegressionPipeline(scaler, reg_model)
+'''
+if old_xlearner_glmnet_regression not in cell53:
+    raise RuntimeError("Could not locate the source X-learner GLMNet regression function.")
+cell53 = cell53.replace(old_xlearner_glmnet_regression, new_xlearner_glmnet_regression)
+
+old_propensity_model = '''def fit_propensity_model(x_matrix, treatment, seed=123):
+    treatment_array = np.asarray(treatment, dtype=float)
+    class_counts = pd.Series(treatment_array).value_counts()
+    folds = int(min(5, class_counts.min())) if len(class_counts) > 1 else 0
+    if folds < 2:
+        raise ValueError('Need at least two treatment classes with at least two rows each for propensity modeling.')
+    cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
+    propensity_model = LogisticRegressionCV(
+        Cs=np.logspace(-4, 4, 30),
+        cv=cv,
+        penalty='elasticnet',
+        solver='saga',
+        l1_ratios=[0.5],
+        scoring='roc_auc',
+        max_iter=10000,
+        random_state=seed,
+        refit=True,
+    )
+    pipeline = make_pipeline(StandardScaler(), propensity_model)
+    pipeline.fit(x_matrix, treatment_array)
+    return pipeline
+'''
+new_propensity_model = '''def fit_propensity_model(x_matrix, treatment, seed=123):
+    treatment_array = np.asarray(treatment, dtype=float)
+    if pd.Series(treatment_array).nunique() < 2:
+        raise ValueError('Need both treatment classes for propensity modeling.')
+    propensity_model = LogisticRegression(
+        C=1.0,
+        penalty='elasticnet',
+        solver='saga',
+        l1_ratio=0.5,
+        max_iter=2000,
+        tol=1e-3,
+        random_state=seed,
+    )
+    pipeline = make_pipeline(StandardScaler(), propensity_model)
+    pipeline.fit(x_matrix, treatment_array)
+    return pipeline
+'''
+if old_propensity_model not in cell53:
+    raise RuntimeError("Could not locate the source propensity tuning function.")
+cell53 = cell53.replace(old_propensity_model, new_propensity_model)
+set_cell(notebook, 53, cell53)
 
 set_cell(
     notebook,
