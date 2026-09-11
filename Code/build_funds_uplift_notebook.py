@@ -643,6 +643,15 @@ for old, new in replacements.items():
     cell31 = cell31.replace(old, new)
 set_cell(notebook, 31, cell31)
 
+cell33 = "".join(notebook["cells"][33]["source"])
+cell33 = cell33.replace(
+    "    counts = values.value_counts()\n",
+    "    counts = values.value_counts()\n"
+    "    if column == 'risk_tier':\n"
+    "        counts = counts.reindex(['1', '2', '3', '4', '5', 'Missing'], fill_value=0)\n",
+)
+set_cell(notebook, 33, cell33)
+
 set_cell(
     notebook,
     87,
@@ -788,6 +797,16 @@ cell89 = cell89.replace(
     "print('Risk tier population summary:')\n",
     "print('Members excluded from the 1-5 risk-tier population summary because tier was missing or invalid:', unassigned_risk_tier_members)\n"
     "print('Risk tier population summary (original Funds tiers 1-5):')\n",
+)
+cell89 = cell89.replace(
+    "tlearner_risk_tier_benefit_group_summary = build_risk_tier_benefit_group_outputs(\n",
+    "tlearner_xgboost_risk_tier_benefit_group_summary = build_risk_tier_benefit_group_outputs(\n"
+    "    results_test_xgboost,\n"
+    "    xgboost_output_folder,\n"
+    "    'tlearner',\n"
+    "    'XGBoost T-learner benefit group distribution by risk tier (test set)',\n"
+    ")\n\n"
+    "tlearner_risk_tier_benefit_group_summary = build_risk_tier_benefit_group_outputs(\n",
 )
 set_cell(notebook, 89, cell89)
 
