@@ -37,13 +37,13 @@ Read the file as CSV, not Excel. Normalize column names using the same `clean_na
 - Store the original intervention value separately (for example, `source_intervention_flag`) and use a separately derived binary `intervention_flag` for modeling.
 - The two raw source flags must be retained in audits and scored outputs but excluded from the predictor matrix because they directly define treatment status.
 - Convert treatment to validated binary numeric values.
-- Preserve `outcome_ed_90d` as a nonnegative ED-visit count. Replace missing values with `0`; do not collapse positive counts to a binary indicator and do not discard these members.
+- Convert `outcome_ed_90d` to a binary ED-event indicator after replacing missing values with `0`: `0` means no ED visit and any positive ED-visit count becomes `1`. Do not discard members with missing outcomes.
 - Members who died must remain in the analysis.
 - Convert `date_of_death` into a binary indicator such as `death_within_90d_flag`, where a populated death date represents death within the applicable 90-day period. Drop the raw death date after creating the flag so that a raw date is never modeled.
 - Do not exclude members merely because the death indicator equals 1.
 - Preserve the original `member_id` in scored outputs, but never use it as a predictor.
 - Do not exclude a row merely because the source `intervention_flag` is missing when `OptOut_flag` identifies it as control. Only contradictory or unresolved treatment rows may be excluded, after reporting their counts.
-- Validate that both treatment groups are present and that the count outcome has adequate variation within the subsets required for training and cross-validation.
+- Validate that both treatment groups and both binary outcome classes are present, including within the treated and control training subsets required for cross-validation.
 
 ## Post-treatment leakage exclusions
 
@@ -103,7 +103,7 @@ Produce a preprocessing audit that reports:
 - missing treatment count
 - missing outcome count before filling
 - number of outcome values filled with zero
-- treatment and count-outcome distributions
+- treatment, raw count-outcome, and final binary-outcome distributions
 - death-flag distribution
 - predictors retained
 - columns excluded and the reason for each exclusion
@@ -121,7 +121,7 @@ Keep the same methods and settings as the source notebook unless a change is str
 
 - 70/30 train/test split
 - random seed 123
-- stratification by treatment and count outcome, using a deterministic count stratum when necessary to avoid sparse joint strata
+- stratification by treatment and binary outcome
 - separate treated and control outcome models
 - XGBoost T-learner
 - the identical XGBoost grid:
@@ -133,13 +133,15 @@ Keep the same methods and settings as the source notebook unless a change is str
 - five-fold stratified cross-validation when supported by class counts
 - maximum 500 boosting rounds
 - early stopping after 20 rounds
-- selection by a regression-appropriate cross-validation metric
-- GLMNet-style elastic-net regression comparison using the same alpha-grid concept, scaling, folds, seed, and equivalent regression evaluation rules
+- selection by validation AUC
+- GLMNet-style elastic-net logistic comparison using the same alpha grid, lambda/C search, scaling, folds, seed, and evaluation rules
 - T-learner scoring definitions and benefit-score direction
 - X-learner methods and propensity modeling
 - all factual model diagnostics
-- regression-appropriate factual metrics such as RMSE, MAE, mean residual, and Poisson deviance; explicitly mark AUC and Brier scores not applicable rather than fabricating them
-- count calibration analyses comparing mean predicted and observed ED visits
+- factual model AUC and event-class diagnostics
+- Brier scores for the treated and control factual predictions
+- probability-calibration tables by predicted-risk decile
+- calibration summaries and predicted-versus-observed calibration charts
 - decile summaries
 - observed treated/control outcome gaps
 - uplift curves
