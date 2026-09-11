@@ -24,7 +24,7 @@ rx_count_last_6m,Pharmacy,float64,float64,Number of prescriptions or medication 
 total_cost_last_6m,Pharmacy,float64,float64,Total healthcare cost in the last 6 months.,Continuous/count numeric,True,True,total_cost_last_6m,422,0.06635220125786163,3673,8982.13; 23263.88; 84056.69; 21512.52; 7227.56,-16284.2,1527816.73
 current_risk_score,Risk Scores,float64,float64,Current overall risk score.,Continuous/count numeric,True,True,current_risk_score,92,0.014465408805031447,3348,11.62515431; 3.913194258; 7.082354886; 4.779908607; 2.908411593,0.0,28.62614143
 percolator_score,Risk Scores,float64,float64,Baseline Percolator risk score.,Continuous/count numeric,True,True,percolator_score,92,0.014465408805031447,4000,709.4114; 518.31944; 281.154; 617.08336; 201.5826,0.0,3292.34452
-risk_tier,Risk Scores,object,category,Categorical risk tier assignment.,Multi-level categorical,True,True,risk_tier_High; risk_tier_Low; risk_tier_Medium; risk_tier_Missing; risk_tier_Very_High,0,0.0,5,High; Medium; Low; Very High; Missing,,
+risk_tier,Risk Scores,string,category,Categorical risk tier assignment.,Multi-level categorical,True,True,risk_tier_1; risk_tier_2; risk_tier_3; risk_tier_4; risk_tier_5; risk_tier_Missing,0,0.0,6,3; 2; 1; 5; 4,1.0,5.0
 financial_strain_flag,SDOH,int64,float64,Indicator for financial strain.,Binary indicator,True,True,financial_strain_flag,0,0.0,2,0; 1,0.0,1.0
 food_insecurity_flag,SDOH,int64,float64,Indicator for food insecurity.,Binary indicator,True,True,food_insecurity_flag,0,0.0,2,0; 1,0.0,1.0
 healthliteracy_challenges_flag,SDOH,int64,float64,Indicator for health-literacy challenges.,Binary indicator,True,True,healthliteracy_challenges_flag,0,0.0,2,0; 1,0.0,1.0

@@ -1,2 +1,2 @@
 total_members,treated_members,control_members,treatment_rate,outcome_events,outcome_prevalence,treated_outcome_rate,control_outcome_rate,number_of_predictors,number_of_continuous_count_predictors,number_of_binary_indicator_predictors,number_of_multilevel_categorical_predictors,number_of_model_matrix_columns
-6360,3030,3330,0.47641509433962265,1492,0.23459119496855346,0.23135313531353136,0.23753753753753754,36,10,21,5,370
+6360,3030,3330,0.47641509433962265,1492,0.23459119496855346,0.23135313531353136,0.23753753753753754,36,10,21,5,371
