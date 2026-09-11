@@ -49,6 +49,140 @@ cell2 = "".join(notebook["cells"][2]["source"])
 cell2 = cell2.replace("    'openpyxl': 'openpyxl',\n", "")
 set_cell(notebook, 2, cell2)
 
+cell8 = "".join(notebook["cells"][8]["source"])
+old_fit_elastic_net = '''def fit_elastic_net(x_matrix, y, alpha_grid=np.round(np.arange(0, 1.01, 0.1), 1), nfolds=5, seed=123, prefit_scaler=None):
+    y_array = np.asarray(y, dtype=float)
+    class_counts = pd.Series(y_array).value_counts()
+    folds = int(min(nfolds, class_counts.min())) if len(class_counts) > 1 else 0
+    if folds < 2:
+        raise ValueError('Need at least two outcome classes with at least two rows each for elastic-net CV.')
+
+    if not RUN_CPU_ONLY_COMPARISON_MODELS:
+        raise RuntimeError(
+            'fit_elastic_net uses sklearn LogisticRegressionCV, which trains on CPU. '
+            'Set RUN_CPU_ONLY_COMPARISON_MODELS = True to run this CPU comparison model.'
+        )
+
+    results = []
+    best_pipeline = None
+    best_auc = -np.inf
+    best_alpha = np.nan
+    best_lambda = np.nan
+    cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
+
+    for alpha in alpha_grid:
+        penalty = 'l2' if alpha == 0 else 'elasticnet'
+        l1_ratios = None if alpha == 0 else [float(alpha)]
+        cv_model = LogisticRegressionCV(
+            Cs=np.logspace(-4, 4, 30),
+            cv=cv,
+            penalty=penalty,
+            solver='saga',
+            l1_ratios=l1_ratios,
+            scoring='roc_auc',
+            max_iter=10000,
+            random_state=seed,
+            refit=True,
+        )
+        if prefit_scaler is None:
+            pipeline = make_pipeline(StandardScaler(), cv_model)
+            pipeline.fit(x_matrix, y_array)
+            fitted = pipeline.named_steps['logisticregressioncv']
+        else:
+            x_scaled = prefit_scaler.transform(x_matrix)
+            cv_model.fit(x_scaled, y_array)
+            fitted = cv_model
+            pipeline = PrefitScaledLogisticPipeline(prefit_scaler, fitted)
+        scores = fitted.scores_[1.0]
+        auc_cv = float(np.nanmax(np.nanmean(scores, axis=0)))
+        lambda_value = float(1 / fitted.C_[0])
+        results.append({'alpha': float(alpha), 'lambda': lambda_value, 'cv_auc': auc_cv})
+        if auc_cv > best_auc:
+            best_auc = auc_cv
+            best_alpha = float(alpha)
+            best_lambda = lambda_value
+            best_pipeline = pipeline
+
+    return {
+        'best_model': best_pipeline,
+        'best_alpha': best_alpha,
+        'best_lambda': best_lambda,
+        'best_auc': best_auc,
+        'search_results': pd.DataFrame(results).sort_values('cv_auc', ascending=False).reset_index(drop=True),
+    }
+'''
+new_fit_elastic_net = '''def fit_elastic_net(x_matrix, y, alpha_grid=np.round(np.arange(0, 1.01, 0.1), 1), nfolds=5, seed=123, prefit_scaler=None):
+    y_array = np.asarray(y, dtype=float)
+    class_counts = pd.Series(y_array).value_counts()
+    folds = int(min(nfolds, class_counts.min())) if len(class_counts) > 1 else 0
+    if folds < 2:
+        raise ValueError('Need at least two outcome classes with at least two rows each for elastic-net CV.')
+
+    if not RUN_CPU_ONLY_COMPARISON_MODELS:
+        raise RuntimeError(
+            'fit_elastic_net uses sklearn LogisticRegressionCV, which trains on CPU. '
+            'Set RUN_CPU_ONLY_COMPARISON_MODELS = True to run this CPU comparison model.'
+        )
+
+    # Fit every alpha (l1_ratio) in one call so sklearn can reuse coefficient paths
+    # and distribute the cross-validation work across all available CPU cores.
+    alpha_values = np.asarray(alpha_grid, dtype=float)
+    c_values = np.logspace(-4, 4, 30)
+    cv = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed)
+    cv_model = LogisticRegressionCV(
+        Cs=c_values,
+        cv=cv,
+        penalty='elasticnet',
+        solver='saga',
+        l1_ratios=alpha_values.tolist(),
+        scoring='roc_auc',
+        max_iter=10000,
+        random_state=seed,
+        refit=True,
+        n_jobs=-1,
+    )
+
+    if prefit_scaler is None:
+        pipeline = make_pipeline(StandardScaler(), cv_model)
+        pipeline.fit(x_matrix, y_array)
+        fitted = pipeline.named_steps['logisticregressioncv']
+    else:
+        x_scaled = prefit_scaler.transform(x_matrix)
+        cv_model.fit(x_scaled, y_array)
+        fitted = cv_model
+        pipeline = PrefitScaledLogisticPipeline(prefit_scaler, fitted)
+
+    # For binary classification, scores have shape (fold, C, l1_ratio).
+    positive_class = next(key for key in fitted.scores_ if float(key) == 1.0)
+    scores = np.asarray(fitted.scores_[positive_class], dtype=float)
+    if scores.ndim == 2:
+        scores = scores[:, :, np.newaxis]
+    mean_scores = np.nanmean(scores, axis=0)
+    results = []
+    for alpha_index, alpha in enumerate(alpha_values):
+        best_c_index = int(np.nanargmax(mean_scores[:, alpha_index]))
+        results.append({
+            'alpha': float(alpha),
+            'lambda': float(1 / c_values[best_c_index]),
+            'cv_auc': float(mean_scores[best_c_index, alpha_index]),
+        })
+
+    best_alpha = float(np.asarray(fitted.l1_ratio_).ravel()[0])
+    best_lambda = float(1 / np.asarray(fitted.C_).ravel()[0])
+    best_auc = float(max(row['cv_auc'] for row in results))
+    return {
+        'best_model': pipeline,
+        'best_alpha': best_alpha,
+        'best_lambda': best_lambda,
+        'best_auc': best_auc,
+        'search_results': pd.DataFrame(results).sort_values('cv_auc', ascending=False).reset_index(drop=True),
+    }
+'''
+if old_fit_elastic_net not in cell8:
+    raise RuntimeError("Could not locate the source GLMNet tuning function.")
+cell8 = cell8.replace(old_fit_elastic_net, new_fit_elastic_net)
+set_cell(notebook, 8, cell8)
+
 set_cell(
     notebook,
     6,
