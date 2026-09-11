@@ -1,0 +1,60 @@
+column,status,reason
+member_id,excluded,identifier retained in outputs but excluded from predictors
+client_contract,included,leakage-safe baseline predictor
+age,included,leakage-safe baseline predictor
+gender,included,leakage-safe baseline predictor
+dual_elg,included,leakage-safe baseline predictor
+date_of_death,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+county,included,leakage-safe baseline predictor
+state,included,leakage-safe baseline predictor
+plan_type,excluded,zero-variance predictor removed after preprocessing
+diabetes_flag,included,leakage-safe baseline predictor
+chf_flag,included,leakage-safe baseline predictor
+copd_flag,included,leakage-safe baseline predictor
+asthma_flag,included,leakage-safe baseline predictor
+depression_flag,included,leakage-safe baseline predictor
+anxiety_flag,included,leakage-safe baseline predictor
+substance_use_flag,included,leakage-safe baseline predictor
+ckd_flag,included,leakage-safe baseline predictor
+bh_flag,included,leakage-safe baseline predictor
+htn_flag,included,leakage-safe baseline predictor
+hyperlipidemia_flag,included,leakage-safe baseline predictor
+cad_flag,included,leakage-safe baseline predictor
+financial_strain_flag,included,leakage-safe baseline predictor
+food_insecurity_flag,included,leakage-safe baseline predictor
+housing_instability_flag,included,leakage-safe baseline predictor
+transportation_barrier_flag,included,leakage-safe baseline predictor
+healthliteracy_challenges_flag,included,leakage-safe baseline predictor
+op_visits_last_6m,included,leakage-safe baseline predictor
+ed_visits_last_30d,included,leakage-safe baseline predictor
+ed_visits_last_6m,included,leakage-safe baseline predictor
+admits_last_6m,included,leakage-safe baseline predictor
+observation_stays_last_6m,included,leakage-safe baseline predictor
+total_cost_last_6m,included,leakage-safe baseline predictor
+rx_count_last_6m,included,leakage-safe baseline predictor
+opioid_flag,included,leakage-safe baseline predictor
+polypharmacy_flag,included,leakage-safe baseline predictor
+current_risk_score,included,leakage-safe baseline predictor
+percolator_score,included,leakage-safe baseline predictor
+risk_tier,included,leakage-safe baseline predictor
+program,excluded,zero-variance predictor removed after preprocessing
+intervention_flag,excluded,treatment definition/source; retained as metadata but excluded from predictors
+optout_flag,excluded,treatment definition/source; retained as metadata but excluded from predictors
+programstart,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+programend,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+engaged_date,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+engagement_length,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+case_manager_name,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+interventioncount,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+successfulinterventions,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_ed_30d,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_ed_90d,excluded,not on leakage-safe baseline predictor allowlist
+outcome_ed_6mo,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_admit_30d,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_admit_90d,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_admit_6mo,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_total_cost_90d,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+outcome_total_cost_6mo,excluded,"post-treatment, alternate outcome, or explicitly prohibited"
+source_intervention_flag,excluded,treatment definition/source; retained as metadata but excluded from predictors
+treatment_derivation_status,excluded,treatment derivation audit metadata
+death_within_90d_flag,included,leakage-safe baseline predictor

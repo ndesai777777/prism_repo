@@ -1,0 +1,13 @@
+split,intervention_flag,outcome_stratum,n
+test,0.0,0,762
+test,0.0,1,181
+test,0.0,2_plus,56
+test,1.0,0,699
+test,1.0,1,150
+test,1.0,2_plus,60
+train,0.0,0,1777
+train,0.0,1,424
+train,0.0,2_plus,130
+train,1.0,0,1630
+train,1.0,1,350
+train,1.0,2_plus,141
