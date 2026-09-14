@@ -823,6 +823,18 @@ cell91 = cell91.replace(
     "folder / 'xlearner_decile_summary.csv',",
     "folder / 'xlearner_decile_summary.csv',\n                folder / 'treatment_outcome_benefit_summary.csv',",
 )
+cell91 = cell91.replace(
+    "for folder in [xgboost_output_folder, glmnet_output_folder]:",
+    "writeup_output_files.extend(\n"
+    "    [\n"
+    "        overlap_weighted_xgboost_output_folder / 'overlap_weighted_scored_test_output.csv',\n"
+    "        overlap_weighted_xgboost_output_folder / 'uplift_decile_summary.csv',\n"
+    "        overlap_weighted_xgboost_output_folder / 'treatment_outcome_benefit_summary.csv',\n"
+    "        overlap_weighted_xgboost_output_folder / 'dashboard_avg_benefit_by_decile.png',\n"
+    "    ]\n"
+    ")\n"
+    "for folder in [xgboost_output_folder, glmnet_output_folder]:",
+)
 set_cell(notebook, 91, cell91)
 
 set_cell(
@@ -1020,9 +1032,10 @@ notebook["cells"][54:54] = [
                     'benefit_p75',
                 ]:
                     formatted[column] = formatted[column].map(lambda value: f'{value:.2%}')
-                formatted['negative_benefit_pct'] = formatted['negative_benefit_pct'].map(
-                    lambda value: f'{value:.1%}'
-                )
+                if 'negative_benefit_pct' in formatted.columns:
+                    formatted['negative_benefit_pct'] = formatted['negative_benefit_pct'].map(
+                        lambda value: f'{value:.1%}'
+                    )
                 return formatted
 
             print('XGBoost T-Learner: benefit by observed treatment and actual outcome (test set)')
@@ -1038,6 +1051,195 @@ notebook["cells"][54:54] = [
                     xlearner_xgboost_treatment_outcome_benefit_summary
                 )
             )
+            """
+        ),
+    },
+    {
+        "cell_type": "markdown",
+        "id": "funds-overlap-weighted-xgboost-tlearner",
+        "metadata": {},
+        "source": lines(
+            """
+            ---
+            ## OVERLAP-WEIGHTED XGBOOST T-LEARNER
+            ---
+
+            This sensitivity model uses the same pre-treatment elastic-net logistic propensity
+            model already fitted for the X-Learner. Treated observations receive weight
+            `1 - propensity`, and untreated observations receive weight `propensity`. Weights are
+            normalized to mean 1 within each treatment arm so XGBoost's regularization scale remains
+            comparable to the unweighted models.
+
+            To keep this focused and computationally efficient, the weighted models reuse the
+            corresponding unweighted T-Learner's selected hyperparameters and boosting rounds.
+            The outputs below are limited to the requested four-group benefit summary and the same
+            benefit-by-decile summary/chart used for the unweighted XGBoost T-Learner.
+            """
+        ),
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "id": "funds-overlap-weighted-xgboost-tlearner-results",
+        "metadata": {},
+        "outputs": [],
+        "source": lines(
+            """
+            overlap_weighted_xgboost_output_folder = ensure_output_folder(
+                tlearner_root_folder / 'XGBoost_Overlap_Weighted'
+            )
+
+
+            def normalized_overlap_weights(propensity_scores, observed_treatment):
+                propensity_array = np.asarray(propensity_scores, dtype=float)
+                if observed_treatment == 1:
+                    raw_weights = 1.0 - propensity_array
+                elif observed_treatment == 0:
+                    raw_weights = propensity_array
+                else:
+                    raise ValueError('observed_treatment must be 0 or 1.')
+
+                if not np.isfinite(raw_weights).all() or raw_weights.mean() <= 0:
+                    raise ValueError('Overlap weights must be finite with a positive mean.')
+                return raw_weights / raw_weights.mean()
+
+
+            propensity_treated_train = clipped_propensity(propensity_model, x_treated)
+            propensity_control_train = clipped_propensity(propensity_model, x_control)
+
+            overlap_weights_treated = normalized_overlap_weights(
+                propensity_treated_train,
+                observed_treatment=1,
+            )
+            overlap_weights_control = normalized_overlap_weights(
+                propensity_control_train,
+                observed_treatment=0,
+            )
+
+            overlap_treated_dmatrix = xgb.DMatrix(
+                x_treated,
+                label=np.asarray(y_treated, dtype=float),
+                weight=overlap_weights_treated,
+                feature_names=list(x_treated.columns),
+            )
+            overlap_control_dmatrix = xgb.DMatrix(
+                x_control,
+                label=np.asarray(y_control, dtype=float),
+                weight=overlap_weights_control,
+                feature_names=list(x_control.columns),
+            )
+
+            overlap_weighted_model_treated = xgb.train(
+                params=xgb_treated_cv['best_params'],
+                dtrain=overlap_treated_dmatrix,
+                num_boost_round=xgb_treated_cv['best_nrounds'],
+                verbose_eval=False,
+            )
+            overlap_weighted_model_control = xgb.train(
+                params=xgb_control_cv['best_params'],
+                dtrain=overlap_control_dmatrix,
+                num_boost_round=xgb_control_cv['best_nrounds'],
+                verbose_eval=False,
+            )
+
+            assert_xgb_booster_uses_cuda(
+                overlap_weighted_model_treated,
+                'Overlap-weighted treated XGBoost model',
+            )
+            assert_xgb_booster_uses_cuda(
+                overlap_weighted_model_control,
+                'Overlap-weighted control XGBoost model',
+            )
+
+            overlap_pred_treated_test = overlap_weighted_model_treated.predict(
+                make_dmatrix(x_test)
+            )
+            overlap_pred_control_test = overlap_weighted_model_control.predict(
+                make_dmatrix(x_test)
+            )
+            results_test_overlap_weighted_xgboost = build_uplift_results(
+                test_df,
+                overlap_pred_treated_test,
+                overlap_pred_control_test,
+            )
+            results_test_overlap_weighted_xgboost['propensity_score'] = propensity_test
+            results_test_overlap_weighted_xgboost['learner_framework'] = (
+                'Overlap-Weighted T-Learner'
+            )
+            results_test_overlap_weighted_xgboost['model'] = 'XGBoost'
+
+            overlap_weighted_decile_summary_xgboost = summarize_uplift_deciles(
+                results_test_overlap_weighted_xgboost
+            )
+            overlap_weighted_treatment_outcome_benefit_summary = (
+                summarize_benefit_by_observed_group(
+                    results_test_overlap_weighted_xgboost,
+                    'Overlap-Weighted XGBoost T-Learner',
+                )
+            )
+            overlap_weighted_treatment_outcome_benefit_summary = (
+                overlap_weighted_treatment_outcome_benefit_summary[
+                    [
+                        'learner',
+                        'intervention_flag',
+                        'observed_treatment_group',
+                        'outcome_ed_90d',
+                        'actual_outcome_group',
+                        'members',
+                        'mean_benefit',
+                        'benefit_p25',
+                        'median_benefit',
+                        'benefit_p75',
+                    ]
+                ].copy()
+            )
+
+            results_test_overlap_weighted_xgboost.to_csv(
+                overlap_weighted_xgboost_output_folder
+                / 'overlap_weighted_scored_test_output.csv',
+                index=False,
+            )
+            overlap_weighted_decile_summary_xgboost.to_csv(
+                overlap_weighted_xgboost_output_folder / 'uplift_decile_summary.csv',
+                index=False,
+            )
+            overlap_weighted_treatment_outcome_benefit_summary.to_csv(
+                overlap_weighted_xgboost_output_folder
+                / 'treatment_outcome_benefit_summary.csv',
+                index=False,
+            )
+
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.bar(
+                overlap_weighted_decile_summary_xgboost['uplift_decile'].astype(str),
+                overlap_weighted_decile_summary_xgboost['avg_benefit_score'],
+            )
+            ax.set_title(
+                'Overlap-Weighted XGBoost T-Learner: Average Predicted Intervention Benefit by Uplift Decile'
+            )
+            ax.set_xlabel('Uplift Decile: 1 = Highest Predicted Benefit')
+            ax.set_ylabel('Average Benefit Score')
+            fig.tight_layout()
+            fig.savefig(
+                overlap_weighted_xgboost_output_folder
+                / 'dashboard_avg_benefit_by_decile.png',
+                dpi=150,
+            )
+            plt.close(fig)
+
+            print(
+                'Overlap-weighted XGBoost T-Learner: benefit by observed treatment '
+                'and actual outcome (test set)'
+            )
+            display(
+                format_benefit_summary_for_display(
+                    overlap_weighted_treatment_outcome_benefit_summary
+                )
+            )
+
+            print('Overlap-weighted XGBoost T-Learner benefit-by-decile summary:')
+            display(overlap_weighted_decile_summary_xgboost)
+            print('Outputs saved to:', overlap_weighted_xgboost_output_folder)
             """
         ),
     },
