@@ -815,6 +815,14 @@ cell91 = cell91.replace(
     "output_folder / 'data_review_summary.csv',",
     "output_folder / 'data_review_summary.csv',\n    output_folder / 'preprocessing_audit_summary.csv',\n    output_folder / 'preprocessing_column_audit.csv',\n    output_folder / 'preprocessing_split_distribution.csv',",
 )
+cell91 = cell91.replace(
+    "folder / 'uplift_decile_summary.csv',",
+    "folder / 'uplift_decile_summary.csv',\n            folder / 'treatment_outcome_benefit_summary.csv',",
+)
+cell91 = cell91.replace(
+    "folder / 'xlearner_decile_summary.csv',",
+    "folder / 'xlearner_decile_summary.csv',\n                folder / 'treatment_outcome_benefit_summary.csv',",
+)
 set_cell(notebook, 91, cell91)
 
 set_cell(
@@ -888,6 +896,152 @@ set_cell(
     print('Final encoded-feature leakage audit passed.')
     """,
 )
+
+notebook["cells"][54:54] = [
+    {
+        "cell_type": "markdown",
+        "id": "funds-treatment-outcome-benefit-diagnostic",
+        "metadata": {},
+        "source": lines(
+            """
+            ---
+            ## XGBOOST BENEFIT BY OBSERVED TREATMENT AND ACTUAL OUTCOME
+            ---
+
+            This diagnostic compares predicted benefit across the four factual test-set groups:
+            treated/outcome 1, treated/outcome 0, untreated/outcome 1, and untreated/outcome 0.
+            It is generated separately for the XGBoost T-Learner and XGBoost X-Learner.
+
+            Benefit is defined as the predicted 90-day ED risk if untreated minus the predicted
+            risk if treated, so negative benefit indicates adverse expected benefit (a "sleeping
+            dog"). The grouped results are descriptive. Because each member has only one observed
+            treatment and one observed outcome, these tables do not reveal the member's unobserved
+            counterfactual outcome and cannot establish that treatment caused an observed event.
+            """
+        ),
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "id": "funds-treatment-outcome-benefit-summary",
+        "metadata": {},
+        "outputs": [],
+        "source": lines(
+            """
+            def summarize_benefit_by_observed_group(results, learner_label):
+                required_columns = {'intervention_flag', 'outcome_ed_90d', 'benefit_score'}
+                missing_columns = required_columns.difference(results.columns)
+                if missing_columns:
+                    raise ValueError(
+                        f'{learner_label} results are missing required columns: {sorted(missing_columns)}'
+                    )
+
+                diagnostic = results.loc[:, sorted(required_columns)].copy()
+                diagnostic['intervention_flag'] = pd.to_numeric(
+                    diagnostic['intervention_flag'], errors='raise'
+                ).astype(int)
+                diagnostic['outcome_ed_90d'] = pd.to_numeric(
+                    diagnostic['outcome_ed_90d'], errors='raise'
+                ).astype(int)
+
+                if not diagnostic['intervention_flag'].isin([0, 1]).all():
+                    raise ValueError('intervention_flag must be binary for this diagnostic.')
+                if not diagnostic['outcome_ed_90d'].isin([0, 1]).all():
+                    raise ValueError('outcome_ed_90d must be binary for this diagnostic.')
+
+                summary = (
+                    diagnostic.groupby(
+                        ['intervention_flag', 'outcome_ed_90d'],
+                        observed=True,
+                    )
+                    .agg(
+                        members=('benefit_score', 'size'),
+                        mean_benefit=('benefit_score', 'mean'),
+                        benefit_p25=('benefit_score', lambda values: values.quantile(0.25)),
+                        median_benefit=('benefit_score', 'median'),
+                        benefit_p75=('benefit_score', lambda values: values.quantile(0.75)),
+                        negative_benefit_members=(
+                            'benefit_score',
+                            lambda values: int((values < 0).sum()),
+                        ),
+                        negative_benefit_pct=(
+                            'benefit_score',
+                            lambda values: float((values < 0).mean()),
+                        ),
+                    )
+                    .reindex([(1, 1), (1, 0), (0, 1), (0, 0)])
+                    .reset_index()
+                )
+
+                summary.insert(0, 'learner', learner_label)
+                summary.insert(
+                    2,
+                    'observed_treatment_group',
+                    summary['intervention_flag'].map({1: 'Treated', 0: 'Untreated'}),
+                )
+                summary.insert(
+                    4,
+                    'actual_outcome_group',
+                    summary['outcome_ed_90d'].map(
+                        {1: 'Actual outcome = 1', 0: 'Actual outcome = 0'}
+                    ),
+                )
+                return summary
+
+
+            tlearner_xgboost_treatment_outcome_benefit_summary = (
+                summarize_benefit_by_observed_group(
+                    results_test_xgboost,
+                    'XGBoost T-Learner',
+                )
+            )
+            xlearner_xgboost_treatment_outcome_benefit_summary = (
+                summarize_benefit_by_observed_group(
+                    results_test_xlearner_xgboost,
+                    'XGBoost X-Learner',
+                )
+            )
+
+            tlearner_xgboost_treatment_outcome_benefit_summary.to_csv(
+                xgboost_output_folder / 'treatment_outcome_benefit_summary.csv',
+                index=False,
+            )
+            xlearner_xgboost_treatment_outcome_benefit_summary.to_csv(
+                xlearner_xgboost_output_folder / 'treatment_outcome_benefit_summary.csv',
+                index=False,
+            )
+
+            def format_benefit_summary_for_display(summary):
+                formatted = summary.copy()
+                for column in [
+                    'mean_benefit',
+                    'benefit_p25',
+                    'median_benefit',
+                    'benefit_p75',
+                ]:
+                    formatted[column] = formatted[column].map(lambda value: f'{value:.2%}')
+                formatted['negative_benefit_pct'] = formatted['negative_benefit_pct'].map(
+                    lambda value: f'{value:.1%}'
+                )
+                return formatted
+
+            print('XGBoost T-Learner: benefit by observed treatment and actual outcome (test set)')
+            display(
+                format_benefit_summary_for_display(
+                    tlearner_xgboost_treatment_outcome_benefit_summary
+                )
+            )
+
+            print('XGBoost X-Learner: benefit by observed treatment and actual outcome (test set)')
+            display(
+                format_benefit_summary_for_display(
+                    xlearner_xgboost_treatment_outcome_benefit_summary
+                )
+            )
+            """
+        ),
+    },
+]
 
 notebook["metadata"]["language_info"]["version"] = "3"
 TARGET.write_text(json.dumps(notebook, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
