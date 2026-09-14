@@ -810,10 +810,123 @@ cell89 = cell89.replace(
 )
 set_cell(notebook, 89, cell89)
 
+cell59 = "".join(notebook["cells"][59]["source"])
+cell59 = cell59.replace(
+    "    gap_lower = control_lower - treated_upper\n"
+    "    gap_upper = control_upper - treated_lower\n",
+    "    gap_lower = gap - np.sqrt(\n"
+    "        (control_rate - control_lower) ** 2\n"
+    "        + (treated_upper - treated_rate) ** 2\n"
+    "    )\n"
+    "    gap_upper = gap + np.sqrt(\n"
+    "        (control_upper - control_rate) ** 2\n"
+    "        + (treated_rate - treated_lower) ** 2\n"
+    "    )\n"
+    "    gap_lower = max(-1.0, gap_lower)\n"
+    "    gap_upper = min(1.0, gap_upper)\n",
+)
+cell59 += """
+
+
+# Apply the same observed within-decile treatment-control comparison to the
+# XGBoost X-Learner and the overlap-weighted XGBoost T-Learner.
+def save_observed_gap_decile_only(results, folder, model_label):
+    gap_df = observed_gap_by_decile(results, model_label)
+    if gap_df is None:
+        return None
+
+    gap_df.to_csv(folder / 'uplift_observed_gap_by_decile.csv', index=False)
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    x_values = np.arange(len(gap_df))
+    gaps = gap_df['observed_control_minus_treated_gap'].to_numpy(dtype=float)
+    ci_lower = gap_df['observed_gap_ci_lower_95'].to_numpy(dtype=float)
+    ci_upper = gap_df['observed_gap_ci_upper_95'].to_numpy(dtype=float)
+    yerr = np.vstack([gaps - ci_lower, ci_upper - gaps])
+    bar_colors = np.where(gaps < 0, '#c44e52', '#4c78a8')
+
+    ax.bar(x_values, gaps, color=bar_colors)
+    ax.errorbar(
+        x_values,
+        gaps,
+        yerr=yerr,
+        fmt='none',
+        ecolor='#222222',
+        capsize=4,
+        linewidth=1,
+    )
+    ax.axhline(0, color='gray', linewidth=1)
+    ax.set_xticks(x_values)
+    ax.set_xticklabels(gap_df['uplift_decile'].astype(str))
+    ax.set_title(f'{model_label}: Observed Control-Treated ED Gap by Uplift Decile')
+    ax.set_xlabel('Uplift Decile: 1 = Highest Predicted Benefit')
+    ax.set_ylabel('Observed Control ED Rate - Treated ED Rate')
+    fig.tight_layout()
+    fig.savefig(folder / 'dashboard_observed_gap_by_decile.png', dpi=150)
+    plt.close(fig)
+
+    print(f'{model_label} observed control-treated ED gap by uplift decile:')
+    display(gap_df)
+    print()
+    return gap_df
+
+
+observed_gap_xlearner_xgboost = save_observed_gap_decile_only(
+    results_test_xlearner_xgboost,
+    xlearner_xgboost_output_folder,
+    'XGBoost X-Learner',
+)
+observed_gap_overlap_weighted_xgboost = save_observed_gap_decile_only(
+    results_test_overlap_weighted_xgboost,
+    overlap_weighted_xgboost_output_folder,
+    'Overlap-Weighted XGBoost T-Learner',
+)
+
+observed_gap_comparison_columns = [
+    'model',
+    'uplift_decile',
+    'n',
+    'treated_n',
+    'control_n',
+    'treated_events',
+    'control_events',
+    'treated_observed_ed_rate',
+    'control_observed_ed_rate',
+    'observed_control_minus_treated_gap',
+    'observed_gap_ci_lower_95',
+    'observed_gap_ci_upper_95',
+]
+observed_gap_xgboost_model_comparison = pd.concat(
+    [
+        observed_gap_xgboost[observed_gap_comparison_columns],
+        observed_gap_xlearner_xgboost[observed_gap_comparison_columns],
+        observed_gap_overlap_weighted_xgboost[observed_gap_comparison_columns],
+    ],
+    ignore_index=True,
+)
+observed_gap_xgboost_model_comparison.to_csv(
+    output_folder / 'xgboost_observed_gap_by_decile_comparison.csv',
+    index=False,
+)
+
+print('Observed treatment-control ED difference by decile across XGBoost models:')
+display(observed_gap_xgboost_model_comparison)
+print(
+    'Interpretation: positive values favor treatment; negative values indicate higher '
+    'observed ED rates among treated members within that model-defined decile. '
+    'Intervals crossing zero are inconclusive.'
+)
+print(
+    'These are unadjusted observed associations within predicted deciles, not randomized '
+    'causal effects. The confidence intervals reflect outcome sampling uncertainty only.'
+)
+"""
+set_cell(notebook, 59, cell59)
+
 cell91 = "".join(notebook["cells"][91]["source"])
 cell91 = cell91.replace(
     "output_folder / 'data_review_summary.csv',",
-    "output_folder / 'data_review_summary.csv',\n    output_folder / 'preprocessing_audit_summary.csv',\n    output_folder / 'preprocessing_column_audit.csv',\n    output_folder / 'preprocessing_split_distribution.csv',",
+    "output_folder / 'data_review_summary.csv',\n    output_folder / 'preprocessing_audit_summary.csv',\n    output_folder / 'preprocessing_column_audit.csv',\n    output_folder / 'preprocessing_split_distribution.csv',\n    output_folder / 'xgboost_observed_gap_by_decile_comparison.csv',",
 )
 cell91 = cell91.replace(
     "folder / 'uplift_decile_summary.csv',",
@@ -831,9 +944,17 @@ cell91 = cell91.replace(
     "        overlap_weighted_xgboost_output_folder / 'uplift_decile_summary.csv',\n"
     "        overlap_weighted_xgboost_output_folder / 'treatment_outcome_benefit_summary.csv',\n"
     "        overlap_weighted_xgboost_output_folder / 'dashboard_avg_benefit_by_decile.png',\n"
+    "        overlap_weighted_xgboost_output_folder / 'uplift_observed_gap_by_decile.csv',\n"
+    "        overlap_weighted_xgboost_output_folder / 'dashboard_observed_gap_by_decile.png',\n"
     "    ]\n"
     ")\n"
     "for folder in [xgboost_output_folder, glmnet_output_folder]:",
+)
+cell91 = cell91.replace(
+    "xlearner_xgboost_output_folder / 'dashboard_xlearner_risk_tier_by_benefit_group.png',",
+    "xlearner_xgboost_output_folder / 'dashboard_xlearner_risk_tier_by_benefit_group.png',\n"
+    "            xlearner_xgboost_output_folder / 'uplift_observed_gap_by_decile.csv',\n"
+    "            xlearner_xgboost_output_folder / 'dashboard_observed_gap_by_decile.png',",
 )
 set_cell(notebook, 91, cell91)
 
