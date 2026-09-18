@@ -629,7 +629,9 @@ Supporting files:
 
 ## Analytical Task 7: Business Value Assessment
 
-This section compares benefit-based targeting with traditional current-risk targeting using the same calculation structure as the PRP report:
+This section compares uplift-based targeting with traditional risk-based targeting by estimating expected avoided ED visits and gross savings under both approaches.
+
+The current calculation assumes:
 
 ```text
 expected_ed_rate_reduction = avg_benefit_score
@@ -640,60 +642,80 @@ net_savings = gross_savings - intervention_cost
 roi = net_savings / intervention_cost
 ```
 
-The analysis assumes **$1,200 per ED visit** and **$250 per intervention**. All values are model-based scenarios, not realized savings.
+The analysis assumes an average cost of **$1,200 per ED visit** and **$250 per intervention**. Because Evaluation Levels 1 and 2 identified XGBoost as the stronger Funds model family, business-value estimates are presented for both XGBoost frameworks.
 
 ### XGBoost T-Learner Targeting
 
 <!-- AUTO_TABLE:xgboost_tlearner_roi_summary START -->
-| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage |
-|---|---:|---:|---:|---:|
-| Top 10% | 190 | $101,201 | $9,879 | $91,322 |
-| Top 20% | 380 | $148,422 | $5,885 | $142,537 |
-| Top 30% | 570 | $172,626 | $6,589 | $166,037 |
-| Top 40% | 760 | $182,935 | $5,070 | $177,865 |
-| Top 50% | 950 | $185,107 | $13,538 | $171,569 |
+| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
+| --- | --- | --- | --- | --- | --- | --- |
+| Top 10% | 190 | $101,201.25 | $9,878.95 | $91,322.30 | 84.3344 | 8.2325 |
+| Top 20% | 380 | $148,421.66 | $5,884.87 | $142,536.78 | 123.6847 | 4.9041 |
+| Top 30% | 570 | $172,625.79 | $6,589.21 | $166,036.57 | 143.8548 | 5.4910 |
+| Top 40% | 760 | $182,934.91 | $5,069.87 | $177,865.04 | 152.4458 | 4.2249 |
+| Top 50% | 950 | $185,106.91 | $12,326.46 | $172,780.46 | 154.2558 | 10.2720 |
 <!-- AUTO_TABLE:xgboost_tlearner_roi_summary END -->
 
-At the model's native uplift-decile grouping, Decile 1 contains 191 observations, estimates 84.6 avoided ED events and $101,536 in gross savings, and yields estimated net savings of $53,786 after intervention cost (ROI 1.13). Later deciles have much smaller or negative benefit, making the model operationally useful primarily for focused targeting.
+<!-- AUTO_TEXT:xgboost_tlearner_roi_interpretation START -->
+This view compares two targeting policies on the same held-out test population: ranking members by XGBoost T-learner predicted uplift versus ranking members by current risk score. Through the top 30% of targeted members, uplift targeting captures $172,625.79 in estimated gross savings, compared with $6,589.21 from current-risk targeting, an uplift advantage of $166,036.57. Gross savings are estimated from the XGBoost T-learner predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
+<!-- AUTO_TEXT:xgboost_tlearner_roi_interpretation END -->
 
-<!-- AUTO_CHART:xgboost_tlearner_roi START -->
-![XGBoost T-learner estimated net savings by uplift decile](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png)
-<!-- AUTO_CHART:xgboost_tlearner_roi END -->
+<!-- AUTO_CHART:xgboost_tlearner_roi_by_decile START -->
+![XGBoost T-learner cumulative gross savings by targeting approach](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+<!-- AUTO_CHART:xgboost_tlearner_roi_by_decile END -->
+
+The chart below compares the marginal gross savings of uplift-based targeting with current-risk targeting across successive targeting bands. Positive values indicate that benefit-based targeting captures more estimated value within that band. In this run, the T-learner maintains a positive marginal advantage through the top 40% of targeted members before the advantage becomes negative in later bands.
+
+<!-- AUTO_CHART:xgboost_tlearner_marginal_advantage START -->
+![XGBoost T-learner marginal gross savings advantage versus current risk](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+<!-- AUTO_CHART:xgboost_tlearner_marginal_advantage END -->
 
 ### XGBoost X-Learner Targeting
 
 <!-- AUTO_TABLE:xgboost_xlearner_roi_summary START -->
-| Targeted group | Members targeted | X-learner gross savings | Current-risk gross savings | X-learner advantage |
-|---|---:|---:|---:|---:|
-| Top 10% | 190 | $40,503 | $9,641 | $30,862 |
-| Top 20% | 380 | $60,801 | $8,917 | $51,883 |
-| Top 30% | 570 | $74,736 | $12,809 | $61,927 |
-| Top 40% | 760 | $83,907 | $15,938 | $67,969 |
-| Top 50% | 950 | $88,910 | $19,772 | $69,139 |
+| Targeted group | Members targeted | X-learner gross savings | Current-risk gross savings | X-learner advantage | X-learner ED visits avoided | Current-risk ED visits avoided |
+|---|---:|---:|---:|---:|---:|---:|
+| Top 10% | 190 | $40,502.76 | $9,641.08 | $30,861.68 | 33.7523 | 8.0342 |
+| Top 20% | 380 | $60,800.60 | $8,917.34 | $51,883.26 | 50.6672 | 7.4311 |
+| Top 30% | 570 | $74,735.74 | $12,809.02 | $61,926.71 | 62.2798 | 10.6742 |
+| Top 40% | 760 | $83,906.86 | $15,937.58 | $67,969.28 | 69.9224 | 13.2813 |
+| Top 50% | 950 | $88,910.47 | $19,601.35 | $69,309.13 | 74.0921 | 16.3345 |
 <!-- AUTO_TABLE:xgboost_xlearner_roi_summary END -->
 
-The X-learner also strongly favors benefit-based targeting over current-risk ranking. Through the top 50%, it estimates $88,910 in cumulative gross savings versus $19,772 under the current-risk ordering. Its benefit estimates are more conservative than the T-learner's, and the $250 intervention-cost assumption produces negative net savings within each individual X-learner decile. This distinction between gross targeting advantage and net ROI is important for decision making.
+<!-- AUTO_TEXT:xgboost_xlearner_roi_interpretation START -->
+The X-learner view uses the same held-out test population and the same cost assumptions, but members are ranked by XGBoost X-learner predicted benefit. Through the top 30% of targeted members, X-learner benefit targeting captures $74,735.74 in estimated gross savings, compared with $12,809.02 from current-risk targeting, an advantage of $61,926.71. The X-learner savings estimates are smaller in absolute dollars because its predicted benefit scores are more conservative than the T-learner scores.
+<!-- AUTO_TEXT:xgboost_xlearner_roi_interpretation END -->
 
 <!-- AUTO_CHART:xgboost_xlearner_roi START -->
 ![XGBoost X-learner cumulative gross savings by targeting approach](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
 <!-- AUTO_CHART:xgboost_xlearner_roi END -->
 
-The X-learner's marginal advantage over current-risk targeting remains positive through the fifth targeting band and becomes negative after the top 50%. This indicates that broad expansion beyond the highest-benefit half of the test population dilutes modeled value.
+The X-learner maintains a positive marginal advantage through the top 50% of targeted members, indicating that benefit-based targeting consistently captures more estimated value than current-risk targeting across the evaluated targeting bands.
 
 <!-- AUTO_CHART:xgboost_xlearner_marginal_advantage START -->
 ![XGBoost X-learner marginal gross savings advantage versus current risk](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 <!-- AUTO_CHART:xgboost_xlearner_marginal_advantage END -->
 
-These estimates compare model-based targeting strategies rather than realized financial outcomes. Actual value depends on intervention effectiveness, achievable outreach capacity, intervention cost, ED-event cost, treatment adherence, duplicate-member handling, and prospective validation.
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, treatment adherence, and validation using live production data.
+
+Overall, both XGBoost frameworks suggest that prioritizing members by predicted treatment benefit captures greater estimated value than prioritizing members by baseline risk alone. The T-learner produces the larger modeled advantage, while the X-learner provides the more conservative estimate. Because Funds Combined is observational and the low-benefit deciles show adverse observed gaps, these results should be treated as operational targeting hypotheses requiring prospective validation.
 
 Supporting files:
 
-- [`XGBoost T-learner ROI by decile`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/uplift_roi_by_decile.csv)
-- [`XGBoost T-learner top-decile summary`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/top_benefit_decile_summary.csv)
-- [`XGBoost X-learner ROI by decile`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/xlearner_roi_by_decile.csv)
-- [`XGBoost X-learner cumulative targeting`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
-- [`XGBoost X-learner marginal targeting`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
-- [`XGBoost X-learner marginal advantage`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost/uplift_roi_by_decile.csv`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/uplift_roi_by_decile.csv)
+- [`XGBoost T-learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
+- [`XGBoost T-learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv)
+- [`XGBoost T-learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
+- [`XGBoost T-learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost T-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+- [`XGBoost T-learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift_Funds/Python/T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+- [`XGBoost X-learner/xlearner_roi_by_decile.csv`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/xlearner_roi_by_decile.csv)
+- [`XGBoost X-learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
+- [`XGBoost X-learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv)
+- [`XGBoost X-learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
+- [`XGBoost X-learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost X-learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+- [`XGBoost X-learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift_Funds/Python/X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 
 ## Level 3 Summary: Operational Evaluation
 
