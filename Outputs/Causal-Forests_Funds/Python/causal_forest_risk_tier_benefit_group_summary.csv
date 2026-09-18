@@ -1,0 +1,16 @@
+risk_tier,benefit_group,members,risk_tier_members,pct_within_risk_tier,risk_tier_source
+1,High benefit,56,335,0.16716417910447762,Original Funds Combined assignment; not derived from current_risk_score
+1,Medium benefit,113,335,0.3373134328358209,Original Funds Combined assignment; not derived from current_risk_score
+1,Low benefit,166,335,0.4955223880597015,Original Funds Combined assignment; not derived from current_risk_score
+2,High benefit,216,651,0.3317972350230415,Original Funds Combined assignment; not derived from current_risk_score
+2,Medium benefit,242,651,0.3717357910906298,Original Funds Combined assignment; not derived from current_risk_score
+2,Low benefit,193,651,0.2964669738863287,Original Funds Combined assignment; not derived from current_risk_score
+3,High benefit,326,662,0.49244712990936557,Original Funds Combined assignment; not derived from current_risk_score
+3,Medium benefit,206,662,0.311178247734139,Original Funds Combined assignment; not derived from current_risk_score
+3,Low benefit,130,662,0.19637462235649547,Original Funds Combined assignment; not derived from current_risk_score
+4,High benefit,33,188,0.17553191489361702,Original Funds Combined assignment; not derived from current_risk_score
+4,Medium benefit,56,188,0.2978723404255319,Original Funds Combined assignment; not derived from current_risk_score
+4,Low benefit,99,188,0.526595744680851,Original Funds Combined assignment; not derived from current_risk_score
+5,High benefit,2,62,0.03225806451612903,Original Funds Combined assignment; not derived from current_risk_score
+5,Medium benefit,13,62,0.20967741935483872,Original Funds Combined assignment; not derived from current_risk_score
+5,Low benefit,47,62,0.7580645161290323,Original Funds Combined assignment; not derived from current_risk_score

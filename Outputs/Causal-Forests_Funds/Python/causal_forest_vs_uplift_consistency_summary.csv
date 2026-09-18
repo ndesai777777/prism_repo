@@ -1,0 +1,5 @@
+comparison,benchmark_role,benchmark_framework,benchmark_model,comparison_basis,n_compared,pearson_corr,spearman_corr,top_decile_overlap,top_20pct_overlap
+Causal forest vs XGBoost T-Learner,Primary selected Funds uplift benchmark,T-Learner,XGBoost,validated_full_source_row_order,1908,0.5383595170545314,0.5409168366869824,0.38421052631578945,0.49343832020997375
+Causal forest vs XGBoost X-Learner,Primary selected Funds uplift benchmark,X-Learner,XGBoost,validated_reproduced_test_row_order,1908,0.5362492105520104,0.5412974141605674,0.4,0.5091863517060368
+Causal forest vs GLMNet T-Learner,Fixed-specification sensitivity benchmark,T-Learner,GLMNet,validated_full_source_row_order,1908,0.12718478672679678,0.17713363400245427,0.15789473684210525,0.2992125984251969
+Causal forest vs GLMNet X-Learner,Fixed-specification sensitivity benchmark,X-Learner,GLMNet,validated_reproduced_test_row_order,1908,-0.005867771573274646,0.003153310963112345,0.09473684210526316,0.2178477690288714

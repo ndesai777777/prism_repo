@@ -1,0 +1,21 @@
+metric,current_value
+Raw rows,6360.0
+Raw columns,56.0
+Modeling members/rows,6360.0
+Duplicate member_id observations retained,2514.0
+Treated members,3030.0
+Control members,3330.0
+Treatment rate,0.47641509433962265
+ED outcome events,1492.0
+Outcome prevalence,0.23459119496855346
+Treated observed ED rate,0.23135313531353136
+Control observed ED rate,0.23753753753753754
+Missing outcomes filled with zero,222.0
+Death-flag rows retained,745.0
+Final predictors before one-hot encoding,36.0
+Continuous/count numeric predictors,10.0
+Binary indicator predictors,21.0
+Multi-level categorical predictors,5.0
+Model matrix columns after one-hot encoding,371.0
+Train rows,4452.0
+Test rows,1908.0

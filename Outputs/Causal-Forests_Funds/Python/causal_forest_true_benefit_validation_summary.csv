@@ -1,0 +1,2 @@
+section,applicability,reason,fabricated_ground_truth
+synthetic_true_benefit_validation,not_applicable,Funds Combined does not provide known member-level counterfactual treatment-effect ground truth.,False

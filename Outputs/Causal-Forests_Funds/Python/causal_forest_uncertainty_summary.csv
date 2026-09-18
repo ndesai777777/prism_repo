@@ -1,0 +1,7 @@
+metric,value
+Mean tau standard error,0.036719582290372005
+Median tau standard error,0.0346299000670381
+Members with tau CI entirely below zero,51.0
+Members with tau CI crossing zero,1854.0
+Members with tau CI entirely above zero,3.0
+Top HTE decile mean tau standard error,0.03825517382919039

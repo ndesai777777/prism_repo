@@ -1,0 +1,12 @@
+metric,value
+Propensity source,fixed_funds_uplift_matched_elastic_net
+Train treatment model AUC,0.7623394257057623
+Test treatment model AUC,0.6823660844562935
+Mean propensity,0.4734866462532895
+Min propensity,0.05
+5th percentile,0.1346950654216661
+Median propensity,0.4624630163839333
+95th percentile,0.9095282816756888
+Max propensity,0.95
+Members at lower clip (0.05),47
+Members at upper clip (0.95),52
