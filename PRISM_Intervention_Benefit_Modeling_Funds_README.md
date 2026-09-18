@@ -448,13 +448,13 @@ The T-learner shows a strong ordered gradient from 0.443 in Decile 1 to -0.361 i
 
 ### Risk Tier Versus Benefit Group
 
-Benefit groups use the same model-relative definitions as the PRP report:
+Benefit groups are model-relative terciles, assigned directly from each model's predicted benefit ranking:
 
 | Benefit group | Definition |
 |---|---|
-| High benefit | Uplift deciles 1–2 (top 20% by predicted benefit) |
-| Medium benefit | Uplift deciles 3–7 (middle 50%) |
-| Low benefit | Uplift deciles 8–10 (bottom 30%) |
+| High benefit | Predicted-benefit tercile (top third) |
+| Medium benefit | Predicted-benefit tercile (middle third) |
+| Low benefit | Predicted-benefit tercile (bottom third) |
 
 Funds risk tiers are the original ordered assignments from 1 (lowest) through 5 (highest); they are not derived from `current_risk_score`.
 

@@ -799,6 +799,46 @@ cell89 = cell89.replace(
     "print('Risk tier population summary (original Funds tiers 1-5):')\n",
 )
 cell89 = cell89.replace(
+    "def assign_model_relative_benefit_group(uplift_decile):\n"
+    "    uplift_decile = int(uplift_decile)\n\n"
+    "    if uplift_decile in [1, 2]:\n"
+    "        return 'High benefit'\n\n"
+    "    if uplift_decile in [3, 4, 5, 6, 7]:\n"
+    "        return 'Medium benefit'\n\n"
+    "    return 'Low benefit'\n",
+    "def assign_model_relative_benefit_groups(benefit_score):\n"
+    "    # Rank first so ties are resolved deterministically and qcut produces\n"
+    "    # three equal-frequency groups (sizes differ by at most one member).\n"
+    "    benefit_rank = benefit_score.rank(method='first', ascending=False)\n"
+    "    return pd.qcut(\n"
+    "        benefit_rank,\n"
+    "        q=3,\n"
+    "        labels=benefit_group_order,\n"
+    "    )\n",
+)
+cell89 = cell89.replace(
+    "    df = scored_df.loc[scored_df['risk_tier'].isin(risk_tier_order)].copy()\n",
+    "    df = scored_df.copy()\n\n"
+    "    df['benefit_group'] = assign_model_relative_benefit_groups(\n"
+    "        df['benefit_score']\n"
+    "    )\n\n"
+    "    df = df.loc[df['risk_tier'].isin(risk_tier_order)].copy()\n",
+)
+cell89 = cell89.replace(
+    "    df['benefit_group'] = df['uplift_decile'].apply(\n"
+    "        assign_model_relative_benefit_group\n"
+    "    )\n\n",
+    "",
+)
+cell89 = cell89.replace(
+    "            'High benefit': 'uplift_decile 1-2 (top 20%)',\n"
+    "            'Medium benefit': 'uplift_decile 3-7 (middle 50%)',\n"
+    "            'Low benefit': 'uplift_decile 8-10 (bottom 30%)',\n",
+    "            'High benefit': 'predicted-benefit tercile (top third)',\n"
+    "            'Medium benefit': 'predicted-benefit tercile (middle third)',\n"
+    "            'Low benefit': 'predicted-benefit tercile (bottom third)',\n",
+)
+cell89 = cell89.replace(
     "tlearner_risk_tier_benefit_group_summary = build_risk_tier_benefit_group_outputs(\n",
     "tlearner_xgboost_risk_tier_benefit_group_summary = build_risk_tier_benefit_group_outputs(\n"
     "    results_test_xgboost,\n"
