@@ -1,4 +1,4 @@
 metric,value
-weighted_shap_baseline,0.02227979954045129
-sum_mean_signed_feature_shap,-0.02324859266322733
-baseline_plus_signed_shap_sum,-0.0009687931227760384
+weighted_shap_baseline,0.017217649559453634
+sum_mean_signed_feature_shap,-0.020109338032769868
+baseline_plus_signed_shap_sum,-0.0028916884733162333

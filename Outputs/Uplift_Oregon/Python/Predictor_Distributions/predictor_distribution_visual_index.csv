@@ -1,38 +1,38 @@
 variable,category,visual_type,output_file
-age,Demographics,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\age_histogram.png
-rx_count_last_6m,Pharmacy,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\rx_count_last_6m_histogram.png
-total_cost_last_6m,Pharmacy,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\total_cost_last_6m_histogram.png
-current_risk_score,Risk Scores,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\current_risk_score_histogram.png
-percolator_score,Risk Scores,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\percolator_score_histogram.png
-admits_last_6m,Utilization,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\admits_last_6m_histogram.png
-ed_visits_last_30d,Utilization,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\ed_visits_last_30d_histogram.png
-ed_visits_last_6m,Utilization,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\ed_visits_last_6m_histogram.png
-observation_stays_last_6m,Utilization,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\observation_stays_last_6m_histogram.png
-op_visits_last_6m,Utilization,numeric_histogram,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Numeric\op_visits_last_6m_histogram.png
-anxiety_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\anxiety_flag_bar_chart.png
-asthma_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\asthma_flag_bar_chart.png
-bh_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\bh_flag_bar_chart.png
-cad_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\cad_flag_bar_chart.png
-chf_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\chf_flag_bar_chart.png
-ckd_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\ckd_flag_bar_chart.png
-copd_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\copd_flag_bar_chart.png
-depression_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\depression_flag_bar_chart.png
-diabetes_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\diabetes_flag_bar_chart.png
-htn_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\htn_flag_bar_chart.png
-hyperlipidemia_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\hyperlipidemia_flag_bar_chart.png
-substance_use_flag,Clinical Conditions,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\substance_use_flag_bar_chart.png
-client_contract,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\client_contract_bar_chart.png
-county,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\county_bar_chart.png
-dual_elg,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\dual_elg_bar_chart.png
-gender,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\gender_bar_chart.png
-plan_type,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\plan_type_bar_chart.png
-program,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\program_bar_chart.png
-state,Demographics,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\state_bar_chart.png
-opioid_flag,Pharmacy,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\opioid_flag_bar_chart.png
-polypharmacy_flag,Pharmacy,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\polypharmacy_flag_bar_chart.png
-risk_tier,Risk Scores,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\risk_tier_bar_chart.png
-financial_strain_flag,SDOH,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\financial_strain_flag_bar_chart.png
-food_insecurity_flag,SDOH,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\food_insecurity_flag_bar_chart.png
-healthliteracy_challenges_flag,SDOH,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\healthliteracy_challenges_flag_bar_chart.png
-housing_instability_flag,SDOH,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\housing_instability_flag_bar_chart.png
-transportation_barrier_flag,SDOH,categorical_bar_chart,C:\Users\i.Nikesh.Desai\OneDrive - Acentra\Documents\GitHub\prism_repo\Outputs\Uplift_Oregon\Python\Predictor_Distributions\Categorical\transportation_barrier_flag_bar_chart.png
+age,Demographics,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/age_histogram.png
+rx_count_last_6m,Pharmacy,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/rx_count_last_6m_histogram.png
+total_cost_last_6m,Pharmacy,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/total_cost_last_6m_histogram.png
+current_risk_score,Risk Scores,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/current_risk_score_histogram.png
+percolator_score,Risk Scores,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/percolator_score_histogram.png
+admits_last_6m,Utilization,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/admits_last_6m_histogram.png
+ed_visits_last_30d,Utilization,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/ed_visits_last_30d_histogram.png
+ed_visits_last_6m,Utilization,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/ed_visits_last_6m_histogram.png
+observation_stays_last_6m,Utilization,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/observation_stays_last_6m_histogram.png
+op_visits_last_6m,Utilization,numeric_histogram,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Numeric/op_visits_last_6m_histogram.png
+anxiety_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/anxiety_flag_bar_chart.png
+asthma_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/asthma_flag_bar_chart.png
+bh_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/bh_flag_bar_chart.png
+cad_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/cad_flag_bar_chart.png
+chf_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/chf_flag_bar_chart.png
+ckd_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/ckd_flag_bar_chart.png
+copd_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/copd_flag_bar_chart.png
+depression_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/depression_flag_bar_chart.png
+diabetes_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/diabetes_flag_bar_chart.png
+htn_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/htn_flag_bar_chart.png
+hyperlipidemia_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/hyperlipidemia_flag_bar_chart.png
+substance_use_flag,Clinical Conditions,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/substance_use_flag_bar_chart.png
+client_contract,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/client_contract_bar_chart.png
+county,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/county_bar_chart.png
+dual_elg,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/dual_elg_bar_chart.png
+gender,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/gender_bar_chart.png
+plan_type,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/plan_type_bar_chart.png
+program,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/program_bar_chart.png
+state,Demographics,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/state_bar_chart.png
+opioid_flag,Pharmacy,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/opioid_flag_bar_chart.png
+polypharmacy_flag,Pharmacy,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/polypharmacy_flag_bar_chart.png
+risk_tier,Risk Scores,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/risk_tier_bar_chart.png
+financial_strain_flag,SDOH,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/financial_strain_flag_bar_chart.png
+food_insecurity_flag,SDOH,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/food_insecurity_flag_bar_chart.png
+healthliteracy_challenges_flag,SDOH,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/healthliteracy_challenges_flag_bar_chart.png
+housing_instability_flag,SDOH,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/housing_instability_flag_bar_chart.png
+transportation_barrier_flag,SDOH,categorical_bar_chart,/home/sagemaker-user/prism_repo/Outputs/Uplift_Oregon/Python/Predictor_Distributions/Categorical/transportation_barrier_flag_bar_chart.png

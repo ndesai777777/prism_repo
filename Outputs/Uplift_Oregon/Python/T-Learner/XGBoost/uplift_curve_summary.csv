@@ -1,2 +1,2 @@
 model,observed_gap_area_under_curve,predicted_benefit_area_under_curve,final_cumulative_observed_gap,final_cumulative_avg_predicted_benefit
-XGBoost,0.0813388570492464,0.07897903231894159,0.08789214415348717,0.022308117
+XGBoost,0.10117865596800403,0.06818700121491368,0.08789214415348717,0.008913491
