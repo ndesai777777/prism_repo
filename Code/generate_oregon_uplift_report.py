@@ -94,6 +94,63 @@ def side_by_side(left_path: str, left_alt: str, right_path: str, right_alt: str)
     )
 
 
+def save_targeting_charts(
+    cumulative: pd.DataFrame,
+    advantage: pd.DataFrame,
+    out_dir: Path,
+    learner_label: str,
+) -> None:
+    """Save full-population cumulative and sign-colored marginal charts."""
+    line_colors = {"Uplift score": "#2F5597", "Current risk score": "#ED7D31"}
+    fig, ax = plt.subplots(figsize=(8.5, 5.25))
+    for approach, group in cumulative.groupby("targeting_approach", sort=False):
+        group = group.sort_values("through_decile")
+        ax.plot(
+            group["population_fraction_targeted"] * 100,
+            group["cumulative_gross_savings"],
+            marker="o",
+            linewidth=2.2,
+            label=approach,
+            color=line_colors[approach],
+        )
+    ax.axhline(0, color="#666666", linewidth=0.8)
+    ax.set_xlim(0, 102)
+    ax.set_xticks(range(10, 101, 10))
+    ax.set_title(f"XGBoost {learner_label}: Cumulative Gross Savings by Targeting Method")
+    ax.set_xlabel("Population targeted (%)")
+    ax.set_ylabel("Cumulative gross savings ($)")
+    ax.grid(axis="y", alpha=0.25)
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    fig.savefig(out_dir / "dashboard_cumulative_gross_savings_targeting.png", dpi=200)
+    plt.close(fig)
+
+    chart_advantage = advantage.copy()
+    chart_advantage["decile"] = pd.to_numeric(
+        chart_advantage["decile"], errors="raise"
+    ).astype(int)
+    bar_colors = np.where(
+        chart_advantage["marginal_advantage"] < 0,
+        "#C00000",
+        "#4C78A8",
+    )
+    fig, ax = plt.subplots(figsize=(8.5, 5.25))
+    ax.bar(
+        chart_advantage["decile"],
+        chart_advantage["marginal_advantage"],
+        color=bar_colors,
+    )
+    ax.axhline(0, color="#666666", linewidth=0.8)
+    ax.set_title(f"XGBoost {learner_label}: Marginal Gross Savings Advantage vs Current Risk")
+    ax.set_xlabel("Targeting decile")
+    ax.set_ylabel("Marginal gross savings advantage ($)")
+    ax.set_xticks(range(1, 11))
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(out_dir / "dashboard_marginal_gross_savings_advantage_vs_current_risk.png", dpi=200)
+    plt.close(fig)
+
+
 def make_tlearner_targeting_artifacts(scored: pd.DataFrame) -> pd.DataFrame:
     """Reproduce the Funds cumulative/marginal targeting calculation for T scores."""
     out_dir = OUTPUT_ROOT / "T-Learner" / "XGBoost"
@@ -159,38 +216,7 @@ def make_tlearner_targeting_artifacts(scored: pd.DataFrame) -> pd.DataFrame:
     top50 = cumulative[cumulative["through_decile"].eq(5)].copy()
     top50.to_csv(out_dir / "cumulative_gross_savings_summary_top50.csv", index=False)
 
-    colors = {"Uplift score": "#2F5597", "Current risk score": "#ED7D31"}
-    fig, ax = plt.subplots(figsize=(8.5, 5.25))
-    for approach, group in cumulative.groupby("targeting_approach", sort=False):
-        ax.plot(
-            group["population_fraction_targeted"] * 100,
-            group["cumulative_gross_savings"],
-            marker="o",
-            linewidth=2.2,
-            label=approach,
-            color=colors[approach],
-        )
-    ax.axhline(0, color="#666666", linewidth=0.8)
-    ax.set_title("XGBoost T-Learner: Cumulative Gross Savings by Targeting Method")
-    ax.set_xlabel("Population targeted (%)")
-    ax.set_ylabel("Cumulative gross savings ($)")
-    ax.grid(axis="y", alpha=0.25)
-    ax.legend(frameon=False)
-    fig.tight_layout()
-    fig.savefig(out_dir / "dashboard_cumulative_gross_savings_targeting.png", dpi=200)
-    plt.close(fig)
-
-    fig, ax = plt.subplots(figsize=(8.5, 5.25))
-    ax.bar(advantage["decile"], advantage["marginal_advantage"], color="#2F5597")
-    ax.axhline(0, color="#666666", linewidth=0.8)
-    ax.set_title("XGBoost T-Learner: Marginal Savings Advantage vs Current Risk")
-    ax.set_xlabel("Targeting decile")
-    ax.set_ylabel("Uplift minus risk marginal gross savings ($)")
-    ax.set_xticks(range(1, 11))
-    ax.grid(axis="y", alpha=0.25)
-    fig.tight_layout()
-    fig.savefig(out_dir / "dashboard_marginal_gross_savings_advantage_vs_current_risk.png", dpi=200)
-    plt.close(fig)
+    save_targeting_charts(cumulative, advantage, out_dir, "T-Learner")
 
     return cumulative
 
@@ -221,7 +247,14 @@ def main() -> None:
     consistency = load("X-Learner/xlearner_vs_tlearner_consistency_summary.csv")
     x_test = load("X-Learner/XGBoost/xlearner_scored_test_output.csv")
     x_cumulative = load("X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv")
+    x_advantage = load("X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv")
     t_cumulative = make_tlearner_targeting_artifacts(x_test)
+    save_targeting_charts(
+        x_cumulative,
+        x_advantage,
+        OUTPUT_ROOT / "X-Learner" / "XGBoost",
+        "X-Learner",
+    )
 
     xgb_eval = evaluation[evaluation["model"].eq("XGBoost")].iloc[0]
     glm_eval = evaluation[evaluation["model"].eq("GLMNET")].iloc[0]

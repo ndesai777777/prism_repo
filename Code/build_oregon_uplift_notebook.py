@@ -119,6 +119,45 @@ cell8 = cell8.replace(
 )
 set_cell(notebook, 8, cell8)
 
+# Keep both X-Learner business-value charts consistent with the Oregon report:
+# show the full 10%-100% targeting range and use red for negative marginal
+# advantage bars.
+cell97 = "".join(notebook["cells"][97]["source"])
+xlearner_cumulative_filter = (
+    "    chart_df = cumulative_df[cumulative_df['population_fraction_targeted'] <= 0.51]\n"
+)
+if xlearner_cumulative_filter not in cell97:
+    raise RuntimeError("Could not locate the X-Learner cumulative chart filter in cell 97.")
+cell97 = cell97.replace(
+    xlearner_cumulative_filter,
+    "    chart_df = cumulative_df.copy()\n",
+    1,
+)
+
+xlearner_bar_marker = """        fig, ax = plt.subplots(figsize=(8.5, 5.25))
+        ax.bar(
+            advantage_df['decile'].astype(str),
+            advantage_df['marginal_advantage'],
+            color='#4c78a8',
+        )
+"""
+xlearner_bar_replacement = """        fig, ax = plt.subplots(figsize=(8.5, 5.25))
+        bar_colors = np.where(
+            advantage_df['marginal_advantage'] < 0,
+            '#C00000',
+            '#4C78A8',
+        )
+        ax.bar(
+            advantage_df['decile'].astype(str),
+            advantage_df['marginal_advantage'],
+            color=bar_colors,
+        )
+"""
+if xlearner_bar_marker not in cell97:
+    raise RuntimeError("Could not locate the X-Learner marginal chart styling in cell 97.")
+cell97 = cell97.replace(xlearner_bar_marker, xlearner_bar_replacement, 1)
+set_cell(notebook, 97, cell97)
+
 set_cell(
     notebook,
     6,
