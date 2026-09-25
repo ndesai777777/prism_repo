@@ -207,7 +207,6 @@ def main() -> None:
 
     t_gap = load("T-Learner/XGBoost/uplift_observed_gap_by_decile.csv")
     t_top = load("T-Learner/XGBoost/top_benefit_decile_summary.csv").iloc[0]
-    t_roi = load("T-Learner/XGBoost/uplift_roi_by_decile.csv")
     t_risk = load("T-Learner/XGBoost/tlearner_risk_tier_benefit_group_summary.csv")
     t_shap_models = load("T-Learner/XGBoost/shap_importance_treated_control_models.csv")
     t_shap_benefit = load("T-Learner/XGBoost/shap_importance_benefit_score.csv")
@@ -217,7 +216,6 @@ def main() -> None:
 
     x_decile = load("X-Learner/XGBoost/xlearner_decile_summary.csv")
     x_gap = load("X-Learner/XGBoost/uplift_observed_gap_by_decile.csv")
-    x_roi = load("X-Learner/XGBoost/xlearner_roi_by_decile.csv")
     x_risk = load("X-Learner/XGBoost/xlearner_risk_tier_benefit_group_summary.csv")
     x_benefit = load("X-Learner/XGBoost/xlearner_benefit_driver_importance.csv")
     consistency = load("X-Learner/xlearner_vs_tlearner_consistency_summary.csv")
@@ -237,9 +235,12 @@ def main() -> None:
         [r["split"], r["group"], integer(r["n"]), integer(r["positive_ed_events"]), integer(r["negative_ed_events"]), percent(r["event_rate"])]
         for _, r in events.iterrows()
     ]
+    def tlearner_model_label(model: str) -> str:
+        return "XGBoost T-Learner" if model == "XGBoost" else "GLMNet T-Learner"
+
     performance_rows = [
         [
-            r["model"],
+            tlearner_model_label(r["model"]),
             number(r["treated_cv_auc"]),
             number(r["control_cv_auc"]),
             number(r["treated_test_auc"]),
@@ -252,11 +253,11 @@ def main() -> None:
         for _, r in evaluation.iterrows()
     ]
     separation_rows = [
-        [r["model"], r["group"], number(r["auc"]), number(r["avg_pred_actual_positive"]), number(r["avg_pred_actual_negative"]), number(r["avg_pred_positive_minus_negative"])]
+        [tlearner_model_label(r["model"]), r["group"], number(r["auc"]), number(r["avg_pred_actual_positive"]), number(r["avg_pred_actual_negative"]), number(r["avg_pred_positive_minus_negative"])]
         for _, r in separation.iterrows()
     ]
     range_rows = [
-        [r["model"], r["group"], number(r["min_pred"]), number(r["p10_pred"]), number(r["median_pred"]), number(r["mean_pred"]), number(r["p90_pred"]), number(r["max_pred"])]
+        [tlearner_model_label(r["model"]), r["group"], number(r["min_pred"]), number(r["p10_pred"]), number(r["median_pred"]), number(r["mean_pred"]), number(r["p90_pred"]), number(r["max_pred"])]
         for _, r in prediction_ranges.iterrows()
     ]
     risk_rows = [
@@ -294,24 +295,45 @@ def main() -> None:
             for idx, row in pivot.iterrows()
         ]
 
-    def roi_rows(frame: pd.DataFrame) -> list[list[object]]:
-        return [
-            [integer(r["uplift_decile"]), integer(r["n"]), number(r["expected_ed_rate_reduction"]), number(r["expected_ed_visits_avoided"], 2), dollars(r["gross_savings"]), dollars(r["intervention_cost"]), dollars(r["net_savings"]), percent(r["roi"])]
-            for _, r in frame.iterrows()
-        ]
+    def targeting_comparison_rows(frame: pd.DataFrame) -> list[list[object]]:
+        uplift = frame[frame["targeting_approach"].eq("Uplift score")].set_index("through_decile")
+        risk = frame[frame["targeting_approach"].eq("Current risk score")].set_index("through_decile")
+        rows: list[list[object]] = []
+        for decile in range(1, 6):
+            uplift_row = uplift.loc[decile]
+            risk_row = risk.loc[decile]
+            rows.append(
+                [
+                    f"Top {decile * 10}%",
+                    integer(uplift_row["n"]),
+                    dollars(uplift_row["cumulative_gross_savings"], 2),
+                    dollars(risk_row["cumulative_gross_savings"], 2),
+                    dollars(
+                        uplift_row["cumulative_gross_savings"]
+                        - risk_row["cumulative_gross_savings"],
+                        2,
+                    ),
+                    number(uplift_row["cumulative_estimated_ed_visits_avoided"], 4),
+                    number(risk_row["cumulative_estimated_ed_visits_avoided"], 4),
+                ]
+            )
+        return rows
 
-    def targeting_rows(frame: pd.DataFrame) -> list[list[object]]:
-        return [
-            [r["targeting_approach"], integer(r["through_decile"]), percent(r["population_fraction_targeted"]), integer(r["n"]), number(r["cumulative_estimated_ed_visits_avoided"], 2), dollars(r["cumulative_gross_savings"])]
-            for _, r in frame[frame["through_decile"].isin([1, 3, 5, 10])].iterrows()
-        ]
+    def targeting_values(frame: pd.DataFrame, decile: int) -> tuple[pd.Series, pd.Series]:
+        selected = frame[frame["through_decile"].eq(decile)]
+        uplift = selected[selected["targeting_approach"].eq("Uplift score")].iloc[0]
+        risk = selected[selected["targeting_approach"].eq("Current risk score")].iloc[0]
+        return uplift, risk
+
+    t_top30_uplift, t_top30_risk = targeting_values(t_cumulative, 3)
+    x_top30_uplift, x_top30_risk = targeting_values(x_cumulative, 3)
 
     t_model_shap = {
         name: group.sort_values("mean_abs_shap", ascending=False).head(10)
         for name, group in t_shap_models.groupby("model")
     }
     consistency_rows = [
-        [r["model"], number(r["pearson_benefit_score_corr"]), number(r["spearman_benefit_score_corr"]), percent(r["top_decile_overlap_pct"]), number(r["t_learner_mean_benefit_score"]), number(r["x_learner_mean_benefit_score"])]
+        [f"{r['model']} model family", number(r["pearson_benefit_score_corr"]), number(r["spearman_benefit_score_corr"]), percent(r["top_decile_overlap_pct"]), number(r["t_learner_mean_benefit_score"]), number(r["x_learner_mean_benefit_score"])]
         for _, r in consistency.iterrows()
     ]
 
@@ -464,21 +486,21 @@ The held-out control group contains 116 records and 32 events. These counts are 
 <!-- AUTO_TABLE: oregon_model_performance -->
 {table(['Model', 'Treated CV AUC', 'Control CV AUC', 'Treated test AUC', 'Control test AUC', 'Treated Brier', 'Control Brier', 'Treated calibration error', 'Control calibration error'], performance_rows)}
 
-GLMNet has the higher mean held-out factual AUC ({number(avg_glm_auc)} versus {number(avg_xgb_auc)} for XGBoost), driven by its control-group AUC. XGBoost is slightly stronger for treated records and has the better average calibration error ({number(avg_xgb_cal)} versus {number(avg_glm_cal)}). The Oregon result is therefore mixed rather than a simple winner on every metric.
+The GLMNet T-Learner has the higher mean held-out factual AUC ({number(avg_glm_auc)} versus {number(avg_xgb_auc)} for the XGBoost T-Learner), driven by its control-group AUC. The XGBoost T-Learner is slightly stronger for treated records and has the better average calibration error ({number(avg_xgb_cal)} versus {number(avg_glm_cal)}). The Oregon result is therefore mixed rather than a simple winner on every metric.
 
 ### Factual Discrimination And Prediction Separation
 
 <!-- AUTO_TABLE: oregon_prediction_separation -->
 {table(['Model', 'Group', 'AUC', 'Mean prediction: event', 'Mean prediction: no event', 'Difference'], separation_rows)}
 
-{side_by_side('T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png', 'XGBoost factual prediction distributions', 'T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png', 'GLMNet factual prediction distributions')}
+{side_by_side('T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png', 'XGBoost T-Learner factual prediction distributions', 'T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png', 'GLMNet T-Learner factual prediction distributions')}
 
 ### Brier Score And Calibration
 
-Both model families have similar average Brier scores, while XGBoost has lower mean calibration error. Calibration matters directly here because a benefit score is the difference between two predicted probabilities; bias in either potential-outcome model can distort the estimated treatment-effect scale.
+Both T-Learner model families have similar average Brier scores, while the XGBoost T-Learner has lower mean calibration error. Calibration matters directly here because a benefit score is the difference between two predicted probabilities; bias in either potential-outcome model can distort the estimated treatment-effect scale.
 
 <!-- AUTO_CHART: oregon_calibration_comparison -->
-{side_by_side('T-Learner/XGBoost/dashboard_calibration_plot.png', 'XGBoost calibration', 'T-Learner/GLMNet/dashboard_calibration_plot.png', 'GLMNet calibration')}
+{side_by_side('T-Learner/XGBoost/dashboard_calibration_plot.png', 'XGBoost T-Learner calibration', 'T-Learner/GLMNet/dashboard_calibration_plot.png', 'GLMNet T-Learner calibration')}
 
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
@@ -489,11 +511,11 @@ The event is not extremely rare overall, but subgroup sizes remain limited. Some
 
 ### Model Performance Takeaway
 
-For direct methodological parity with the Funds report, XGBoost remains the primary Oregon uplift model and GLMNet remains the transparent sensitivity model. That choice is supported by XGBoost's stronger calibration and plausible top-decile benefit scale, not by universal AUC dominance. GLMNet's higher average factual AUC is reported explicitly and should be revisited in future cohorts.
+For direct methodological parity with the Funds report, the XGBoost T-Learner remains the primary Oregon T-Learner and the GLMNet T-Learner remains the transparent sensitivity model. That choice is supported by the XGBoost T-Learner's stronger calibration and plausible top-decile benefit scale, not by universal AUC dominance. The GLMNet T-Learner's higher average factual AUC is reported explicitly and should be revisited in future cohorts.
 
 ## Level 1 Summary: Outcome Model Validation
 
-The factual outcome models contain useful signal: held-out AUCs range from {number(evaluation[['treated_test_auc','control_test_auc']].min().min())} to {number(evaluation[['treated_test_auc','control_test_auc']].max().max())}. However, discrimination alone does not validate uplift ranking. XGBoost offers the better probability calibration, while GLMNet has stronger average discrimination. Both therefore move forward to treatment-effect evaluation, with XGBoost as the report's primary model and GLMNet as a sensitivity check.
+The factual outcome models contain useful signal: held-out AUCs range from {number(evaluation[['treated_test_auc','control_test_auc']].min().min())} to {number(evaluation[['treated_test_auc','control_test_auc']].max().max())}. However, discrimination alone does not validate uplift ranking. The XGBoost T-Learner offers the better probability calibration, while the GLMNet T-Learner has stronger average discrimination. Both therefore move forward to treatment-effect evaluation, with the XGBoost T-Learner as the primary T-Learner and the GLMNet T-Learner as a sensitivity check.
 
 # Evaluation Level 2: Uplift Model Validation
 
@@ -515,7 +537,7 @@ The strongest predicted benefit should appear in decile 1 and decrease toward de
 {table(['Decile', 'N', 'Average predicted benefit', 'Observed control - treated gap', '95% CI', 'Treated N', 'Control N'], gap_rows(t_gap))}
 
 <!-- AUTO_CHART: oregon_tlearner_decile_pair -->
-{side_by_side('T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'T-Learner predicted benefit by decile', 'T-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'T-Learner observed gap by decile')}
+{side_by_side('T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'XGBoost T-Learner predicted benefit by decile', 'T-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'XGBoost T-Learner observed gap by decile')}
 
 The XGBoost T-Learner's decile Spearman correlation between predicted benefit and observed gap is {number(xgb_eval['benefit_gap_spearman_corr_by_decile'])}. The negative, near-zero value means the observed gap does not decline monotonically with predicted benefit. This is the central validation weakness of the current T-Learner result.
 
@@ -525,7 +547,7 @@ The XGBoost X-Learner produces a wider score spread, from {number(x_decile.iloc[
 {table(['Decile', 'N', 'Average predicted benefit', 'Observed control - treated gap', '95% CI', 'Treated N', 'Control N'], gap_rows(x_gap))}
 
 <!-- AUTO_CHART: oregon_xlearner_decile_pair -->
-{side_by_side('X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'X-Learner predicted benefit by decile', 'X-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'X-Learner observed gap by decile')}
+{side_by_side('X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'XGBoost X-Learner predicted benefit by decile', 'X-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'XGBoost X-Learner observed gap by decile')}
 
 GLMNet's T-Learner has a positive decile Spearman correlation ({number(glm_eval['benefit_gap_spearman_corr_by_decile'])}), but its top predicted benefit ({number(glm_top['top_decile_avg_predicted_benefit'])}) lies above the observed-gap 95% interval ({number(glm_eval['top_decile_observed_gap_ci_lower_95'])} to {number(glm_eval['top_decile_observed_gap_ci_upper_95'])}). It may rank more consistently while overstating absolute benefit.
 
@@ -542,7 +564,7 @@ For comparison, the X-Learner risk-tier mix is:
 {table(['Risk tier', 'High benefit', 'Medium benefit', 'Low benefit'], risk_mix_rows(x_risk))}
 
 <!-- AUTO_CHART: oregon_risk_benefit_pair -->
-{side_by_side('T-Learner/XGBoost/dashboard_tlearner_risk_tier_by_benefit_group.png', 'T-Learner risk tier and benefit group', 'X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png', 'X-Learner risk tier and benefit group')}
+{side_by_side('T-Learner/XGBoost/dashboard_tlearner_risk_tier_by_benefit_group.png', 'XGBoost T-Learner risk tier and benefit group', 'X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png', 'XGBoost X-Learner risk tier and benefit group')}
 
 High modeled benefit appears in multiple risk tiers rather than only in the highest-risk tier. For example, {percent(t_risk[(t_risk['risk_tier'].eq(1)) & (t_risk['benefit_group'].eq('High benefit'))]['pct_within_risk_tier'].iloc[0])} of valid tier-1 test records fall in the T-Learner high-benefit group. Risk-only targeting would therefore select a meaningfully different population.
 
@@ -551,15 +573,15 @@ High modeled benefit appears in multiple risk tiers rather than only in the high
 <!-- AUTO_TABLE: oregon_framework_consistency -->
 {table(['Model family', 'Pearson correlation', 'Spearman correlation', 'Top-decile overlap', 'T-Learner mean benefit', 'X-Learner mean benefit'], consistency_rows)}
 
-XGBoost has moderate T-versus-X score agreement (Spearman {number(consistency[consistency['model'].eq('XGBoost')]['spearman_benefit_score_corr'].iloc[0])}), while GLMNet agreement is weak. Moderate score correlation with limited top-decile overlap means framework choice materially changes which individual records are prioritized.
+The XGBoost model family has moderate T-versus-X score agreement (Spearman {number(consistency[consistency['model'].eq('XGBoost')]['spearman_benefit_score_corr'].iloc[0])}), while GLMNet agreement is weak. Moderate score correlation with limited top-decile overlap means framework choice materially changes which individual records are prioritized.
 
 ### True-Benefit Top-Group Overlap
 
-True-benefit top-group overlap cannot be calculated for Oregon because individual counterfactual benefit is unobserved. The report instead shows T-versus-X top-decile overlap: {percent(consistency[consistency['model'].eq('XGBoost')]['top_decile_overlap_pct'].iloc[0])} for XGBoost. This is a stability diagnostic, not a truth benchmark.
+True-benefit top-group overlap cannot be calculated for Oregon because individual counterfactual benefit is unobserved. The report instead shows T-versus-X top-decile overlap: {percent(consistency[consistency['model'].eq('XGBoost')]['top_decile_overlap_pct'].iloc[0])} for the XGBoost model family. This is a stability diagnostic, not a truth benchmark.
 
 ## Level 2 Summary: Uplift Model Validation
 
-The Oregon analysis produces clear predicted score gradients but mixed empirical validation. The XGBoost T-Learner's top predicted magnitude is compatible with its wide observed interval, yet its observed gaps are not monotonic. The X-Learner's first decile has a positive observed-gap interval, but the two frameworks overlap on only about one-third of top-decile records. These findings support a targeted prospective pilot and do not support interpreting the scores as proven individual causal effects.
+The Oregon analysis produces clear predicted score gradients but mixed empirical validation. The XGBoost T-Learner's top predicted magnitude is compatible with its wide observed interval, yet its observed gaps are not monotonic. The XGBoost X-Learner's first decile has a positive observed-gap interval, but the two frameworks overlap on only about one-third of top-decile records. These findings support a targeted prospective pilot and do not support interpreting the scores as proven individual causal effects.
 
 # Evaluation Level 3: Operational Evaluation
 
@@ -575,7 +597,7 @@ The treated and control factual models emphasize related but not identical risk 
 <!-- AUTO_TABLE: oregon_factual_shap_control -->
 {table(['Rank', 'Control-model feature', 'Mean absolute SHAP'], [[i, r['feature'], number(r['mean_abs_shap'])] for i, (_, r) in enumerate(t_model_shap['Control Model'].iterrows(), 1)])}
 
-{side_by_side('T-Learner/XGBoost/dashboard_shap_treated_model.png', 'Treated factual model SHAP', 'T-Learner/XGBoost/dashboard_shap_control_model.png', 'Control factual model SHAP')}
+{side_by_side('T-Learner/XGBoost/dashboard_shap_treated_model.png', 'XGBoost T-Learner treated factual model SHAP', 'T-Learner/XGBoost/dashboard_shap_control_model.png', 'XGBoost T-Learner control factual model SHAP')}
 
 ### Explainability Approaches
 
@@ -591,15 +613,15 @@ GLMNet provides a transparent sensitivity view, but its top-decile benefit magni
 ### SHAP Benefit-Score Contributions
 
 <!-- AUTO_TABLE: oregon_tlearner_benefit_shap -->
-{table(['Rank', 'T-Learner feature', 'Mean absolute benefit SHAP', 'Mean signed SHAP', 'Positive SHAP share'], shap_rows(t_shap_benefit, 12))}
+{table(['Rank', 'XGBoost T-Learner feature', 'Mean absolute benefit SHAP', 'Mean signed SHAP', 'Positive SHAP share'], shap_rows(t_shap_benefit, 12))}
 
 <!-- AUTO_TABLE: oregon_xlearner_benefit_shap -->
-{table(['Rank', 'X-Learner feature', 'Mean absolute benefit SHAP', 'Mean signed SHAP', 'Positive SHAP share'], shap_rows(x_benefit, 12))}
+{table(['Rank', 'XGBoost X-Learner feature', 'Mean absolute benefit SHAP', 'Mean signed SHAP', 'Positive SHAP share'], shap_rows(x_benefit, 12))}
 
 <!-- AUTO_CHART: oregon_benefit_shap_pair -->
-{side_by_side('T-Learner/XGBoost/dashboard_shap_benefit_score.png', 'T-Learner benefit-score SHAP', 'X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png', 'X-Learner benefit-score SHAP')}
+{side_by_side('T-Learner/XGBoost/dashboard_shap_benefit_score.png', 'XGBoost T-Learner benefit-score SHAP', 'X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png', 'XGBoost X-Learner benefit-score SHAP')}
 
-Recent ED utilization, recent total cost, percolator score, age, and current risk score dominate the T-Learner benefit explanation. The X-Learner also emphasizes recent ED use, total cost, and age, though at a smaller contribution scale. The overlap is reassuring at the population level; the limited top-decile member overlap shows that similar global drivers do not imply identical individual rankings.
+Recent ED utilization, recent total cost, percolator score, age, and current risk score dominate the XGBoost T-Learner benefit explanation. The XGBoost X-Learner also emphasizes recent ED use, total cost, and age, though at a smaller contribution scale. The overlap is reassuring at the population level; the limited top-decile member overlap shows that similar global drivers do not imply identical individual rankings.
 
 ### Known Synthetic Driver Alignment
 
@@ -607,47 +629,91 @@ There are no known synthetic treatment-effect drivers in the Oregon observationa
 
 ## Analytical Task 7: Business Value Assessment
 
-As in the Funds report, the scenario assigns **$1,200 gross value per modeled ED event avoided** and **$250 intervention cost per targeted record**. These are illustrative assumptions, not measured Oregon allowed amounts or program costs. Gross savings are shown separately from intervention cost, and results inherit all uncertainty in the benefit scores.
+This section compares uplift-based targeting with traditional risk-based targeting by estimating expected avoided ED visits and gross savings under both approaches.
+
+The current calculation assumes:
+
+```text
+expected_ed_rate_reduction = avg_benefit_score
+expected_ed_visits_avoided = n * expected_ed_rate_reduction
+gross_savings = expected_ed_visits_avoided * cost_per_ed_visit
+intervention_cost = n * cost_per_intervention
+net_savings = gross_savings - intervention_cost
+roi = net_savings / intervention_cost
+```
+
+The analysis assumes an average cost of **$1,200 per ED visit** and **$250 per intervention**. Because Evaluation Levels 1 and 2 identify the XGBoost model family as the primary Oregon modeling family, business-value estimates are presented for both XGBoost frameworks.
 
 ### XGBoost T-Learner Targeting
 
-<!-- AUTO_TABLE: oregon_tlearner_roi -->
-{table(['Decile', 'N', 'Expected ED-rate reduction', 'Expected ED events avoided', 'Gross savings', 'Intervention cost', 'Net savings', 'ROI'], roi_rows(t_roi))}
+<!-- AUTO_TABLE:xgboost_tlearner_roi_summary START -->
+{table(['Targeted group', 'Members targeted', 'Uplift gross savings', 'Current-risk gross savings', 'Uplift advantage', 'Uplift ED visits avoided', 'Current-risk ED visits avoided'], targeting_comparison_rows(t_cumulative))}
+<!-- AUTO_TABLE:xgboost_tlearner_roi_summary END -->
 
-The complete top decile has {integer(t_top['top_decile_n'])} records, {number(t_top['top_decile_estimated_ed_visits_avoided'],2)} modeled ED events avoided, {dollars(t_top['top_decile_gross_savings'])} gross savings, and {dollars(t_top['top_decile_net_savings'])} net savings. Its illustrative ROI is {percent(t_top['top_decile_roi'])}, so the full decile does not clear the assumed $250 per-person intervention cost.
+<!-- AUTO_TEXT:xgboost_tlearner_roi_interpretation START -->
+This view compares two targeting policies on the same held-out test population: ranking members by XGBoost T-Learner predicted uplift versus ranking members by current risk score. Through the top 30% of targeted members, uplift targeting captures {dollars(t_top30_uplift['cumulative_gross_savings'], 2)} in estimated gross savings, compared with {dollars(t_top30_risk['cumulative_gross_savings'], 2)} from current-risk targeting, an uplift advantage of {dollars(t_top30_uplift['cumulative_gross_savings'] - t_top30_risk['cumulative_gross_savings'], 2)}. Gross savings are estimated from the XGBoost T-Learner predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
+<!-- AUTO_TEXT:xgboost_tlearner_roi_interpretation END -->
 
-{image('T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png', 'T-Learner net savings by decile')}
+<!-- AUTO_CHART:xgboost_tlearner_roi_by_decile START -->
+{image('T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'XGBoost T-Learner cumulative gross savings by targeting approach')}
+<!-- AUTO_CHART:xgboost_tlearner_roi_by_decile END -->
 
-The Funds-style cumulative comparison ranks the same held-out test population either by modeled T-Learner benefit or by current risk. Avoided events are always summed from the T-Learner benefit score so only the targeting order changes.
+The chart below compares the marginal gross savings of uplift-based targeting with current-risk targeting across successive targeting bands. Positive values indicate that benefit-based targeting captures more estimated value within that band. In this run, the XGBoost T-Learner maintains a positive marginal advantage through the top 50% of targeted members before the advantage becomes mixed in later bands.
 
-<!-- AUTO_TABLE: oregon_tlearner_cumulative_targeting -->
-{table(['Targeting approach', 'Through decile', 'Population targeted', 'N', 'Modeled ED events avoided', 'Cumulative gross savings'], targeting_rows(t_cumulative))}
-
-The ROI table follows the notebook's decile assignment, whose first bin contains 39 records. The cumulative Funds-style comparison uses fixed 38-record increments (`382 // 10`) and places all remaining records in the final step. This intentional convention explains the small difference between first-decile gross savings in the two displays.
-
-<!-- AUTO_CHART: oregon_tlearner_targeting_pair -->
-{side_by_side('T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'T-Learner cumulative targeting value', 'T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'T-Learner marginal advantage versus risk')}
-
-At approximately 50% of the test population, T-Learner uplift ranking produces {dollars(t_cumulative[(t_cumulative['targeting_approach'].eq('Uplift score')) & (t_cumulative['through_decile'].eq(5))]['cumulative_gross_savings'].iloc[0])} in modeled gross savings, compared with {dollars(t_cumulative[(t_cumulative['targeting_approach'].eq('Current risk score')) & (t_cumulative['through_decile'].eq(5))]['cumulative_gross_savings'].iloc[0])} under current-risk ranking.
+<!-- AUTO_CHART:xgboost_tlearner_marginal_advantage START -->
+{image('T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'XGBoost T-Learner marginal gross savings advantage versus current risk')}
+<!-- AUTO_CHART:xgboost_tlearner_marginal_advantage END -->
 
 ### XGBoost X-Learner Targeting
 
-<!-- AUTO_TABLE: oregon_xlearner_roi -->
-{table(['Decile', 'N', 'Expected ED-rate reduction', 'Expected ED events avoided', 'Gross savings', 'Intervention cost', 'Net savings', 'ROI'], roi_rows(x_roi))}
+<!-- AUTO_TABLE:xgboost_xlearner_roi_summary START -->
+{table(['Targeted group', 'Members targeted', 'X-Learner gross savings', 'Current-risk gross savings', 'X-Learner advantage', 'X-Learner ED visits avoided', 'Current-risk ED visits avoided'], targeting_comparison_rows(x_cumulative))}
+<!-- AUTO_TABLE:xgboost_xlearner_roi_summary END -->
 
-{image('X-Learner/XGBoost/dashboard_xlearner_roi_net_savings_by_decile.png', 'X-Learner net savings by decile')}
+<!-- AUTO_TEXT:xgboost_xlearner_roi_interpretation START -->
+The X-Learner view uses the same held-out test population and the same cost assumptions, but members are ranked by XGBoost X-Learner predicted benefit. Through the top 30% of targeted members, X-Learner benefit targeting captures {dollars(x_top30_uplift['cumulative_gross_savings'], 2)} in estimated gross savings, compared with {dollars(x_top30_risk['cumulative_gross_savings'], 2)} from current-risk targeting, an advantage of {dollars(x_top30_uplift['cumulative_gross_savings'] - x_top30_risk['cumulative_gross_savings'], 2)}. The X-Learner savings estimates are larger in absolute dollars because its highest-ranked Oregon benefit scores are larger than the corresponding T-Learner scores.
+<!-- AUTO_TEXT:xgboost_xlearner_roi_interpretation END -->
 
-<!-- AUTO_TABLE: oregon_xlearner_cumulative_targeting -->
-{table(['Targeting approach', 'Through decile', 'Population targeted', 'N', 'Modeled ED events avoided', 'Cumulative gross savings'], targeting_rows(x_cumulative))}
+<!-- AUTO_CHART:xgboost_xlearner_roi START -->
+{image('X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'XGBoost X-Learner cumulative gross savings by targeting approach')}
+<!-- AUTO_CHART:xgboost_xlearner_roi END -->
 
-<!-- AUTO_CHART: oregon_xlearner_targeting_pair -->
-{side_by_side('X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'X-Learner cumulative targeting value', 'X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'X-Learner marginal advantage versus risk')}
+The XGBoost X-Learner maintains a positive marginal advantage through the top 50% of targeted members, indicating that benefit-based targeting captures more estimated value than current-risk targeting across the evaluated targeting bands.
 
-The X-Learner shows stronger modeled value in its first few deciles than the T-Learner, but later marginal value turns negative. Because the frameworks prioritize substantially different records, the apparent economic advantage is model-dependent and must be validated prospectively before it is treated as expected savings.
+<!-- AUTO_CHART:xgboost_xlearner_marginal_advantage START -->
+{image('X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'XGBoost X-Learner marginal gross savings advantage versus current risk')}
+<!-- AUTO_CHART:xgboost_xlearner_marginal_advantage END -->
+
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, treatment adherence, and validation using live production data.
+
+Overall, both XGBoost frameworks suggest that prioritizing members by predicted treatment benefit captures greater estimated value than prioritizing members by baseline risk alone through the top 50% of the test population. The XGBoost X-Learner produces the larger modeled gross-savings advantage in Oregon, while the XGBoost T-Learner provides an independent comparison framework. Because Oregon is observational and framework agreement is incomplete, these results should be treated as operational targeting hypotheses requiring prospective validation.
+
+Supporting files:
+
+- [`XGBoost T-Learner/uplift_roi_by_decile.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/uplift_roi_by_decile.csv)
+- [`XGBoost T-Learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
+- [`XGBoost T-Learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv)
+- [`XGBoost T-Learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
+- [`XGBoost T-Learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost T-Learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+- [`XGBoost T-Learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+- [`XGBoost X-Learner/xlearner_roi_by_decile.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/xlearner_roi_by_decile.csv)
+- [`XGBoost X-Learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
+- [`XGBoost X-Learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv)
+- [`XGBoost X-Learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
+- [`XGBoost X-Learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost X-Learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+- [`XGBoost X-Learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 
 ## Level 3 Summary: Operational Evaluation
 
-Recent ED use, cost, percolator score, and age are prominent in the Oregon benefit models. Uplift-based ranking generates a different allocation from current-risk ranking and can concentrate modeled gross value earlier in the targeting curve. However, the full XGBoost T-Learner top decile has negative net value under the retained cost assumptions, while the X-Learner is more favorable. That disagreement, together with noisy observed decile gaps, makes a controlled pilot with Oregon-specific cost inputs the appropriate next decision point.
+The XGBoost models provide a coherent operational case for benefit-based prioritization, with the T-Learner serving as the direct two-model targeting framework and the X-Learner as an independent robustness check.
+
+On explainability, recent ED utilization, recent cost, Percolator score, age, and current risk contribute strongly to the Oregon benefit rankings. Several features change magnitude or direction across frameworks, so SHAP should be used to explain model behavior—not to make causal claims about individual factors.
+
+On business value, both XGBoost frameworks produce greater modeled gross savings through the top 50% when ranking by predicted benefit rather than current risk. Through the top 30%, the XGBoost T-Learner produces a modeled targeting advantage of {dollars(t_top30_uplift['cumulative_gross_savings'] - t_top30_risk['cumulative_gross_savings'], 2)}, while the XGBoost X-Learner produces an advantage of {dollars(x_top30_uplift['cumulative_gross_savings'] - x_top30_risk['cumulative_gross_savings'], 2)}.
+
+The operational recommendation is to treat the XGBoost T-Learner ranking as the primary direct candidate and use XGBoost X-Learner agreement as a robustness signal, while recognizing that Oregon's nonmonotonic T-Learner observed gaps and limited framework overlap require prospective validation before production use.
 
 ---
 

@@ -172,49 +172,49 @@ The held-out control group contains 116 records and 32 events. These counts are 
 <!-- AUTO_TABLE: oregon_model_performance -->
 | Model | Treated CV AUC | Control CV AUC | Treated test AUC | Control test AUC | Treated Brier | Control Brier | Treated calibration error | Control calibration error |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| XGBoost | 0.786 | 0.807 | 0.715 | 0.725 | 0.137 | 0.172 | 0.062 | 0.088 |
-| GLMNET | — | — | 0.705 | 0.792 | 0.152 | 0.159 | 0.090 | 0.120 |
+| XGBoost T-Learner | 0.786 | 0.807 | 0.715 | 0.725 | 0.137 | 0.172 | 0.062 | 0.088 |
+| GLMNet T-Learner | — | — | 0.705 | 0.792 | 0.152 | 0.159 | 0.090 | 0.120 |
 
-GLMNet has the higher mean held-out factual AUC (0.749 versus 0.720 for XGBoost), driven by its control-group AUC. XGBoost is slightly stronger for treated records and has the better average calibration error (0.075 versus 0.105). The Oregon result is therefore mixed rather than a simple winner on every metric.
+The GLMNet T-Learner has the higher mean held-out factual AUC (0.749 versus 0.720 for the XGBoost T-Learner), driven by its control-group AUC. The XGBoost T-Learner is slightly stronger for treated records and has the better average calibration error (0.075 versus 0.105). The Oregon result is therefore mixed rather than a simple winner on every metric.
 
 ### Factual Discrimination And Prediction Separation
 
 <!-- AUTO_TABLE: oregon_prediction_separation -->
 | Model | Group | AUC | Mean prediction: event | Mean prediction: no event | Difference |
 | --- | --- | --- | --- | --- | --- |
-| XGBoost | Treated | 0.715 | 0.321 | 0.180 | 0.141 |
-| XGBoost | Control | 0.725 | 0.362 | 0.220 | 0.143 |
-| GLMNET | Treated | 0.705 | 0.344 | 0.161 | 0.183 |
-| GLMNET | Control | 0.792 | 0.515 | 0.188 | 0.327 |
+| XGBoost T-Learner | Treated | 0.715 | 0.321 | 0.180 | 0.141 |
+| XGBoost T-Learner | Control | 0.725 | 0.362 | 0.220 | 0.143 |
+| GLMNet T-Learner | Treated | 0.705 | 0.344 | 0.161 | 0.183 |
+| GLMNet T-Learner | Control | 0.792 | 0.515 | 0.188 | 0.327 |
 
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png" alt="XGBoost factual prediction distributions"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png" alt="GLMNet factual prediction distributions"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png" alt="XGBoost T-Learner factual prediction distributions"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png" alt="GLMNet T-Learner factual prediction distributions"></td></tr></table>
 
 ### Brier Score And Calibration
 
-Both model families have similar average Brier scores, while XGBoost has lower mean calibration error. Calibration matters directly here because a benefit score is the difference between two predicted probabilities; bias in either potential-outcome model can distort the estimated treatment-effect scale.
+Both T-Learner model families have similar average Brier scores, while the XGBoost T-Learner has lower mean calibration error. Calibration matters directly here because a benefit score is the difference between two predicted probabilities; bias in either potential-outcome model can distort the estimated treatment-effect scale.
 
 <!-- AUTO_CHART: oregon_calibration_comparison -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_calibration_plot.png" alt="XGBoost calibration"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/GLMNet/dashboard_calibration_plot.png" alt="GLMNet calibration"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_calibration_plot.png" alt="XGBoost T-Learner calibration"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/GLMNet/dashboard_calibration_plot.png" alt="GLMNet T-Learner calibration"></td></tr></table>
 
 ### Factual Prediction Range And Rare-Outcome Interpretation
 
 <!-- AUTO_TABLE: oregon_prediction_ranges -->
 | Model | Group | Minimum | P10 | Median | Mean | P90 | Maximum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| XGBoost | Treated | 0.057 | 0.065 | 0.151 | 0.207 | 0.472 | 0.716 |
-| XGBoost | Control | 0.057 | 0.076 | 0.198 | 0.259 | 0.525 | 0.671 |
-| GLMNET | Treated | 0.000 | 0.025 | 0.085 | 0.195 | 0.568 | 0.974 |
-| GLMNET | Control | 0.000 | 0.012 | 0.160 | 0.278 | 0.794 | 0.975 |
+| XGBoost T-Learner | Treated | 0.057 | 0.065 | 0.151 | 0.207 | 0.472 | 0.716 |
+| XGBoost T-Learner | Control | 0.057 | 0.076 | 0.198 | 0.259 | 0.525 | 0.671 |
+| GLMNet T-Learner | Treated | 0.000 | 0.025 | 0.085 | 0.195 | 0.568 | 0.974 |
+| GLMNet T-Learner | Control | 0.000 | 0.012 | 0.160 | 0.278 | 0.794 | 0.975 |
 
 The event is not extremely rare overall, but subgroup sizes remain limited. Some probabilities approach the edges of the observed range, especially for GLMNet; this helps explain why GLMNet can rank records well while overstating the magnitude of its top predicted benefit.
 
 ### Model Performance Takeaway
 
-For direct methodological parity with the Funds report, XGBoost remains the primary Oregon uplift model and GLMNet remains the transparent sensitivity model. That choice is supported by XGBoost's stronger calibration and plausible top-decile benefit scale, not by universal AUC dominance. GLMNet's higher average factual AUC is reported explicitly and should be revisited in future cohorts.
+For direct methodological parity with the Funds report, the XGBoost T-Learner remains the primary Oregon T-Learner and the GLMNet T-Learner remains the transparent sensitivity model. That choice is supported by the XGBoost T-Learner's stronger calibration and plausible top-decile benefit scale, not by universal AUC dominance. The GLMNet T-Learner's higher average factual AUC is reported explicitly and should be revisited in future cohorts.
 
 ## Level 1 Summary: Outcome Model Validation
 
-The factual outcome models contain useful signal: held-out AUCs range from 0.705 to 0.792. However, discrimination alone does not validate uplift ranking. XGBoost offers the better probability calibration, while GLMNet has stronger average discrimination. Both therefore move forward to treatment-effect evaluation, with XGBoost as the report's primary model and GLMNet as a sensitivity check.
+The factual outcome models contain useful signal: held-out AUCs range from 0.705 to 0.792. However, discrimination alone does not validate uplift ranking. The XGBoost T-Learner offers the better probability calibration, while the GLMNet T-Learner has stronger average discrimination. Both therefore move forward to treatment-effect evaluation, with the XGBoost T-Learner as the primary T-Learner and the GLMNet T-Learner as a sensitivity check.
 
 # Evaluation Level 2: Uplift Model Validation
 
@@ -247,7 +247,7 @@ The strongest predicted benefit should appear in decile 1 and decrease toward de
 | 10 | 38 | -0.150 | 0.238 | -0.073 to 0.546 | 29 | 9 |
 
 <!-- AUTO_CHART: oregon_tlearner_decile_pair -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png" alt="T-Learner predicted benefit by decile"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_observed_gap_by_decile.png" alt="T-Learner observed gap by decile"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png" alt="XGBoost T-Learner predicted benefit by decile"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_observed_gap_by_decile.png" alt="XGBoost T-Learner observed gap by decile"></td></tr></table>
 
 The XGBoost T-Learner's decile Spearman correlation between predicted benefit and observed gap is -0.091. The negative, near-zero value means the observed gap does not decline monotonically with predicted benefit. This is the central validation weakness of the current T-Learner result.
 
@@ -268,7 +268,7 @@ The XGBoost X-Learner produces a wider score spread, from 0.267 in decile 1 to -
 | 10 | 38 | -0.198 | 0.275 | -0.010 to 0.601 | 30 | 8 |
 
 <!-- AUTO_CHART: oregon_xlearner_decile_pair -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png" alt="X-Learner predicted benefit by decile"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_observed_gap_by_decile.png" alt="X-Learner observed gap by decile"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png" alt="XGBoost X-Learner predicted benefit by decile"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_observed_gap_by_decile.png" alt="XGBoost X-Learner observed gap by decile"></td></tr></table>
 
 GLMNet's T-Learner has a positive decile Spearman correlation (0.636), but its top predicted benefit (0.584) lies above the observed-gap 95% interval (-0.035 to 0.518). It may rank more consistently while overstating absolute benefit.
 
@@ -297,7 +297,7 @@ For comparison, the X-Learner risk-tier mix is:
 | 5 | 41.7% | 41.7% | 16.7% |
 
 <!-- AUTO_CHART: oregon_risk_benefit_pair -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_tlearner_risk_tier_by_benefit_group.png" alt="T-Learner risk tier and benefit group"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png" alt="X-Learner risk tier and benefit group"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_tlearner_risk_tier_by_benefit_group.png" alt="XGBoost T-Learner risk tier and benefit group"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png" alt="XGBoost X-Learner risk tier and benefit group"></td></tr></table>
 
 High modeled benefit appears in multiple risk tiers rather than only in the highest-risk tier. For example, 26.7% of valid tier-1 test records fall in the T-Learner high-benefit group. Risk-only targeting would therefore select a meaningfully different population.
 
@@ -306,18 +306,18 @@ High modeled benefit appears in multiple risk tiers rather than only in the high
 <!-- AUTO_TABLE: oregon_framework_consistency -->
 | Model family | Pearson correlation | Spearman correlation | Top-decile overlap | T-Learner mean benefit | X-Learner mean benefit |
 | --- | --- | --- | --- | --- | --- |
-| XGBoost | 0.592 | 0.631 | 30.8% | 0.009 | -0.003 |
-| GLMNET | -0.006 | 0.037 | 15.4% | 0.044 | 0.025 |
+| XGBoost model family | 0.592 | 0.631 | 30.8% | 0.009 | -0.003 |
+| GLMNET model family | -0.006 | 0.037 | 15.4% | 0.044 | 0.025 |
 
-XGBoost has moderate T-versus-X score agreement (Spearman 0.631), while GLMNet agreement is weak. Moderate score correlation with limited top-decile overlap means framework choice materially changes which individual records are prioritized.
+The XGBoost model family has moderate T-versus-X score agreement (Spearman 0.631), while GLMNet agreement is weak. Moderate score correlation with limited top-decile overlap means framework choice materially changes which individual records are prioritized.
 
 ### True-Benefit Top-Group Overlap
 
-True-benefit top-group overlap cannot be calculated for Oregon because individual counterfactual benefit is unobserved. The report instead shows T-versus-X top-decile overlap: 30.8% for XGBoost. This is a stability diagnostic, not a truth benchmark.
+True-benefit top-group overlap cannot be calculated for Oregon because individual counterfactual benefit is unobserved. The report instead shows T-versus-X top-decile overlap: 30.8% for the XGBoost model family. This is a stability diagnostic, not a truth benchmark.
 
 ## Level 2 Summary: Uplift Model Validation
 
-The Oregon analysis produces clear predicted score gradients but mixed empirical validation. The XGBoost T-Learner's top predicted magnitude is compatible with its wide observed interval, yet its observed gaps are not monotonic. The X-Learner's first decile has a positive observed-gap interval, but the two frameworks overlap on only about one-third of top-decile records. These findings support a targeted prospective pilot and do not support interpreting the scores as proven individual causal effects.
+The Oregon analysis produces clear predicted score gradients but mixed empirical validation. The XGBoost T-Learner's top predicted magnitude is compatible with its wide observed interval, yet its observed gaps are not monotonic. The XGBoost X-Learner's first decile has a positive observed-gap interval, but the two frameworks overlap on only about one-third of top-decile records. These findings support a targeted prospective pilot and do not support interpreting the scores as proven individual causal effects.
 
 # Evaluation Level 3: Operational Evaluation
 
@@ -355,7 +355,7 @@ The treated and control factual models emphasize related but not identical risk 
 | 9 | rx_count_last_6m | 0.026 |
 | 10 | risk_tier_4 | 0.025 |
 
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_shap_treated_model.png" alt="Treated factual model SHAP"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_shap_control_model.png" alt="Control factual model SHAP"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_shap_treated_model.png" alt="XGBoost T-Learner treated factual model SHAP"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_shap_control_model.png" alt="XGBoost T-Learner control factual model SHAP"></td></tr></table>
 
 ### Explainability Approaches
 
@@ -382,7 +382,7 @@ GLMNet provides a transparent sensitivity view, but its top-decile benefit magni
 ### SHAP Benefit-Score Contributions
 
 <!-- AUTO_TABLE: oregon_tlearner_benefit_shap -->
-| Rank | T-Learner feature | Mean absolute benefit SHAP | Mean signed SHAP | Positive SHAP share |
+| Rank | XGBoost T-Learner feature | Mean absolute benefit SHAP | Mean signed SHAP | Positive SHAP share |
 | --- | --- | --- | --- | --- |
 | 1 | ed_visits_last_6m | 0.340 | -0.193 | 36.4% |
 | 2 | total_cost_last_6m | 0.199 | -0.150 | 21.2% |
@@ -398,7 +398,7 @@ GLMNet provides a transparent sensitivity view, but its top-decile benefit magni
 | 12 | admits_last_6m | 0.056 | 0.018 | 77.5% |
 
 <!-- AUTO_TABLE: oregon_xlearner_benefit_shap -->
-| Rank | X-Learner feature | Mean absolute benefit SHAP | Mean signed SHAP | Positive SHAP share |
+| Rank | XGBoost X-Learner feature | Mean absolute benefit SHAP | Mean signed SHAP | Positive SHAP share |
 | --- | --- | --- | --- | --- |
 | 1 | ed_visits_last_6m | 0.049 | -0.019 | 44.2% |
 | 2 | total_cost_last_6m | 0.033 | -0.002 | 51.6% |
@@ -414,9 +414,9 @@ GLMNet provides a transparent sensitivity view, but its top-decile benefit magni
 | 12 | substance_use_flag | 0.010 | -0.001 | 77.5% |
 
 <!-- AUTO_CHART: oregon_benefit_shap_pair -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_shap_benefit_score.png" alt="T-Learner benefit-score SHAP"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png" alt="X-Learner benefit-score SHAP"></td></tr></table>
+<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_shap_benefit_score.png" alt="XGBoost T-Learner benefit-score SHAP"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png" alt="XGBoost X-Learner benefit-score SHAP"></td></tr></table>
 
-Recent ED utilization, recent total cost, percolator score, age, and current risk score dominate the T-Learner benefit explanation. The X-Learner also emphasizes recent ED use, total cost, and age, though at a smaller contribution scale. The overlap is reassuring at the population level; the limited top-decile member overlap shows that similar global drivers do not imply identical individual rankings.
+Recent ED utilization, recent total cost, percolator score, age, and current risk score dominate the XGBoost T-Learner benefit explanation. The XGBoost X-Learner also emphasizes recent ED use, total cost, and age, though at a smaller contribution scale. The overlap is reassuring at the population level; the limited top-decile member overlap shows that similar global drivers do not imply identical individual rankings.
 
 ### Known Synthetic Driver Alignment
 
@@ -424,87 +424,103 @@ There are no known synthetic treatment-effect drivers in the Oregon observationa
 
 ## Analytical Task 7: Business Value Assessment
 
-As in the Funds report, the scenario assigns **$1,200 gross value per modeled ED event avoided** and **$250 intervention cost per targeted record**. These are illustrative assumptions, not measured Oregon allowed amounts or program costs. Gross savings are shown separately from intervention cost, and results inherit all uncertainty in the benefit scores.
+This section compares uplift-based targeting with traditional risk-based targeting by estimating expected avoided ED visits and gross savings under both approaches.
+
+The current calculation assumes:
+
+```text
+expected_ed_rate_reduction = avg_benefit_score
+expected_ed_visits_avoided = n * expected_ed_rate_reduction
+gross_savings = expected_ed_visits_avoided * cost_per_ed_visit
+intervention_cost = n * cost_per_intervention
+net_savings = gross_savings - intervention_cost
+roi = net_savings / intervention_cost
+```
+
+The analysis assumes an average cost of **$1,200 per ED visit** and **$250 per intervention**. Because Evaluation Levels 1 and 2 identify the XGBoost model family as the primary Oregon modeling family, business-value estimates are presented for both XGBoost frameworks.
 
 ### XGBoost T-Learner Targeting
 
-<!-- AUTO_TABLE: oregon_tlearner_roi -->
-| Decile | N | Expected ED-rate reduction | Expected ED events avoided | Gross savings | Intervention cost | Net savings | ROI |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 39 | 0.194 | 7.56 | $9,072 | $9,750 | -$678 | -7.0% |
-| 2 | 38 | 0.078 | 2.98 | $3,571 | $9,500 | -$5,929 | -62.4% |
-| 3 | 38 | 0.046 | 1.76 | $2,108 | $9,500 | -$7,392 | -77.8% |
-| 4 | 38 | 0.033 | 1.25 | $1,505 | $9,500 | -$7,995 | -84.2% |
-| 5 | 38 | 0.016 | 0.62 | $744 | $9,500 | -$8,756 | -92.2% |
-| 6 | 39 | -0.002 | -0.08 | -$98 | $9,750 | -$9,848 | -101.0% |
-| 7 | 38 | -0.020 | -0.75 | -$905 | $9,500 | -$10,405 | -109.5% |
-| 8 | 38 | -0.042 | -1.59 | -$1,913 | $9,500 | -$11,413 | -120.1% |
-| 9 | 38 | -0.069 | -2.62 | -$3,141 | $9,500 | -$12,641 | -133.1% |
-| 10 | 38 | -0.150 | -5.71 | -$6,858 | $9,500 | -$16,358 | -172.2% |
+<!-- AUTO_TABLE:xgboost_tlearner_roi_summary START -->
+| Targeted group | Members targeted | Uplift gross savings | Current-risk gross savings | Uplift advantage | Uplift ED visits avoided | Current-risk ED visits avoided |
+| --- | --- | --- | --- | --- | --- | --- |
+| Top 10% | 38 | $8,933.58 | $3,832.99 | $5,100.60 | 7.4447 | 3.1942 |
+| Top 20% | 76 | $12,578.84 | $4,880.22 | $7,698.63 | 10.4824 | 4.0668 |
+| Top 30% | 114 | $14,704.37 | $4,148.27 | $10,556.10 | 12.2536 | 3.4569 |
+| Top 40% | 152 | $16,225.01 | $1,785.99 | $14,439.02 | 13.5208 | 1.4883 |
+| Top 50% | 190 | $16,993.29 | $355.67 | $16,637.62 | 14.1611 | 0.2964 |
+<!-- AUTO_TABLE:xgboost_tlearner_roi_summary END -->
 
-The complete top decile has 39 records, 7.56 modeled ED events avoided, $9,072 gross savings, and -$678 net savings. Its illustrative ROI is -7.0%, so the full decile does not clear the assumed $250 per-person intervention cost.
+<!-- AUTO_TEXT:xgboost_tlearner_roi_interpretation START -->
+This view compares two targeting policies on the same held-out test population: ranking members by XGBoost T-Learner predicted uplift versus ranking members by current risk score. Through the top 30% of targeted members, uplift targeting captures $14,704.37 in estimated gross savings, compared with $4,148.27 from current-risk targeting, an uplift advantage of $10,556.10. Gross savings are estimated from the XGBoost T-Learner predicted benefit score, so this is a targeting-policy comparison rather than a claim of realized savings.
+<!-- AUTO_TEXT:xgboost_tlearner_roi_interpretation END -->
 
-![T-Learner net savings by decile](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png)
+<!-- AUTO_CHART:xgboost_tlearner_roi_by_decile START -->
+![XGBoost T-Learner cumulative gross savings by targeting approach](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+<!-- AUTO_CHART:xgboost_tlearner_roi_by_decile END -->
 
-The Funds-style cumulative comparison ranks the same held-out test population either by modeled T-Learner benefit or by current risk. Avoided events are always summed from the T-Learner benefit score so only the targeting order changes.
+The chart below compares the marginal gross savings of uplift-based targeting with current-risk targeting across successive targeting bands. Positive values indicate that benefit-based targeting captures more estimated value within that band. In this run, the XGBoost T-Learner maintains a positive marginal advantage through the top 50% of targeted members before the advantage becomes mixed in later bands.
 
-<!-- AUTO_TABLE: oregon_tlearner_cumulative_targeting -->
-| Targeting approach | Through decile | Population targeted | N | Modeled ED events avoided | Cumulative gross savings |
-| --- | --- | --- | --- | --- | --- |
-| Uplift score | 1 | 9.9% | 38 | 7.44 | $8,934 |
-| Uplift score | 3 | 29.8% | 114 | 12.25 | $14,704 |
-| Uplift score | 5 | 49.7% | 190 | 14.16 | $16,993 |
-| Uplift score | 10 | 100.0% | 382 | 3.40 | $4,086 |
-| Current risk score | 1 | 9.9% | 38 | 3.19 | $3,833 |
-| Current risk score | 3 | 29.8% | 114 | 3.46 | $4,148 |
-| Current risk score | 5 | 49.7% | 190 | 0.30 | $356 |
-| Current risk score | 10 | 100.0% | 382 | 3.40 | $4,086 |
-
-The ROI table follows the notebook's decile assignment, whose first bin contains 39 records. The cumulative Funds-style comparison uses fixed 38-record increments (`382 // 10`) and places all remaining records in the final step. This intentional convention explains the small difference between first-decile gross savings in the two displays.
-
-<!-- AUTO_CHART: oregon_tlearner_targeting_pair -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png" alt="T-Learner cumulative targeting value"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png" alt="T-Learner marginal advantage versus risk"></td></tr></table>
-
-At approximately 50% of the test population, T-Learner uplift ranking produces $16,993 in modeled gross savings, compared with $356 under current-risk ranking.
+<!-- AUTO_CHART:xgboost_tlearner_marginal_advantage START -->
+![XGBoost T-Learner marginal gross savings advantage versus current risk](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+<!-- AUTO_CHART:xgboost_tlearner_marginal_advantage END -->
 
 ### XGBoost X-Learner Targeting
 
-<!-- AUTO_TABLE: oregon_xlearner_roi -->
-| Decile | N | Expected ED-rate reduction | Expected ED events avoided | Gross savings | Intervention cost | Net savings | ROI |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 39 | 0.267 | 10.41 | $12,487 | $9,750 | $2,737 | 28.1% |
-| 2 | 38 | 0.128 | 4.86 | $5,834 | $9,500 | -$3,666 | -38.6% |
-| 3 | 38 | 0.059 | 2.24 | $2,685 | $9,500 | -$6,815 | -71.7% |
-| 4 | 38 | 0.011 | 0.43 | $514 | $9,500 | -$8,986 | -94.6% |
-| 5 | 38 | -0.012 | -0.44 | -$526 | $9,500 | -$10,026 | -105.5% |
-| 6 | 39 | -0.033 | -1.29 | -$1,543 | $9,750 | -$11,293 | -115.8% |
-| 7 | 38 | -0.056 | -2.12 | -$2,546 | $9,500 | -$12,046 | -126.8% |
-| 8 | 38 | -0.081 | -3.07 | -$3,685 | $9,500 | -$13,185 | -138.8% |
-| 9 | 38 | -0.121 | -4.61 | -$5,528 | $9,500 | -$15,028 | -158.2% |
-| 10 | 38 | -0.198 | -7.51 | -$9,016 | $9,500 | -$18,516 | -194.9% |
+<!-- AUTO_TABLE:xgboost_xlearner_roi_summary START -->
+| Targeted group | Members targeted | X-Learner gross savings | Current-risk gross savings | X-Learner advantage | X-Learner ED visits avoided | Current-risk ED visits avoided |
+| --- | --- | --- | --- | --- | --- | --- |
+| Top 10% | 38 | $12,290.01 | $2,849.45 | $9,440.56 | 10.2417 | 2.3745 |
+| Top 20% | 76 | $18,205.36 | $4,350.76 | $13,854.60 | 15.1711 | 3.6256 |
+| Top 30% | 114 | $20,966.23 | $2,976.15 | $17,990.08 | 17.4719 | 2.4801 |
+| Top 40% | 152 | $21,523.24 | $1,520.41 | $20,002.83 | 17.9360 | 1.2670 |
+| Top 50% | 190 | $21,018.34 | $648.28 | $20,370.06 | 17.5153 | 0.5402 |
+<!-- AUTO_TABLE:xgboost_xlearner_roi_summary END -->
 
-![X-Learner net savings by decile](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_xlearner_roi_net_savings_by_decile.png)
+<!-- AUTO_TEXT:xgboost_xlearner_roi_interpretation START -->
+The X-Learner view uses the same held-out test population and the same cost assumptions, but members are ranked by XGBoost X-Learner predicted benefit. Through the top 30% of targeted members, X-Learner benefit targeting captures $20,966.23 in estimated gross savings, compared with $2,976.15 from current-risk targeting, an advantage of $17,990.08. The X-Learner savings estimates are larger in absolute dollars because its highest-ranked Oregon benefit scores are larger than the corresponding T-Learner scores.
+<!-- AUTO_TEXT:xgboost_xlearner_roi_interpretation END -->
 
-<!-- AUTO_TABLE: oregon_xlearner_cumulative_targeting -->
-| Targeting approach | Through decile | Population targeted | N | Modeled ED events avoided | Cumulative gross savings |
-| --- | --- | --- | --- | --- | --- |
-| Uplift score | 1 | 9.9% | 38 | 10.24 | $12,290 |
-| Uplift score | 3 | 29.8% | 114 | 17.47 | $20,966 |
-| Uplift score | 5 | 49.7% | 190 | 17.52 | $21,018 |
-| Uplift score | 10 | 100.0% | 382 | -1.10 | -$1,326 |
-| Current risk score | 1 | 9.9% | 38 | 2.37 | $2,849 |
-| Current risk score | 3 | 29.8% | 114 | 2.48 | $2,976 |
-| Current risk score | 5 | 49.7% | 190 | 0.54 | $648 |
-| Current risk score | 10 | 100.0% | 382 | -1.10 | -$1,326 |
+<!-- AUTO_CHART:xgboost_xlearner_roi START -->
+![XGBoost X-Learner cumulative gross savings by targeting approach](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+<!-- AUTO_CHART:xgboost_xlearner_roi END -->
 
-<!-- AUTO_CHART: oregon_xlearner_targeting_pair -->
-<table><tr><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png" alt="X-Learner cumulative targeting value"></td><td width="50%" valign="top"><img src="Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png" alt="X-Learner marginal advantage versus risk"></td></tr></table>
+The XGBoost X-Learner maintains a positive marginal advantage through the top 50% of targeted members, indicating that benefit-based targeting captures more estimated value than current-risk targeting across the evaluated targeting bands.
 
-The X-Learner shows stronger modeled value in its first few deciles than the T-Learner, but later marginal value turns negative. Because the frameworks prioritize substantially different records, the apparent economic advantage is model-dependent and must be validated prospectively before it is treated as expected savings.
+<!-- AUTO_CHART:xgboost_xlearner_marginal_advantage START -->
+![XGBoost X-Learner marginal gross savings advantage versus current risk](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+<!-- AUTO_CHART:xgboost_xlearner_marginal_advantage END -->
+
+These estimates compare targeting strategies rather than realized financial outcomes. Actual savings would depend on intervention effectiveness, cost assumptions, treatment adherence, and validation using live production data.
+
+Overall, both XGBoost frameworks suggest that prioritizing members by predicted treatment benefit captures greater estimated value than prioritizing members by baseline risk alone through the top 50% of the test population. The XGBoost X-Learner produces the larger modeled gross-savings advantage in Oregon, while the XGBoost T-Learner provides an independent comparison framework. Because Oregon is observational and framework agreement is incomplete, these results should be treated as operational targeting hypotheses requiring prospective validation.
+
+Supporting files:
+
+- [`XGBoost T-Learner/uplift_roi_by_decile.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/uplift_roi_by_decile.csv)
+- [`XGBoost T-Learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
+- [`XGBoost T-Learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv)
+- [`XGBoost T-Learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
+- [`XGBoost T-Learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost T-Learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+- [`XGBoost T-Learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift_Oregon/Python/T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
+- [`XGBoost X-Learner/xlearner_roi_by_decile.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/xlearner_roi_by_decile.csv)
+- [`XGBoost X-Learner/cumulative_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv)
+- [`XGBoost X-Learner/cumulative_gross_savings_summary_top50.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv)
+- [`XGBoost X-Learner/marginal_gross_savings_by_targeting.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/marginal_gross_savings_by_targeting.csv)
+- [`XGBoost X-Learner/marginal_gross_savings_advantage_vs_current_risk.csv`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv)
+- [`XGBoost X-Learner/dashboard_cumulative_gross_savings_targeting.png`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png)
+- [`XGBoost X-Learner/dashboard_marginal_gross_savings_advantage_vs_current_risk.png`](Outputs/Uplift_Oregon/Python/X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png)
 
 ## Level 3 Summary: Operational Evaluation
 
-Recent ED use, cost, percolator score, and age are prominent in the Oregon benefit models. Uplift-based ranking generates a different allocation from current-risk ranking and can concentrate modeled gross value earlier in the targeting curve. However, the full XGBoost T-Learner top decile has negative net value under the retained cost assumptions, while the X-Learner is more favorable. That disagreement, together with noisy observed decile gaps, makes a controlled pilot with Oregon-specific cost inputs the appropriate next decision point.
+The XGBoost models provide a coherent operational case for benefit-based prioritization, with the T-Learner serving as the direct two-model targeting framework and the X-Learner as an independent robustness check.
+
+On explainability, recent ED utilization, recent cost, Percolator score, age, and current risk contribute strongly to the Oregon benefit rankings. Several features change magnitude or direction across frameworks, so SHAP should be used to explain model behavior—not to make causal claims about individual factors.
+
+On business value, both XGBoost frameworks produce greater modeled gross savings through the top 50% when ranking by predicted benefit rather than current risk. Through the top 30%, the XGBoost T-Learner produces a modeled targeting advantage of $10,556.10, while the XGBoost X-Learner produces an advantage of $17,990.08.
+
+The operational recommendation is to treat the XGBoost T-Learner ranking as the primary direct candidate and use XGBoost X-Learner agreement as a robustness signal, while recognizing that Oregon's nonmonotonic T-Learner observed gaps and limited framework overlap require prospective validation before production use.
 
 ---
 
