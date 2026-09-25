@@ -1,0 +1,208 @@
+corresponding_prp_relative_path,expected_funds_relative_path,artifact_category,applicability_status,generated_status,explanation
+data_review_summary.csv,data_review_summary.csv,Python root,applicable,True,
+factual_event_count_summary.csv,factual_event_count_summary.csv,Python root,applicable,True,
+factual_prediction_ranges.csv,factual_prediction_ranges.csv,Python root,applicable,True,
+factual_prediction_separation.csv,factual_prediction_separation.csv,Python root,applicable,True,
+glmnet_shap_true_driver_alignment.csv,glmnet_shap_true_driver_alignment.csv,Python root,not_applicable,False,Synthetic counterfactual ground truth is unavailable for Oregon 2-Year.
+glmnet_true_benefit_decile_overlap_summary.csv,glmnet_true_benefit_decile_overlap_summary.csv,Python root,not_applicable,False,Synthetic counterfactual ground truth is unavailable for Oregon 2-Year.
+glmnet_true_benefit_scored_test_comparison.csv,glmnet_true_benefit_scored_test_comparison.csv,Python root,not_applicable,False,Synthetic counterfactual ground truth is unavailable for Oregon 2-Year.
+glmnet_true_benefit_validation_summary.csv,glmnet_true_benefit_validation_summary.csv,Python root,not_applicable,False,Synthetic counterfactual ground truth is unavailable for Oregon 2-Year.
+glmnet_true_driver_recovery_summary.csv,glmnet_true_driver_recovery_summary.csv,Python root,not_applicable,False,Synthetic counterfactual ground truth is unavailable for Oregon 2-Year.
+model_evaluation_summary.csv,model_evaluation_summary.csv,Python root,applicable,True,
+model_recommendation_summary.csv,model_recommendation_summary.csv,Python root,applicable,True,
+Predictor_Distributions/Categorical/anxiety_flag_bar_chart.png,Predictor_Distributions/Categorical/anxiety_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/asthma_flag_bar_chart.png,Predictor_Distributions/Categorical/asthma_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/behavioral_health_risk_flag_bar_chart.png,Predictor_Distributions/Categorical/behavioral_health_risk_flag_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/case_manager_name_bar_chart.png,Predictor_Distributions/Categorical/case_manager_name_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/chf_flag_bar_chart.png,Predictor_Distributions/Categorical/chf_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/ckd_flag_bar_chart.png,Predictor_Distributions/Categorical/ckd_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/client_contract_bar_chart.png,Predictor_Distributions/Categorical/client_contract_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/copd_flag_bar_chart.png,Predictor_Distributions/Categorical/copd_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/county_bar_chart.png,Predictor_Distributions/Categorical/county_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/depression_flag_bar_chart.png,Predictor_Distributions/Categorical/depression_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/diabetes_flag_bar_chart.png,Predictor_Distributions/Categorical/diabetes_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/dual_eligible_bar_chart.png,Predictor_Distributions/Categorical/dual_eligible_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/food_insecurity_flag_bar_chart.png,Predictor_Distributions/Categorical/food_insecurity_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/gender_bar_chart.png,Predictor_Distributions/Categorical/gender_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/high_cost_drug_flag_bar_chart.png,Predictor_Distributions/Categorical/high_cost_drug_flag_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/housing_instability_flag_bar_chart.png,Predictor_Distributions/Categorical/housing_instability_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/language_bar_chart.png,Predictor_Distributions/Categorical/language_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/living_alone_flag_bar_chart.png,Predictor_Distributions/Categorical/living_alone_flag_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/opioid_flag_bar_chart.png,Predictor_Distributions/Categorical/opioid_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/plan_type_bar_chart.png,Predictor_Distributions/Categorical/plan_type_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/polypharmacy_flag_bar_chart.png,Predictor_Distributions/Categorical/polypharmacy_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/pregnancy_flag_bar_chart.png,Predictor_Distributions/Categorical/pregnancy_flag_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/program_bar_chart.png,Predictor_Distributions/Categorical/program_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/risk_tier_bar_chart.png,Predictor_Distributions/Categorical/risk_tier_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/service_region_bar_chart.png,Predictor_Distributions/Categorical/service_region_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Categorical/substance_use_flag_bar_chart.png,Predictor_Distributions/Categorical/substance_use_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/transportation_barrier_flag_bar_chart.png,Predictor_Distributions/Categorical/transportation_barrier_flag_bar_chart.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Categorical/utilities_insecurity_flag_bar_chart.png,Predictor_Distributions/Categorical/utilities_insecurity_flag_bar_chart.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/categorical_predictor_distributions.pdf,Predictor_Distributions/categorical_predictor_distributions.pdf,Predictor_Distributions,applicable,True,
+Predictor_Distributions/categorical_predictor_summary.csv,Predictor_Distributions/categorical_predictor_summary.csv,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/admits_last_6m_histogram.png,Predictor_Distributions/Numeric/admits_last_6m_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/age_histogram.png,Predictor_Distributions/Numeric/age_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/anxiety_flag_histogram.png,Predictor_Distributions/Numeric/anxiety_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/asthma_flag_histogram.png,Predictor_Distributions/Numeric/asthma_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/behavioral_health_risk_flag_histogram.png,Predictor_Distributions/Numeric/behavioral_health_risk_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/chf_flag_histogram.png,Predictor_Distributions/Numeric/chf_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/ckd_flag_histogram.png,Predictor_Distributions/Numeric/ckd_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/copd_flag_histogram.png,Predictor_Distributions/Numeric/copd_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/current_risk_score_histogram.png,Predictor_Distributions/Numeric/current_risk_score_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/depression_flag_histogram.png,Predictor_Distributions/Numeric/depression_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/diabetes_flag_histogram.png,Predictor_Distributions/Numeric/diabetes_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/dual_eligible_histogram.png,Predictor_Distributions/Numeric/dual_eligible_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/ed_visits_last_30d_histogram.png,Predictor_Distributions/Numeric/ed_visits_last_30d_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/ed_visits_last_6m_histogram.png,Predictor_Distributions/Numeric/ed_visits_last_6m_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/food_insecurity_flag_histogram.png,Predictor_Distributions/Numeric/food_insecurity_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/high_cost_drug_flag_histogram.png,Predictor_Distributions/Numeric/high_cost_drug_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/housing_instability_flag_histogram.png,Predictor_Distributions/Numeric/housing_instability_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/living_alone_flag_histogram.png,Predictor_Distributions/Numeric/living_alone_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/med_adherence_pdc_histogram.png,Predictor_Distributions/Numeric/med_adherence_pdc_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/observation_stays_last_6m_histogram.png,Predictor_Distributions/Numeric/observation_stays_last_6m_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/opioid_flag_histogram.png,Predictor_Distributions/Numeric/opioid_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/pcp_visits_last_6m_histogram.png,Predictor_Distributions/Numeric/pcp_visits_last_6m_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/percolator_clinical_score_histogram.png,Predictor_Distributions/Numeric/percolator_clinical_score_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/percolator_sdoh_score_histogram.png,Predictor_Distributions/Numeric/percolator_sdoh_score_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/percolator_utilization_score_histogram.png,Predictor_Distributions/Numeric/percolator_utilization_score_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/polypharmacy_flag_histogram.png,Predictor_Distributions/Numeric/polypharmacy_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/pregnancy_flag_histogram.png,Predictor_Distributions/Numeric/pregnancy_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/rx_count_last_6m_histogram.png,Predictor_Distributions/Numeric/rx_count_last_6m_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/specialist_visits_last_6m_histogram.png,Predictor_Distributions/Numeric/specialist_visits_last_6m_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/substance_use_flag_histogram.png,Predictor_Distributions/Numeric/substance_use_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/total_cost_last_6m_histogram.png,Predictor_Distributions/Numeric/total_cost_last_6m_histogram.png,Predictor_Distributions,applicable,True,
+Predictor_Distributions/Numeric/transportation_barrier_flag_histogram.png,Predictor_Distributions/Numeric/transportation_barrier_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/Numeric/utilities_insecurity_flag_histogram.png,Predictor_Distributions/Numeric/utilities_insecurity_flag_histogram.png,Predictor_Distributions,not_applicable,False,Predictor-specific plot is schema-dependent and this PRP predictor is not retained for Oregon.
+Predictor_Distributions/numeric_predictor_distributions.pdf,Predictor_Distributions/numeric_predictor_distributions.pdf,Predictor_Distributions,applicable,True,
+Predictor_Distributions/numeric_predictor_summary.csv,Predictor_Distributions/numeric_predictor_summary.csv,Predictor_Distributions,applicable,True,
+Predictor_Distributions/predictor_data_dictionary.csv,Predictor_Distributions/predictor_data_dictionary.csv,Predictor_Distributions,applicable,True,
+Predictor_Distributions/predictor_distribution_visual_index.csv,Predictor_Distributions/predictor_distribution_visual_index.csv,Predictor_Distributions,applicable,True,
+risk_tier_population_summary.csv,risk_tier_population_summary.csv,Python root,applicable,True,
+risk_tier_thresholds.csv,risk_tier_thresholds.csv,Python root,applicable,True,
+T-Learner/GLMNet/calibration_by_decile.csv,T-Learner/GLMNet/calibration_by_decile.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/calibration_summary.csv,T-Learner/GLMNet/calibration_summary.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv,T-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv,T-Learner,applicable,False,
+T-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv,T-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv,T-Learner,applicable,False,
+T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png,T-Learner/GLMNet/dashboard_avg_benefit_by_decile.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_calibration_plot.png,T-Learner/GLMNet/dashboard_calibration_plot.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png,T-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png,T-Learner,applicable,False,
+T-Learner/GLMNet/dashboard_glmnet_tlearner_global_benefit_shap.png,T-Learner/GLMNet/dashboard_glmnet_tlearner_global_benefit_shap.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png,T-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png,T-Learner,applicable,False,
+T-Learner/GLMNet/dashboard_observed_ed_rate_by_decile.png,T-Learner/GLMNet/dashboard_observed_ed_rate_by_decile.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_observed_gap_by_decile.png,T-Learner/GLMNet/dashboard_observed_gap_by_decile.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png,T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_roi_net_savings_by_decile.png,T-Learner/GLMNet/dashboard_roi_net_savings_by_decile.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_shap_benefit_score.png,T-Learner/GLMNet/dashboard_shap_benefit_score.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_shap_control_model.png,T-Learner/GLMNet/dashboard_shap_control_model.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_shap_treated_model.png,T-Learner/GLMNet/dashboard_shap_treated_model.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png,T-Learner/GLMNet/dashboard_tlearner_risk_tier_by_benefit_group.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_treated_pct_by_decile.png,T-Learner/GLMNet/dashboard_treated_pct_by_decile.png,T-Learner,applicable,True,
+T-Learner/GLMNet/dashboard_uplift_curve_by_decile.png,T-Learner/GLMNet/dashboard_uplift_curve_by_decile.png,T-Learner,applicable,True,
+T-Learner/GLMNet/glmnet_tlearner_global_benefit_shap_importance.csv,T-Learner/GLMNet/glmnet_tlearner_global_benefit_shap_importance.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/glmnet_tlearner_global_benefit_shap_reconciliation.csv,T-Learner/GLMNet/glmnet_tlearner_global_benefit_shap_reconciliation.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/glmnet_tlearner_member_benefit_shap_values.csv,T-Learner/GLMNet/glmnet_tlearner_member_benefit_shap_values.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/marginal_gross_savings_advantage_vs_current_risk.csv,T-Learner/GLMNet/marginal_gross_savings_advantage_vs_current_risk.csv,T-Learner,applicable,False,
+T-Learner/GLMNet/marginal_gross_savings_by_targeting.csv,T-Learner/GLMNet/marginal_gross_savings_by_targeting.csv,T-Learner,applicable,False,
+T-Learner/GLMNet/model_brier_scores.csv,T-Learner/GLMNet/model_brier_scores.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/shap_importance_benefit_score.csv,T-Learner/GLMNet/shap_importance_benefit_score.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/shap_importance_treated_control_models.csv,T-Learner/GLMNet/shap_importance_treated_control_models.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/tlearner_risk_tier_benefit_group_summary.csv,T-Learner/GLMNet/tlearner_risk_tier_benefit_group_summary.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/top_benefit_decile_summary.csv,T-Learner/GLMNet/top_benefit_decile_summary.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/uplift_curve_by_decile.csv,T-Learner/GLMNet/uplift_curve_by_decile.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/uplift_curve_summary.csv,T-Learner/GLMNet/uplift_curve_summary.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/uplift_decile_summary.csv,T-Learner/GLMNet/uplift_decile_summary.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/uplift_observed_gap_by_decile.csv,T-Learner/GLMNet/uplift_observed_gap_by_decile.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/uplift_roi_by_decile.csv,T-Learner/GLMNet/uplift_roi_by_decile.csv,T-Learner,applicable,True,
+T-Learner/GLMNet/uplift_scored_output.csv,T-Learner/GLMNet/uplift_scored_output.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/calibration_by_decile.csv,T-Learner/XGBoost/calibration_by_decile.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/calibration_summary.csv,T-Learner/XGBoost/calibration_summary.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png,T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_calibration_plot.png,T-Learner/XGBoost/dashboard_calibration_plot.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_observed_ed_rate_by_decile.png,T-Learner/XGBoost/dashboard_observed_ed_rate_by_decile.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_observed_gap_by_decile.png,T-Learner/XGBoost/dashboard_observed_gap_by_decile.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png,T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png,T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_shap_benefit_score.png,T-Learner/XGBoost/dashboard_shap_benefit_score.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_shap_control_model.png,T-Learner/XGBoost/dashboard_shap_control_model.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_shap_treated_model.png,T-Learner/XGBoost/dashboard_shap_treated_model.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_treated_pct_by_decile.png,T-Learner/XGBoost/dashboard_treated_pct_by_decile.png,T-Learner,applicable,True,
+T-Learner/XGBoost/dashboard_uplift_curve_by_decile.png,T-Learner/XGBoost/dashboard_uplift_curve_by_decile.png,T-Learner,applicable,True,
+T-Learner/XGBoost/model_brier_scores.csv,T-Learner/XGBoost/model_brier_scores.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/shap_importance_benefit_score.csv,T-Learner/XGBoost/shap_importance_benefit_score.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/shap_importance_treated_control_models.csv,T-Learner/XGBoost/shap_importance_treated_control_models.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/top_benefit_decile_summary.csv,T-Learner/XGBoost/top_benefit_decile_summary.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/uplift_curve_by_decile.csv,T-Learner/XGBoost/uplift_curve_by_decile.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/uplift_curve_summary.csv,T-Learner/XGBoost/uplift_curve_summary.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/uplift_decile_summary.csv,T-Learner/XGBoost/uplift_decile_summary.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/uplift_observed_gap_by_decile.csv,T-Learner/XGBoost/uplift_observed_gap_by_decile.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/uplift_roi_by_decile.csv,T-Learner/XGBoost/uplift_roi_by_decile.csv,T-Learner,applicable,True,
+T-Learner/XGBoost/uplift_scored_output.csv,T-Learner/XGBoost/uplift_scored_output.csv,T-Learner,applicable,True,
+X-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv,X-Learner/GLMNet/cumulative_gross_savings_by_targeting.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv,X-Learner/GLMNet/cumulative_gross_savings_summary_top50.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_avg_benefit_by_decile.png,X-Learner/GLMNet/dashboard_avg_benefit_by_decile.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png,X-Learner/GLMNet/dashboard_cumulative_gross_savings_targeting.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_glmnet_xlearner_global_benefit_shap.png,X-Learner/GLMNet/dashboard_glmnet_xlearner_global_benefit_shap.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png,X-Learner/GLMNet/dashboard_marginal_gross_savings_advantage_vs_current_risk.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_shap_benefit_score.png,X-Learner/GLMNet/dashboard_shap_benefit_score.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png,X-Learner/GLMNet/dashboard_t_vs_x_benefit_driver_comparison.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png,X-Learner/GLMNet/dashboard_xlearner_benefit_drivers.png,X-Learner,applicable,True,
+X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png,X-Learner/GLMNet/dashboard_xlearner_risk_tier_by_benefit_group.png,X-Learner,applicable,True,
+X-Learner/GLMNet/glmnet_xlearner_global_benefit_shap_importance.csv,X-Learner/GLMNet/glmnet_xlearner_global_benefit_shap_importance.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/glmnet_xlearner_global_benefit_shap_reconciliation.csv,X-Learner/GLMNet/glmnet_xlearner_global_benefit_shap_reconciliation.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/glmnet_xlearner_member_benefit_shap_values.csv,X-Learner/GLMNet/glmnet_xlearner_member_benefit_shap_values.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/marginal_gross_savings_advantage_vs_current_risk.csv,X-Learner/GLMNet/marginal_gross_savings_advantage_vs_current_risk.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/marginal_gross_savings_by_targeting.csv,X-Learner/GLMNet/marginal_gross_savings_by_targeting.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/shap_importance_benefit_score.csv,X-Learner/GLMNet/shap_importance_benefit_score.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/xlearner_benefit_driver_importance.csv,X-Learner/GLMNet/xlearner_benefit_driver_importance.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/xlearner_decile_summary.csv,X-Learner/GLMNet/xlearner_decile_summary.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/xlearner_risk_tier_benefit_group_summary.csv,X-Learner/GLMNet/xlearner_risk_tier_benefit_group_summary.csv,X-Learner,applicable,True,
+X-Learner/GLMNet/xlearner_scored_test_output.csv,X-Learner/GLMNet/xlearner_scored_test_output.csv,X-Learner,applicable,True,
+X-Learner/shared_propensity_scores.csv,X-Learner/shared_propensity_scores.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv,X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv,X-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png,X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png,X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png,X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_shap_benefit_score.png,X-Learner/XGBoost/dashboard_shap_benefit_score.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_xgboost_xlearner_global_benefit_shap.png,X-Learner/XGBoost/dashboard_xgboost_xlearner_global_benefit_shap.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png,X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png,X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png,X-Learner,applicable,True,
+X-Learner/XGBoost/dashboard_xlearner_roi_net_savings_by_decile.png,X-Learner/XGBoost/dashboard_xlearner_roi_net_savings_by_decile.png,X-Learner,applicable,True,
+X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv,X-Learner/XGBoost/marginal_gross_savings_advantage_vs_current_risk.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/marginal_gross_savings_by_targeting.csv,X-Learner/XGBoost/marginal_gross_savings_by_targeting.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/shap_importance_benefit_score.csv,X-Learner/XGBoost/shap_importance_benefit_score.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xgboost_xlearner_global_benefit_shap_reconciliation.csv,X-Learner/XGBoost/xgboost_xlearner_global_benefit_shap_reconciliation.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xgboost_xlearner_member_benefit_shap_values.csv,X-Learner/XGBoost/xgboost_xlearner_member_benefit_shap_values.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xlearner_benefit_driver_importance.csv,X-Learner/XGBoost/xlearner_benefit_driver_importance.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xlearner_decile_summary.csv,X-Learner/XGBoost/xlearner_decile_summary.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xlearner_risk_tier_benefit_group_summary.csv,X-Learner/XGBoost/xlearner_risk_tier_benefit_group_summary.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xlearner_roi_by_decile.csv,X-Learner/XGBoost/xlearner_roi_by_decile.csv,X-Learner,applicable,True,
+X-Learner/XGBoost/xlearner_scored_test_output.csv,X-Learner/XGBoost/xlearner_scored_test_output.csv,X-Learner,applicable,True,
+X-Learner/xlearner_vs_tlearner_consistency_summary.csv,X-Learner/xlearner_vs_tlearner_consistency_summary.csv,X-Learner,applicable,True,
+,Predictor_Distributions/Categorical/bh_flag_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/cad_flag_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/dual_elg_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/financial_strain_flag_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/healthliteracy_challenges_flag_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/htn_flag_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/hyperlipidemia_flag_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/state_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Categorical/total_cost_last_6m_bar_chart.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Numeric/op_visits_last_6m_histogram.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,Predictor_Distributions/Numeric/percolator_score_histogram.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,preprocessing_audit_summary.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,preprocessing_column_audit.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,preprocessing_split_distribution.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost/dashboard_tlearner_risk_tier_by_benefit_group.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost/tlearner_risk_tier_benefit_group_summary.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost/treatment_outcome_benefit_summary.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost_Overlap_Weighted/dashboard_avg_benefit_by_decile.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost_Overlap_Weighted/dashboard_observed_gap_by_decile.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost_Overlap_Weighted/overlap_weighted_scored_test_output.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost_Overlap_Weighted/treatment_outcome_benefit_summary.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost_Overlap_Weighted/uplift_decile_summary.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,T-Learner/XGBoost_Overlap_Weighted/uplift_observed_gap_by_decile.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,X-Learner/XGBoost/dashboard_observed_gap_by_decile.png,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,X-Learner/XGBoost/treatment_outcome_benefit_summary.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,X-Learner/XGBoost/uplift_observed_gap_by_decile.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.
+,xgboost_observed_gap_by_decile_comparison.csv,Oregon-specific addition,oregon_specific,True,Oregon-specific preprocessing or schema artifact.

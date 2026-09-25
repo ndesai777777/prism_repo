@@ -1,0 +1,6 @@
+risk_tier,risk_tier_label,current_risk_score_rule,source_definition
+1,Tier 1 (lowest risk),Not derived from current_risk_score,Original Oregon 2-Year risk_tier assignment
+2,Tier 2,Not derived from current_risk_score,Original Oregon 2-Year risk_tier assignment
+3,Tier 3,Not derived from current_risk_score,Original Oregon 2-Year risk_tier assignment
+4,Tier 4,Not derived from current_risk_score,Original Oregon 2-Year risk_tier assignment
+5,Tier 5 (highest risk),Not derived from current_risk_score,Original Oregon 2-Year risk_tier assignment

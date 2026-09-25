@@ -1,0 +1,38 @@
+variable,category,data_type,model_ready_data_type,description,predictor_type,included_in_model,included_in_model_matrix,model_matrix_columns,missing_count,missing_pct,unique_values,example_values,min_value,max_value
+anxiety_flag,Clinical Conditions,int64,float64,Indicator for anxiety diagnosis/history.,Binary indicator,True,True,anxiety_flag,0,0.0,2,0; 1,0.0,1.0
+asthma_flag,Clinical Conditions,int64,float64,Indicator for asthma diagnosis/history.,Binary indicator,True,True,asthma_flag,0,0.0,2,1; 0,0.0,1.0
+bh_flag,Clinical Conditions,int64,float64,Indicator for behavioral health history or risk.,Binary indicator,True,True,bh_flag,0,0.0,2,0; 1,0.0,1.0
+cad_flag,Clinical Conditions,int64,float64,Indicator for coronary artery disease history.,Binary indicator,True,True,cad_flag,0,0.0,2,0; 1,0.0,1.0
+chf_flag,Clinical Conditions,int64,float64,Indicator for congestive heart failure diagnosis/history.,Binary indicator,True,True,chf_flag,0,0.0,2,0; 1,0.0,1.0
+ckd_flag,Clinical Conditions,int64,float64,Indicator for chronic kidney disease diagnosis/history.,Binary indicator,True,True,ckd_flag,0,0.0,2,0; 1,0.0,1.0
+copd_flag,Clinical Conditions,int64,float64,Indicator for COPD diagnosis/history.,Binary indicator,True,True,copd_flag,0,0.0,2,0; 1,0.0,1.0
+depression_flag,Clinical Conditions,int64,float64,Indicator for depression diagnosis/history.,Binary indicator,True,True,depression_flag,0,0.0,2,0; 1,0.0,1.0
+diabetes_flag,Clinical Conditions,int64,float64,Indicator for diabetes diagnosis/history.,Binary indicator,True,True,diabetes_flag,0,0.0,2,0; 1,0.0,1.0
+htn_flag,Clinical Conditions,int64,float64,Indicator for hypertension history.,Binary indicator,True,True,htn_flag,0,0.0,2,0; 1,0.0,1.0
+hyperlipidemia_flag,Clinical Conditions,int64,float64,Indicator for hyperlipidemia history.,Binary indicator,True,True,hyperlipidemia_flag,0,0.0,2,0; 1,0.0,1.0
+substance_use_flag,Clinical Conditions,int64,float64,Indicator for substance use-related risk or diagnosis.,Binary indicator,True,True,substance_use_flag,0,0.0,2,0; 1,0.0,1.0
+age,Demographics,float64,float64,Member age at the index point.,Continuous/count numeric,True,True,age,0,0.0,1176,28.561259; 80.424366; 35.37577; 46.67488; 15.471594,2.800821,103.405886
+client_contract,Demographics,str,str,Client contract or line of business associated with the member.,Multi-level categorical,False,False,,0,0.0,1,OHPCC,,
+county,Demographics,str,str,Member county of residence.,Multi-level categorical,True,True,county_ADA; county_BAKER; county_BENTON; county_CLACKAMAS; county_CLARK; county_CLATSOP; county_COLUMBIA; county_COOS; county_CROOK; county_CURRY; county_DEL_NORTE; county_DESCHUTES; county_DOUGLAS; county_FLAGLER; county_GILLIAM; county_GRANT; county_GRAY; county_GRAYS_HARBOR; county_HARNEY; county_HAYS,0,0.0,58,MARION; HOOD RIVER; WASHINGTON; LANE; MULTNOMAH,,
+dual_elg,Demographics,int64,float64,Indicator for Medicare/Medicaid dual eligibility.,Binary indicator,True,True,dual_elg,0,0.0,2,0; 1,0.0,1.0
+gender,Demographics,str,str,Member gender category.,Multi-level categorical,True,True,gender_F; gender_M; gender_Unseen,0,0.0,2,F; M,,
+plan_type,Demographics,str,str,Health plan product or plan type.,Multi-level categorical,False,False,,0,0.0,1,Medicaid,,
+program,Demographics,str,str,Care management program or operational program assignment.,Multi-level categorical,False,False,,0,0.0,1,CaseManagement,,
+state,Demographics,str,str,Member state of residence.,Multi-level categorical,True,True,state_CA; state_FL; state_ID; state_MT; state_OR; state_TX; state_UT; state_VA; state_WA; state_Unseen,0,0.0,10,OR; WA; HI; TX; CA,,
+opioid_flag,Pharmacy,int64,float64,Indicator for opioid medication use.,Binary indicator,True,True,opioid_flag,0,0.0,2,0; 1,0.0,1.0
+polypharmacy_flag,Pharmacy,int64,float64,Indicator for polypharmacy risk.,Binary indicator,True,True,polypharmacy_flag,0,0.0,2,0; 1,0.0,1.0
+rx_count_last_6m,Pharmacy,int64,int64,Number of prescriptions or medication fills in the last 6 months.,Continuous/count numeric,True,True,rx_count_last_6m,0,0.0,76,44; 0; 2; 1; 9,0.0,373.0
+total_cost_last_6m,Pharmacy,str,Float64,Total healthcare cost in the last 6 months.,Continuous/count numeric,True,True,total_cost_last_6m,0,0.0,876,"$2,244.04; $0.00; $152,526.02; $5,495.08; $121.67",0.0,534364.43
+current_risk_score,Risk Scores,float64,float64,Current overall risk score.,Continuous/count numeric,True,True,current_risk_score,322,0.2539432176656151,757,7.816907842; 6.864560346; 0.495059839; 5.353739122; 0.423489071,0.167554222,60.65373453
+percolator_score,Risk Scores,float64,float64,Baseline Percolator risk score.,Continuous/count numeric,True,True,percolator_score,322,0.2539432176656151,897,2214.42856; 2462.77372; 865.22048; 1845.51492; 414.16456,122.54068,4535.88616
+risk_tier,Risk Scores,string,string,Categorical risk tier assignment.,Multi-level categorical,True,True,risk_tier_1; risk_tier_2; risk_tier_3; risk_tier_4; risk_tier_5; risk_tier_Missing; risk_tier_Unseen,0,0.0,6,4; 2; 1; Missing; 3,1.0,5.0
+financial_strain_flag,SDOH,int64,float64,Indicator for financial strain.,Binary indicator,True,True,financial_strain_flag,0,0.0,2,0; 1,0.0,1.0
+food_insecurity_flag,SDOH,int64,float64,Indicator for food insecurity.,Binary indicator,True,True,food_insecurity_flag,0,0.0,2,1; 0,0.0,1.0
+healthliteracy_challenges_flag,SDOH,int64,float64,Indicator for health-literacy challenges.,Binary indicator,True,True,healthliteracy_challenges_flag,0,0.0,2,0; 1,0.0,1.0
+housing_instability_flag,SDOH,int64,float64,Indicator for housing instability.,Binary indicator,True,True,housing_instability_flag,0,0.0,2,0; 1,0.0,1.0
+transportation_barrier_flag,SDOH,int64,float64,Indicator for transportation barriers.,Binary indicator,True,True,transportation_barrier_flag,0,0.0,2,1; 0,0.0,1.0
+admits_last_6m,Utilization,int64,int64,Number of inpatient admissions in the last 6 months.,Continuous/count numeric,True,True,admits_last_6m,0,0.0,8,0; 1; 2; 5; 3,0.0,8.0
+ed_visits_last_30d,Utilization,int64,int64,Number of ED visits in the last 30 days.,Continuous/count numeric,True,True,ed_visits_last_30d,0,0.0,6,1; 0; 4; 2; 3,0.0,8.0
+ed_visits_last_6m,Utilization,int64,int64,Number of ED visits in the last 6 months.,Continuous/count numeric,True,True,ed_visits_last_6m,0,0.0,13,1; 0; 6; 4; 5,0.0,39.0
+observation_stays_last_6m,Utilization,int64,int64,Number of observation stays in the last 6 months.,Continuous/count numeric,True,True,observation_stays_last_6m,0,0.0,3,0; 1; 2,0.0,2.0
+op_visits_last_6m,Utilization,int64,int64,Number of outpatient visits in the last 6 months.,Continuous/count numeric,True,True,op_visits_last_6m,0,0.0,25,8; 0; 4; 1; 3,0.0,39.0

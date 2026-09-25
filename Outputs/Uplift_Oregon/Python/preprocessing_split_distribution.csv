@@ -1,0 +1,9 @@
+split,intervention_flag,outcome_ed_90d,n
+test,0.0,0.0,84
+test,0.0,1.0,32
+test,1.0,0.0,216
+test,1.0,1.0,50
+train,0.0,0.0,196
+train,0.0,1.0,74
+train,1.0,0.0,500
+train,1.0,1.0,116

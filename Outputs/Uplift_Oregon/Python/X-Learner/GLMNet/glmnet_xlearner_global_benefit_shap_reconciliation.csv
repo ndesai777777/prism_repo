@@ -1,0 +1,6 @@
+metric,value
+shap_baseline_benefit,0.024690925848366463
+sum_mean_signed_feature_shap,-7.856080709245323e-05
+baseline_plus_signed_shap_sum,0.02461236504127401
+average_predicted_benefit_from_model,0.024612365041274006
+reconciliation_difference,3.469446951953614e-18

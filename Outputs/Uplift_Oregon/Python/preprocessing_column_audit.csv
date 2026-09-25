@@ -1,0 +1,56 @@
+original_oregon_column,normalized_column,modeling_name,role,status,transformation,reason
+member_id,member_id,member_id,identifier/grouping key,excluded,Retained as output identifier and grouping key; excluded from predictors.,retained for grouped splitting and outputs; never a predictor
+client_contract,client_contract,client_contract,candidate baseline predictor,excluded,No modeling transformation; field excluded before preprocessing.,zero-variance or all-missing predictor removed using training data only
+age,age,age,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+gender,gender,gender,eligible baseline predictor,included,Missing category handling and one-hot encoding using training levels only.,leakage-safe baseline predictor retained after train-only filtering
+dual_elg,dual_elg,dual_elg,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+County,county,county,eligible baseline predictor,included,Missing category handling and one-hot encoding using training levels only.,leakage-safe baseline predictor retained after train-only filtering
+State,state,state,eligible baseline predictor,included,Missing category handling and one-hot encoding using training levels only.,leakage-safe baseline predictor retained after train-only filtering
+plan_type,plan_type,plan_type,candidate baseline predictor,excluded,No modeling transformation; field excluded before preprocessing.,zero-variance or all-missing predictor removed using training data only
+diabetes_flag,diabetes_flag,diabetes_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+chf_flag,chf_flag,chf_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+copd_flag,copd_flag,copd_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+asthma_flag,asthma_flag,asthma_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+depression_flag,depression_flag,depression_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+anxiety_flag,anxiety_flag,anxiety_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+substance_use_flag,substance_use_flag,substance_use_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+ckd_flag,ckd_flag,ckd_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+bh_flag,bh_flag,bh_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+htn_flag,htn_flag,htn_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+hyperlipidemia_flag,hyperlipidemia_flag,hyperlipidemia_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+cad_flag,cad_flag,cad_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+financial_strain_flag,financial_strain_flag,financial_strain_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+food_insecurity_flag,food_insecurity_flag,food_insecurity_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+housing_instability_flag,housing_instability_flag,housing_instability_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+transportation_barrier_flag,transportation_barrier_flag,transportation_barrier_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+healthliteracy_challenges_flag,healthliteracy_challenges_flag,healthliteracy_challenges_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+op_visits_last_6m,op_visits_last_6m,op_visits_last_6m,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+ed_visits_last_30d,ed_visits_last_30d,ed_visits_last_30d,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+ed_visits_last_6m,ed_visits_last_6m,ed_visits_last_6m,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+admits_last_6m,admits_last_6m,admits_last_6m,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+observation_stays_last_6m,observation_stays_last_6m,observation_stays_last_6m,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+total_cost_last_6m,total_cost_last_6m,total_cost_last_6m,eligible baseline predictor,included,Currency symbols and commas removed; parsed as numeric; train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+rx_count_last_6m,rx_count_last_6m,rx_count_last_6m,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+opioid_flag,opioid_flag,opioid_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+polypharmacy_flag,polypharmacy_flag,polypharmacy_flag,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+current_risk_score,current_risk_score,current_risk_score,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+percolator_score,percolator_score,percolator_score,eligible baseline predictor,included,Numeric coercion and train-median imputation.,leakage-safe baseline predictor retained after train-only filtering
+risk_tier,risk_tier,risk_tier,eligible baseline predictor,included,Values 1-5 retained as categories; missing or out-of-range values mapped to Missing.,leakage-safe baseline predictor retained after train-only filtering
+ProgramFinal,programfinal,program,candidate baseline predictor,excluded,Standardized to program; removed because it has no training variation.,zero-variance or all-missing predictor removed using training data only
+Engaged_flag,engaged_flag,engaged_flag,treatment source,excluded,Converted to binary and used as the canonical treatment source only.,canonical treatment source; never a predictor
+OptOut_flag,optout_flag,optout_flag,treatment validation source,excluded,Converted to binary and used only to validate inverse treatment coding.,redundant inverse treatment signal; validation only
+ProgramStart,programstart,programstart,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+ProgramEnd,programend,programend,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+engaged_date,engaged_date,engaged_date,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+engagement_length,engagement_length,engagement_length,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+case_manager_name,case_manager_name,case_manager_name,excluded identifier/all-missing field,excluded,No modeling transformation; field excluded before preprocessing.,non-generalizable identifier field and entirely missing in Oregon
+InterventionCount,interventioncount,interventioncount,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+SuccessfulInterventions,successfulinterventions,successfulinterventions,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_ed_30d,outcome_ed_30d,outcome_ed_30d,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_ed_90d,outcome_ed_90d,outcome_ed_90d,outcome,excluded,Converted to numeric; missing set to 0; values greater than 0 mapped to 1.,binary target; never a predictor
+outcome_ed_6MO,outcome_ed_6mo,outcome_ed_6mo,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_admit_30d,outcome_admit_30d,outcome_admit_30d,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_admit_90d,outcome_admit_90d,outcome_admit_90d,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_admit_6MO,outcome_admit_6mo,outcome_admit_6mo,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_total_cost_90d,outcome_total_cost_90d,outcome_total_cost_90d,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control
+outcome_total_cost_6MO,outcome_total_cost_6mo,outcome_total_cost_6mo,post-treatment variable,excluded,No modeling transformation; field excluded before preprocessing.,post-treatment leakage control

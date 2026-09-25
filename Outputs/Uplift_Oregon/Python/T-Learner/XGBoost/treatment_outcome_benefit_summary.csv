@@ -1,0 +1,5 @@
+learner,intervention_flag,observed_treatment_group,outcome_ed_90d,actual_outcome_group,members,mean_benefit,benefit_p25,median_benefit,benefit_p75,negative_benefit_members,negative_benefit_pct
+XGBoost T-Learner,1,Treated,1,Actual outcome = 1,50,-0.015186331,-0.09777233,0.036940403,0.06701311,21,0.42
+XGBoost T-Learner,1,Treated,0,Actual outcome = 0,216,0.03439853,0.00512393,0.051761307,0.08008833,51,0.2361111
+XGBoost T-Learner,0,Untreated,1,Actual outcome = 1,32,-0.025436347,-0.09670489,0.009985,0.083077,16,0.5
+XGBoost T-Learner,0,Untreated,0,Actual outcome = 0,84,0.031724982,-0.006710861,0.042664975,0.076013915,25,0.29761904

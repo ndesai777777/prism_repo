@@ -1,0 +1,5 @@
+learner,intervention_flag,observed_treatment_group,outcome_ed_90d,actual_outcome_group,members,mean_benefit,benefit_p25,median_benefit,benefit_p75
+Overlap-Weighted XGBoost T-Learner,1,Treated,1,Actual outcome = 1,50,-0.040497433,-0.09037355,-0.015168879,0.036551386
+Overlap-Weighted XGBoost T-Learner,1,Treated,0,Actual outcome = 0,216,0.009216182,-0.021070505,0.02809707,0.049739882
+Overlap-Weighted XGBoost T-Learner,0,Untreated,1,Actual outcome = 1,32,-0.042597525,-0.13714728,-0.016090468,0.07002336
+Overlap-Weighted XGBoost T-Learner,0,Untreated,0,Actual outcome = 0,84,0.008211271,-0.047119897,0.024251394,0.07263837
