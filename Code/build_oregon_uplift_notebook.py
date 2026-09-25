@@ -47,8 +47,9 @@ for cell in notebook["cells"]:
     source = source.replace("Funds", "Oregon")
     source = source.replace("funds_csv_path", "oregon_csv_path")
     source = source.replace("source_intervention_flag", "source_engaged_flag")
-    # NumPy 2.4 removed the old alias; trapezoid is the exact replacement.
-    source = source.replace("np.trapz", "np.trapezoid")
+    # Route trapezoidal integration through a helper that supports both older
+    # SageMaker NumPy releases (`trapz`) and newer NumPy releases (`trapezoid`).
+    source = source.replace("np.trapz(", "numpy_trapezoid(")
     cell["source"] = source.splitlines(keepends=True)
 
 set_cell(
@@ -95,6 +96,28 @@ cell4 = cell4.replace(
     "    clean_feature_names,\n    clean_names_simple,\n",
 )
 set_cell(notebook, 4, cell4)
+
+cell8 = "".join(notebook["cells"][8]["source"])
+numpy_compatibility_marker = "REQUIRE_GPU_FOR_XGBOOST = True\n"
+numpy_compatibility_helper = """
+def numpy_trapezoid(y_values, x_values):
+    \"\"\"Integrate with the NumPy API available in the active environment.\"\"\"
+    if hasattr(np, 'trapezoid'):
+        return np.trapezoid(y_values, x_values)
+    if hasattr(np, 'trapz'):
+        return np.trapz(y_values, x_values)
+    raise AttributeError('NumPy provides neither trapezoid nor trapz.')
+
+
+"""
+if numpy_compatibility_marker not in cell8:
+    raise RuntimeError("Could not locate the XGBoost configuration in cell 8.")
+cell8 = cell8.replace(
+    numpy_compatibility_marker,
+    numpy_compatibility_helper + numpy_compatibility_marker,
+    1,
+)
+set_cell(notebook, 8, cell8)
 
 set_cell(
     notebook,
