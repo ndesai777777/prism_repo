@@ -1,15 +1,27 @@
-"""Generate the Oregon uplift-model Markdown report from executed notebook outputs."""
+"""Build the Funds-style Oregon uplift report from committed model artifacts.
+
+The modeling notebook remains the source of truth for fitted models.  This
+script performs no refitting; it formats the saved Oregon results and derives
+the same cumulative targeting views used in the Funds report from the saved
+held-out test scores.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ROOT = ROOT / "Outputs" / "Uplift_Oregon" / "Python"
 REPORT_PATH = ROOT / "PRISM_Intervention_Benefit_Modeling_Oregon_README.md"
+ED_EVENT_VALUE = 1_200.0
 
 
 def load(relative_path: str) -> pd.DataFrame:
@@ -22,504 +34,627 @@ def load(relative_path: str) -> pd.DataFrame:
 def number(value: float, digits: int = 3) -> str:
     if pd.isna(value):
         return "—"
-    return f"{value:,.{digits}f}"
+    return f"{float(value):,.{digits}f}"
+
+
+def integer(value: float) -> str:
+    if pd.isna(value):
+        return "—"
+    return f"{int(value):,}"
 
 
 def percent(value: float, digits: int = 1) -> str:
     if pd.isna(value):
         return "—"
-    return f"{100 * value:.{digits}f}%"
+    return f"{100 * float(value):.{digits}f}%"
 
 
 def dollars(value: float, digits: int = 0) -> str:
     if pd.isna(value):
         return "—"
-    return f"${value:,.{digits}f}"
+    numeric = float(value)
+    if numeric < 0:
+        return f"-${abs(numeric):,.{digits}f}"
+    return f"${numeric:,.{digits}f}"
 
 
-def markdown_table(headers: list[str], rows: list[list[object]]) -> str:
-    rendered = ["| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"]
+def table(headers: list[str], rows: list[list[object]]) -> str:
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(["---"] * len(headers)) + " |",
+    ]
     for row in rows:
-        rendered.append("| " + " | ".join(str(value).replace("\n", " ").replace("|", "\\|") for value in row) + " |")
-    return "\n".join(rendered)
+        values = [str(value).replace("\n", " ").replace("|", "\\|") for value in row]
+        lines.append("| " + " | ".join(values) + " |")
+    return "\n".join(lines)
 
 
-def image(relative_path: str, alt_text: str) -> str:
+def rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def image(relative_path: str, alt: str) -> str:
     path = OUTPUT_ROOT / relative_path
     if not path.exists():
         raise FileNotFoundError(f"Report image is missing: {path}")
-    report_relative = path.relative_to(ROOT).as_posix()
-    return f"![{alt_text}]({report_relative})"
+    return f"![{alt}]({rel(path)})"
+
+
+def side_by_side(left_path: str, left_alt: str, right_path: str, right_alt: str) -> str:
+    left = rel(OUTPUT_ROOT / left_path)
+    right = rel(OUTPUT_ROOT / right_path)
+    for path in (ROOT / left, ROOT / right):
+        if not path.exists():
+            raise FileNotFoundError(f"Report image is missing: {path}")
+    return (
+        '<table><tr><td width="50%" valign="top">'
+        f'<img src="{left}" alt="{left_alt}"></td>'
+        '<td width="50%" valign="top">'
+        f'<img src="{right}" alt="{right_alt}"></td></tr></table>'
+    )
+
+
+def make_tlearner_targeting_artifacts(scored: pd.DataFrame) -> pd.DataFrame:
+    """Reproduce the Funds cumulative/marginal targeting calculation for T scores."""
+    out_dir = OUTPUT_ROOT / "T-Learner" / "XGBoost"
+    n_total = len(scored)
+    decile_size = n_total // 10
+    if decile_size == 0:
+        raise ValueError("The held-out score file is too small for decile targeting.")
+
+    rows: list[dict[str, float | int | str]] = []
+    approaches = {
+        "Uplift score": "t_learner_benefit_score",
+        "Current risk score": "current_risk_score",
+    }
+    for label, ranking_column in approaches.items():
+        ranked = scored.sort_values(ranking_column, ascending=False, na_position="last")
+        for decile in range(1, 11):
+            top_n = n_total if decile == 10 else decile * decile_size
+            selected = ranked.head(top_n)
+            avoided = float(selected["t_learner_benefit_score"].sum())
+            rows.append(
+                {
+                    "targeting_approach": label,
+                    "through_decile": decile,
+                    "population_fraction_targeted": top_n / n_total,
+                    "n": top_n,
+                    "cumulative_estimated_ed_visits_avoided": avoided,
+                    "cumulative_gross_savings": avoided * ED_EVENT_VALUE,
+                }
+            )
+
+    cumulative = pd.DataFrame(rows)
+    cumulative.to_csv(out_dir / "cumulative_gross_savings_by_targeting.csv", index=False)
+
+    marginal_parts: list[pd.DataFrame] = []
+    for approach, group in cumulative.groupby("targeting_approach", sort=False):
+        part = group.sort_values("through_decile").copy()
+        part["targeting_approach"] = approach
+        part["decile"] = part["through_decile"]
+        part["marginal_gross_savings"] = part["cumulative_gross_savings"].diff().fillna(
+            part["cumulative_gross_savings"]
+        )
+        marginal_parts.append(
+            part[["targeting_approach", "decile", "marginal_gross_savings", "cumulative_gross_savings"]]
+        )
+    marginal = pd.concat(marginal_parts, ignore_index=True)
+    marginal.to_csv(out_dir / "marginal_gross_savings_by_targeting.csv", index=False)
+
+    uplift = marginal[marginal["targeting_approach"].eq("Uplift score")].set_index("decile")
+    risk = marginal[marginal["targeting_approach"].eq("Current risk score")].set_index("decile")
+    advantage = pd.DataFrame(
+        {
+            "decile": uplift.index,
+            "uplift_marginal_gross_savings": uplift["marginal_gross_savings"].values,
+            "risk_marginal_gross_savings": risk["marginal_gross_savings"].values,
+        }
+    )
+    advantage["decile"] = pd.to_numeric(advantage["decile"], errors="raise").astype(int)
+    advantage["marginal_advantage"] = (
+        advantage["uplift_marginal_gross_savings"] - advantage["risk_marginal_gross_savings"]
+    )
+    advantage.to_csv(out_dir / "marginal_gross_savings_advantage_vs_current_risk.csv", index=False)
+
+    top50 = cumulative[cumulative["through_decile"].eq(5)].copy()
+    top50.to_csv(out_dir / "cumulative_gross_savings_summary_top50.csv", index=False)
+
+    colors = {"Uplift score": "#2F5597", "Current risk score": "#ED7D31"}
+    fig, ax = plt.subplots(figsize=(8.5, 5.25))
+    for approach, group in cumulative.groupby("targeting_approach", sort=False):
+        ax.plot(
+            group["population_fraction_targeted"] * 100,
+            group["cumulative_gross_savings"],
+            marker="o",
+            linewidth=2.2,
+            label=approach,
+            color=colors[approach],
+        )
+    ax.axhline(0, color="#666666", linewidth=0.8)
+    ax.set_title("XGBoost T-Learner: Cumulative Gross Savings by Targeting Method")
+    ax.set_xlabel("Population targeted (%)")
+    ax.set_ylabel("Cumulative gross savings ($)")
+    ax.grid(axis="y", alpha=0.25)
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    fig.savefig(out_dir / "dashboard_cumulative_gross_savings_targeting.png", dpi=200)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(8.5, 5.25))
+    ax.bar(advantage["decile"], advantage["marginal_advantage"], color="#2F5597")
+    ax.axhline(0, color="#666666", linewidth=0.8)
+    ax.set_title("XGBoost T-Learner: Marginal Savings Advantage vs Current Risk")
+    ax.set_xlabel("Targeting decile")
+    ax.set_ylabel("Uplift minus risk marginal gross savings ($)")
+    ax.set_xticks(range(1, 11))
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(out_dir / "dashboard_marginal_gross_savings_advantage_vs_current_risk.png", dpi=200)
+    plt.close(fig)
+
+    return cumulative
 
 
 def main() -> None:
     review = load("data_review_summary.csv").iloc[0]
     audit = load("preprocessing_audit_summary.csv").iloc[0]
-    event_counts = load("factual_event_count_summary.csv")
+    events = load("factual_event_count_summary.csv")
     evaluation = load("model_evaluation_summary.csv")
-    recommendation = load("model_recommendation_summary.csv")
     prediction_ranges = load("factual_prediction_ranges.csv")
     separation = load("factual_prediction_separation.csv")
-    risk_tiers = load("risk_tier_population_summary.csv")
+    risk_population = load("risk_tier_population_summary.csv")
     column_audit = load("preprocessing_column_audit.csv")
-    parity = load("output_parity_manifest.csv")
 
-    xgb_t_deciles = load("T-Learner/XGBoost/uplift_observed_gap_by_decile.csv")
-    glm_t_deciles = load("T-Learner/GLMNet/uplift_observed_gap_by_decile.csv")
-    xgb_t_top = load("T-Learner/XGBoost/top_benefit_decile_summary.csv").iloc[0]
-    glm_t_top = load("T-Learner/GLMNet/top_benefit_decile_summary.csv").iloc[0]
-    xgb_t_roi = load("T-Learner/XGBoost/uplift_roi_by_decile.csv")
-    xgb_t_shap = load("T-Learner/XGBoost/shap_importance_benefit_score.csv")
-    glm_t_shap = load("T-Learner/GLMNet/shap_importance_benefit_score.csv")
+    t_gap = load("T-Learner/XGBoost/uplift_observed_gap_by_decile.csv")
+    t_top = load("T-Learner/XGBoost/top_benefit_decile_summary.csv").iloc[0]
+    t_roi = load("T-Learner/XGBoost/uplift_roi_by_decile.csv")
+    t_risk = load("T-Learner/XGBoost/tlearner_risk_tier_benefit_group_summary.csv")
+    t_shap_models = load("T-Learner/XGBoost/shap_importance_treated_control_models.csv")
+    t_shap_benefit = load("T-Learner/XGBoost/shap_importance_benefit_score.csv")
 
+    glm_top = load("T-Learner/GLMNet/top_benefit_decile_summary.csv").iloc[0]
+    glm_benefit = load("T-Learner/GLMNet/shap_importance_benefit_score.csv")
+
+    x_decile = load("X-Learner/XGBoost/xlearner_decile_summary.csv")
+    x_gap = load("X-Learner/XGBoost/uplift_observed_gap_by_decile.csv")
+    x_roi = load("X-Learner/XGBoost/xlearner_roi_by_decile.csv")
+    x_risk = load("X-Learner/XGBoost/xlearner_risk_tier_benefit_group_summary.csv")
+    x_benefit = load("X-Learner/XGBoost/xlearner_benefit_driver_importance.csv")
     consistency = load("X-Learner/xlearner_vs_tlearner_consistency_summary.csv")
-    xgb_x_deciles = load("X-Learner/XGBoost/uplift_observed_gap_by_decile.csv")
-    xgb_x_roi = load("X-Learner/XGBoost/xlearner_roi_by_decile.csv")
-    xgb_x_drivers = load("X-Learner/XGBoost/xlearner_benefit_driver_importance.csv")
-    xgb_x_savings = load("X-Learner/XGBoost/cumulative_gross_savings_summary_top50.csv")
+    x_test = load("X-Learner/XGBoost/xlearner_scored_test_output.csv")
+    x_cumulative = load("X-Learner/XGBoost/cumulative_gross_savings_by_targeting.csv")
+    t_cumulative = make_tlearner_targeting_artifacts(x_test)
 
-    post_treatment = column_audit[column_audit["role"].eq("post-treatment field")][
-        ["original_oregon_column", "status", "reason"]
-    ]
-    excluded_other = column_audit[
-        column_audit["status"].eq("excluded")
-        & ~column_audit["role"].isin(["post-treatment field", "identifier/grouping key", "treatment", "outcome"])
-    ][["original_oregon_column", "role", "reason"]]
+    xgb_eval = evaluation[evaluation["model"].eq("XGBoost")].iloc[0]
+    glm_eval = evaluation[evaluation["model"].eq("GLMNET")].iloc[0]
+    avg_xgb_auc = np.mean([xgb_eval["treated_test_auc"], xgb_eval["control_test_auc"]])
+    avg_glm_auc = np.mean([glm_eval["treated_test_auc"], glm_eval["control_test_auc"]])
+    avg_xgb_cal = np.mean([xgb_eval["treated_calibration_error"], xgb_eval["control_calibration_error"]])
+    avg_glm_cal = np.mean([glm_eval["treated_calibration_error"], glm_eval["control_calibration_error"]])
 
-    evaluation_rows = []
-    for _, row in evaluation.iterrows():
-        evaluation_rows.append(
-            [
-                row["model"],
-                number(row["treated_cv_auc"]),
-                number(row["control_cv_auc"]),
-                number(row["treated_test_auc"]),
-                number(row["control_test_auc"]),
-                number(row["treated_brier_score"]),
-                number(row["control_brier_score"]),
-                number(row["treated_calibration_error"]),
-                number(row["control_calibration_error"]),
-            ]
-        )
-
+    post_treatment = column_audit[column_audit["role"].eq("post-treatment variable")]
     event_rows = [
-        [
-            row["split"],
-            row["group"],
-            int(row["n"]),
-            int(row["positive_ed_events"]),
-            int(row["negative_ed_events"]),
-            percent(row["event_rate"]),
-        ]
-        for _, row in event_counts.iterrows()
+        [r["split"], r["group"], integer(r["n"]), integer(r["positive_ed_events"]), integer(r["negative_ed_events"]), percent(r["event_rate"])]
+        for _, r in events.iterrows()
     ]
-
+    performance_rows = [
+        [
+            r["model"],
+            number(r["treated_cv_auc"]),
+            number(r["control_cv_auc"]),
+            number(r["treated_test_auc"]),
+            number(r["control_test_auc"]),
+            number(r["treated_brier_score"]),
+            number(r["control_brier_score"]),
+            number(r["treated_calibration_error"]),
+            number(r["control_calibration_error"]),
+        ]
+        for _, r in evaluation.iterrows()
+    ]
     separation_rows = [
-        [
-            row["model"],
-            row["group"],
-            number(row["auc"]),
-            number(row["avg_pred_actual_positive"]),
-            number(row["avg_pred_actual_negative"]),
-            number(row["avg_pred_positive_minus_negative"]),
-        ]
-        for _, row in separation.iterrows()
+        [r["model"], r["group"], number(r["auc"]), number(r["avg_pred_actual_positive"]), number(r["avg_pred_actual_negative"]), number(r["avg_pred_positive_minus_negative"])]
+        for _, r in separation.iterrows()
     ]
-
     range_rows = [
-        [
-            row["model"],
-            row["group"],
-            number(row["min_pred"]),
-            number(row["p10_pred"]),
-            number(row["median_pred"]),
-            number(row["mean_pred"]),
-            number(row["p90_pred"]),
-            number(row["max_pred"]),
-        ]
-        for _, row in prediction_ranges.iterrows()
+        [r["model"], r["group"], number(r["min_pred"]), number(r["p10_pred"]), number(r["median_pred"]), number(r["mean_pred"]), number(r["p90_pred"]), number(r["max_pred"])]
+        for _, r in prediction_ranges.iterrows()
     ]
-
     risk_rows = [
-        [
-            int(row["risk_tier"]),
-            row["risk_tier_label"],
-            int(row["members"]),
-            percent(row["pct_population"]),
-            number(row["min_current_risk_score"]),
-            number(row["max_current_risk_score"]),
-            number(row["avg_current_risk_score"]),
-        ]
-        for _, row in risk_tiers.iterrows()
+        [integer(r["risk_tier"]), r["risk_tier_label"], integer(r["members"]), percent(r["pct_population"]), number(r["min_current_risk_score"]), number(r["max_current_risk_score"]), number(r["avg_current_risk_score"])]
+        for _, r in risk_population.iterrows()
     ]
 
-    def decile_rows(frame: pd.DataFrame) -> list[list[object]]:
+    def gap_rows(frame: pd.DataFrame) -> list[list[object]]:
         return [
             [
-                int(row["uplift_decile"]),
-                int(row["n"]),
-                number(row["avg_predicted_benefit"]),
-                number(row["observed_control_minus_treated_gap"]),
-                f"{number(row['observed_gap_ci_lower_95'])} to {number(row['observed_gap_ci_upper_95'])}",
-                int(row["treated_n"]),
-                int(row["control_n"]),
-                percent(row["treated_pct"]),
+                integer(r["uplift_decile"]),
+                integer(r["n"]),
+                number(r["avg_predicted_benefit"]),
+                number(r["observed_control_minus_treated_gap"]),
+                f"{number(r['observed_gap_ci_lower_95'])} to {number(r['observed_gap_ci_upper_95'])}",
+                integer(r["treated_n"]),
+                integer(r["control_n"]),
             ]
-            for _, row in frame.iterrows()
+            for _, r in frame.iterrows()
         ]
 
+    def shap_rows(frame: pd.DataFrame, limit: int = 10) -> list[list[object]]:
+        absolute = "mean_abs_benefit_shap" if "mean_abs_benefit_shap" in frame else "mean_abs_benefit_contribution"
+        signed = "mean_signed_benefit_shap" if "mean_signed_benefit_shap" in frame else "mean_signed_benefit_contribution"
+        positive = "pct_positive_benefit_shap" if "pct_positive_benefit_shap" in frame else "pct_positive_benefit_contribution"
+        return [
+            [rank, r["feature"], number(r[absolute]), number(r[signed]), percent(r[positive])]
+            for rank, (_, r) in enumerate(frame.head(limit).iterrows(), 1)
+        ]
+
+    def risk_mix_rows(frame: pd.DataFrame) -> list[list[object]]:
+        pivot = frame.pivot(index="risk_tier", columns="benefit_group", values="pct_within_risk_tier").fillna(0)
+        return [
+            [integer(idx), percent(row.get("High benefit", 0)), percent(row.get("Medium benefit", 0)), percent(row.get("Low benefit", 0))]
+            for idx, row in pivot.iterrows()
+        ]
+
+    def roi_rows(frame: pd.DataFrame) -> list[list[object]]:
+        return [
+            [integer(r["uplift_decile"]), integer(r["n"]), number(r["expected_ed_rate_reduction"]), number(r["expected_ed_visits_avoided"], 2), dollars(r["gross_savings"]), dollars(r["intervention_cost"]), dollars(r["net_savings"]), percent(r["roi"])]
+            for _, r in frame.iterrows()
+        ]
+
+    def targeting_rows(frame: pd.DataFrame) -> list[list[object]]:
+        return [
+            [r["targeting_approach"], integer(r["through_decile"]), percent(r["population_fraction_targeted"]), integer(r["n"]), number(r["cumulative_estimated_ed_visits_avoided"], 2), dollars(r["cumulative_gross_savings"])]
+            for _, r in frame[frame["through_decile"].isin([1, 3, 5, 10])].iterrows()
+        ]
+
+    t_model_shap = {
+        name: group.sort_values("mean_abs_shap", ascending=False).head(10)
+        for name, group in t_shap_models.groupby("model")
+    }
     consistency_rows = [
-        [
-            row["model"],
-            number(row["pearson_benefit_score_corr"]),
-            number(row["spearman_benefit_score_corr"]),
-            percent(row["top_decile_overlap_pct"]),
-            number(row["t_learner_mean_benefit_score"]),
-            number(row["x_learner_mean_benefit_score"]),
-        ]
-        for _, row in consistency.iterrows()
+        [r["model"], number(r["pearson_benefit_score_corr"]), number(r["spearman_benefit_score_corr"]), percent(r["top_decile_overlap_pct"]), number(r["t_learner_mean_benefit_score"]), number(r["x_learner_mean_benefit_score"])]
+        for _, r in consistency.iterrows()
     ]
 
-    def driver_rows(frame: pd.DataFrame, limit: int = 15) -> list[list[object]]:
-        absolute_column = (
-            "mean_abs_benefit_shap"
-            if "mean_abs_benefit_shap" in frame.columns
-            else "mean_abs_benefit_contribution"
-        )
-        signed_column = (
-            "mean_signed_benefit_shap"
-            if "mean_signed_benefit_shap" in frame.columns
-            else "mean_signed_benefit_contribution"
-        )
-        positive_column = (
-            "pct_positive_benefit_shap"
-            if "pct_positive_benefit_shap" in frame.columns
-            else "pct_positive_benefit_contribution"
-        )
-        return [
-            [
-                rank,
-                row["feature"],
-                number(row[absolute_column]),
-                number(row[signed_column]),
-                percent(row[positive_column]),
-            ]
-            for rank, (_, row) in enumerate(frame.head(limit).iterrows(), start=1)
-        ]
-
-    roi_rows = [
-        [
-            int(row["uplift_decile"]),
-            int(row["n"]),
-            number(row["expected_ed_rate_reduction"]),
-            number(row["expected_ed_visits_avoided"], 2),
-            dollars(row["gross_savings"]),
-            dollars(row["intervention_cost"]),
-            dollars(row["net_savings"]),
-            percent(row["roi"]),
-        ]
-        for _, row in xgb_t_roi.iterrows()
-    ]
-
-    x_roi_rows = [
-        [
-            int(row["uplift_decile"]),
-            int(row["n"]),
-            number(row["expected_ed_rate_reduction"]),
-            number(row["expected_ed_visits_avoided"], 2),
-            dollars(row["gross_savings"]),
-            dollars(row["intervention_cost"]),
-            dollars(row["net_savings"]),
-            percent(row["roi"]),
-        ]
-        for _, row in xgb_x_roi.iterrows()
-    ]
-
-    recommendation_rows = [
-        [
-            row["model"],
-            row["risk_prediction_strength"],
-            row["probability_calibration"],
-            row["benefit_ranking_quality"],
-        ]
-        for _, row in recommendation.iterrows()
-    ]
-
-    parity_counts = parity.groupby(["applicability_status", "generated_status"], dropna=False).size().to_dict()
-    missing_applicable = parity[
-        parity["applicability_status"].eq("applicable") & ~parity["generated_status"].astype(bool)
-    ]["corresponding_prp_relative_path"].tolist()
-
-    content = f"""# PRISM Intervention Benefit Modeling — Oregon 2-Year Dataset
+    report = f"""# PRISM Intervention Benefit Modeling Oregon Report Draft
 
 ## Background
 
-This report reproduces the analytical workflow, model families, validation sequence, charts, and output structure of the Funds Combined PRISM intervention-benefit notebook using `DataSets/Oregon_2YearDataset.csv`. The executed analysis is in `Code/Uplift Model Code_Oregon_2YearDataset.ipynb`; all generated artifacts are isolated under `Outputs/Uplift_Oregon/`.
+PRISM is intended to focus intervention resources on members most likely to benefit, not simply those most likely to have an emergency department event. This Oregon report mirrors the organization, methods, exhibits, and decision sequence of the **PRISM Intervention Benefit Modeling Funds Report Draft**, while using the Oregon two-year cohort and Oregon-specific preprocessing.
 
-The outcome is a binary indicator of any emergency-department use within 90 days. The treatment is PRISM engagement. A positive benefit score means the model predicts a lower 90-day ED-event probability under engagement than under no engagement.
+The analysis includes {integer(review['total_analytical_records'])} episodes from {integer(review['unique_members'])} unique members. The outcome is a binary indicator of any emergency department use within 90 days. Treatment is engagement in PRISM. A positive benefit score means the model predicts lower 90-day ED-event risk under engagement than under no engagement.
 
-> This is an observational, model-based prioritization analysis. The individual benefit scores are not directly observed causal effects. Small treatment/control counts within some test-set deciles produce wide confidence intervals, so operational use should follow prospective validation.
-
-> The committed notebook is configured to require a SageMaker CUDA GPU on device 0. The checked-in numerical outputs in this report are the completed local CPU validation snapshot produced before enabling the GPU requirement. A full SageMaker rerun will replace those outputs; regenerate this report afterward if fitted results change.
+> **Interpretation boundary.** This is an observational modeling analysis. Individual counterfactual outcomes are not observed, treatment was not randomized, and decile-level treatment/control counts are small. Results support model comparison and pilot design; they do not by themselves establish a causal intervention effect.
 
 ## Business Question
 
-Which Oregon members are most likely to benefit from PRISM engagement, measured as an estimated reduction in the probability of any ED utilization within 90 days?
+Which Oregon members are most likely to benefit from PRISM engagement, measured as a modeled reduction in the probability of an ED event within 90 days?
 
 ## Project Objectives
 
-1. Reproduce the Funds Combined methodology with Oregon-specific preprocessing.
-2. Prevent leakage by excluding treatment indicators, outcomes, and all known post-intervention fields from the predictor matrix.
-3. Compare XGBoost and regularized logistic-regression (GLMNet-equivalent) T-Learners.
-4. Add X-Learners using the same propensity-score and evaluation framework as the source notebook.
-5. Evaluate outcome-model discrimination and calibration, uplift ranking, uncertainty, explainability, and illustrative business value.
+1. Apply the same T-Learner and X-Learner workflow used in the Funds Combined analysis.
+2. Use only variables available before intervention and explicitly exclude treatment, outcome, and post-intervention information from predictors.
+3. Compare XGBoost with regularized logistic regression using the same model-selection and evaluation logic as the Funds report.
+4. Evaluate factual outcome prediction, benefit ranking, framework consistency, explainability, and illustrative targeting value.
+5. Produce an Oregon report with the same reporting structure and visual treatment as the Funds report.
 
-## Analytical Task 1: Modeling Framework
+## Analytical Task 1: Understanding the Modeling Framework
 
-### Outcome
+### Outcome Variable
 
-`outcome_ed_90d` was numerically coerced, missing values were assigned to zero as requested, and all values greater than zero were binarized to one. The source count distribution was preserved in the preprocessing audit. No source values were overwritten.
+`outcome_ed_90d` is the outcome of interest. It was converted to binary form: any value greater than zero is 1 and zero is 0. Missing values were assigned to 0 as specified. The final cohort contains {integer(review['outcome_events'])} events, an overall prevalence of {percent(review['outcome_prevalence'])}.
 
-### Treatment
+### Treatment Variable
 
-`Engaged_flag = 1` defines treated records and `Engaged_flag = 0` defines controls. `OptOut_flag` was used only to validate the treatment definition and was then excluded. The two fields were exact inverses for all {int(audit['modeling_rows']):,} modeling records; no contradictory or unresolved treatment rows were found.
+`Engaged_flag = 1` defines treatment and `Engaged_flag = 0` defines control. `OptOut_flag` contains the inverse treatment information and was used only as a validation check before being excluded. The fields agreed for all modeling records; there were {integer(audit['contradictory_treatment_rows'])} contradictions and {integer(audit['unresolved_treatment_rows'])} unresolved rows.
 
-### Predictors and leakage controls
+### Predictor Variables
 
-Only baseline variables were eligible as predictors. The following post-treatment fields were detected and excluded before preprocessing:
+Only baseline variables were eligible. The preprocessing audit retained {integer(audit['retained_predictor_count'])} source predictors and produced {integer(audit['encoded_feature_count'])} encoded model features. Numeric imputation, categorical levels, and zero-variance filtering were learned from training data only.
 
-{markdown_table(['Source field', 'Status', 'Reason'], [[r['original_oregon_column'], r['status'], r['reason']] for _, r in post_treatment.iterrows()])}
+The following post-intervention variables were detected and excluded before any model matrix was built:
 
-Additional exclusions were:
+<!-- AUTO_TABLE: oregon_post_treatment_exclusions -->
+{table(['Excluded post-intervention variable', 'Reason'], [[r['original_oregon_column'], r['reason']] for _, r in post_treatment.iterrows()])}
 
-{markdown_table(['Source field', 'Role', 'Reason'], [[r['original_oregon_column'], r['role'], r['reason']] for _, r in excluded_other.iterrows()])}
+The member identifier was retained only for grouped splitting and traceability. Treatment and outcome fields were never predictors. No death-related field was available in the Oregon source, so no death flag could be derived; no member was excluded on the basis of death. The 192 missing and 93 out-of-range source risk-tier values were modeled as an explicit `Missing` category. Training-set zero-variance fields `client_contract`, `plan_type`, and `program` were removed.
 
-The member identifier was retained only for grouped splitting and result traceability. The treatment and outcome were never predictors. No death-related variable was present in this Oregon file; no death flag was created, and no record was removed based on death.
+### Overall Modeling Workflow
 
-### Preprocessing and split design
+```mermaid
+flowchart LR
+    A[Oregon two-year data] --> B[Outcome and treatment validation]
+    B --> C[Remove post-treatment and leakage fields]
+    C --> D[Member-grouped 70/30 split]
+    D --> E[Train-only preprocessing]
+    E --> F[T-Learner: XGBoost and GLMNet]
+    E --> G[X-Learner: XGBoost and GLMNet]
+    F --> H[Outcome validation]
+    G --> H
+    H --> I[Benefit deciles and uncertainty]
+    I --> J[Explainability and business value]
+```
 
-- All {int(audit['raw_rows']):,} source records were retained, including {int(audit['repeated_member_episodes_retained']):,} repeated member episodes. There were {int(audit['exact_duplicate_rows']):,} exact duplicate rows.
-- The 70/30 split was grouped by `member_id`, producing zero member overlap between train and test.
-- Numeric imputation medians, categorical levels, unseen-category handling, and zero-variance filtering were learned from training data only.
-- Risk tiers 1–5 were retained. Missing and out-of-range source values were mapped to an explicit `Missing` level.
-- `total_cost_last_6m` was converted from its source currency-like representation to numeric before train-only median imputation.
-- Three training-set zero-variance fields—`client_contract`, `plan_type`, and `program`—were removed.
-- The final model used {int(audit['retained_predictor_count'])} baseline predictors and {int(audit['encoded_feature_count'])} encoded features.
-- Explicit pre-model and final encoded-feature leakage assertions passed.
+All {integer(audit['raw_rows'])} source episodes were retained, including {integer(audit['repeated_member_episodes_retained'])} repeated member episodes. Grouping the split by `member_id` produced {integer(audit['train_rows'])} training rows and {integer(audit['test_rows'])} test rows with zero member overlap. The SageMaker execution audit records: `{audit['xgboost_execution_backend']}`.
 
-### Workflow
+### Treatment-Effect Frameworks
 
-The notebook keeps the Funds Combined sequence and choices: descriptive review, predictor distributions, group-aware holdout, treatment-specific outcome models, T-Learner benefit scores, GLMNet comparison, overlap-weighted sensitivity analysis, X-Learner construction, decile diagnostics, SHAP-style explanation, and ROI targeting summaries. Hyperparameter grids, cross-validation structure, random seeds, and evaluation methods were retained. The committed notebook now matches the Funds GPU requirement: XGBoost uses `tree_method='hist'` with `device='cuda:0'`, and explicit assertions verify that fitted boosters used CUDA.
+#### T-Learner
 
-The Funds source notebook does not define separate Qini or cumulative-gain calculations. Its cumulative uplift-by-targeted-fraction curve is reproduced as written; no additional metric was invented because doing so would change the authoritative source method.
+The T-Learner fits one outcome model among engaged records and a second among controls. Both models score every held-out record. The estimated benefit is:
+
+`predicted ED risk without engagement − predicted ED risk with engagement`
+
+```mermaid
+flowchart LR
+    A[Training data] --> B[Treated subset]
+    A --> C[Control subset]
+    B --> D[Outcome model under treatment]
+    C --> E[Outcome model under control]
+    D --> F[Predicted treated risk]
+    E --> G[Predicted control risk]
+    F --> H[Benefit = control risk - treated risk]
+    G --> H
+```
+
+#### X-Learner
+
+The X-Learner first models factual outcomes, imputes treatment effects for each treatment group, fits treatment-effect models, and combines their predictions using the estimated propensity score. It is included as a sensitivity analysis because it handles treatment-group imbalance differently from the T-Learner.
+
+```mermaid
+flowchart LR
+    A[Factual outcome models] --> B[Imputed treated effects]
+    A --> C[Imputed control effects]
+    B --> D[Treated effect model]
+    C --> E[Control effect model]
+    D --> F[Propensity-weighted combination]
+    E --> F
+    F --> G[X-Learner benefit score]
+```
+
+### Modeling Techniques
+
+The report retains the Funds modeling choices: XGBoost and regularized logistic regression, the same hyperparameter-search logic, stratified cross-validation within treatment group, fixed random seeds, held-out member-grouped evaluation, T- and X-Learner constructions, benefit deciles, SHAP-style explanations, and the same illustrative economic assumptions. XGBoost used the SageMaker CUDA device recorded in the audit; no CPU refit was substituted for these results.
 
 ## Analytical Task 2: Data Review
 
-{markdown_table(
-    ['Measure', 'Value'],
-    [
-        ['Analytical records', f"{int(review['total_analytical_records']):,}"],
-        ['Unique members', f"{int(review['unique_members']):,}"],
-        ['Treated records', f"{int(review['treated_records']):,} ({percent(review['treatment_rate'])})"],
-        ['Control records', f"{int(review['control_records']):,} ({percent(1 - review['treatment_rate'])})"],
-        ['90-day ED events', f"{int(review['outcome_events']):,} ({percent(review['outcome_prevalence'])})"],
-        ['Treated outcome rate', percent(review['treated_outcome_rate'])],
-        ['Control outcome rate', percent(review['control_outcome_rate'])],
-        ['Training records / unique members', f"{int(audit['train_rows']):,} / {int(audit['train_unique_members']):,}"],
-        ['Test records / unique members', f"{int(audit['test_rows']):,} / {int(audit['test_unique_members']):,}"],
-        ['Member overlap across train/test', str(int(audit['train_test_member_overlap']))],
-    ],
-)}
+<!-- AUTO_TABLE: oregon_data_review -->
+{table(['Measure', 'Oregon result'], [
+    ['Analytical records', integer(review['total_analytical_records'])],
+    ['Unique members', integer(review['unique_members'])],
+    ['Treated records', f"{integer(review['treated_records'])} ({percent(review['treatment_rate'])})"],
+    ['Control records', f"{integer(review['control_records'])} ({percent(1-review['treatment_rate'])})"],
+    ['90-day ED events', f"{integer(review['outcome_events'])} ({percent(review['outcome_prevalence'])})"],
+    ['Treated outcome rate', percent(review['treated_outcome_rate'])],
+    ['Control outcome rate', percent(review['control_outcome_rate'])],
+    ['Training rows / unique members', f"{integer(audit['train_rows'])} / {integer(audit['train_unique_members'])}"],
+    ['Test rows / unique members', f"{integer(audit['test_rows'])} / {integer(audit['test_unique_members'])}"],
+    ['Member overlap across splits', integer(audit['train_test_member_overlap'])],
+] )}
 
-The lower observed event rate among engaged records is descriptive and unadjusted. It should not be interpreted as the intervention effect because engagement was not randomized and baseline risk may differ between groups.
+The raw treated outcome rate ({percent(review['treated_outcome_rate'])}) is lower than the raw control outcome rate ({percent(review['control_outcome_rate'])}). That difference is descriptive, not an adjusted treatment effect, because engagement was not randomized.
 
 ### Risk Tier Definition
 
-The source risk tier was used as a baseline categorical predictor rather than recalculated from the current risk score. Among the {int(risk_tiers['members'].sum()):,} records with valid tiers, the distribution was:
+Oregon source risk tiers were retained as baseline categories rather than reconstructed from the current risk score. Valid tiers covered {integer(risk_population['members'].sum())} records.
 
-{markdown_table(['Tier', 'Label', 'Records', 'Share of valid tiers', 'Min score', 'Max score', 'Average score'], risk_rows)}
-
-There were {int(audit['missing_source_risk_tier_rows']):,} missing risk-tier values and {int(audit['out_of_range_source_risk_tier_rows']):,} out-of-range values; both were assigned to the explicit `Missing` category for modeling.
+<!-- AUTO_TABLE: oregon_risk_tier_definition -->
+{table(['Risk tier', 'Label', 'Records', 'Share of valid tiers', 'Minimum score', 'Maximum score', 'Average score'], risk_rows)}
 
 ## Evaluation Roadmap
 
-The model is evaluated at three levels:
+The Funds report evaluates models in three linked levels. Oregon follows the same sequence:
 
-1. **Outcome-model validity:** can each treatment-specific model distinguish records with and without a 90-day ED event, and are its probabilities calibrated?
-2. **Uplift-model validity:** does the estimated benefit ranking show useful separation, stable results across learner frameworks, and reasonable agreement with observed within-decile gaps?
-3. **Operational value:** which variables drive the scores, and what do illustrative targeting economics look like under fixed cost assumptions?
+1. **Outcome model validation:** discrimination, factual separation, Brier score, and calibration.
+2. **Uplift model validation:** benefit-score behavior, decile ranking, uncertainty, risk-versus-benefit mix, and agreement between T- and X-Learners.
+3. **Operational interpretation:** model drivers and illustrative business value under fixed economic assumptions.
 
-## Evaluation Level 1: Outcome Model Validation
+# Evaluation Level 1: Outcome Model Validation
 
-### Analytical Task 3: Model Performance
+## Analytical Task 3: Model Performance
 
-#### Event counts
+### Event Counts And Modeling Constraints
 
-{markdown_table(['Split', 'Group', 'Records', 'ED events', 'No ED event', 'Event rate'], event_rows)}
+<!-- AUTO_TABLE: oregon_factual_event_counts -->
+{table(['Split', 'Treatment group', 'Records', 'ED events', 'No ED event', 'Event rate'], event_rows)}
 
-The control test subgroup contains only {int(event_counts[(event_counts['split'] == 'Test') & (event_counts['group'] == 'Control')]['n'].iloc[0])} records and {int(event_counts[(event_counts['split'] == 'Test') & (event_counts['group'] == 'Control')]['positive_ed_events'].iloc[0])} events. This limits the precision of both outcome-model and uplift validation.
+The held-out control group contains 116 records and 32 events. These counts are adequate for an initial comparison but still make subgroup AUC, calibration, and decile-level estimates imprecise. Wide confidence intervals later in the report are therefore expected rather than anomalous.
 
-#### Discrimination, Brier score, and calibration
+### Discrimination Performance
 
-{markdown_table(
-    ['Model', 'Treated CV AUC', 'Control CV AUC', 'Treated test AUC', 'Control test AUC', 'Treated Brier', 'Control Brier', 'Treated calibration error', 'Control calibration error'],
-    evaluation_rows,
-)}
+<!-- AUTO_TABLE: oregon_model_performance -->
+{table(['Model', 'Treated CV AUC', 'Control CV AUC', 'Treated test AUC', 'Control test AUC', 'Treated Brier', 'Control Brier', 'Treated calibration error', 'Control calibration error'], performance_rows)}
 
-The XGBoost models achieved treated/control test AUCs of {number(evaluation.loc[evaluation['model'].eq('XGBoost'), 'treated_test_auc'].iloc[0])} and {number(evaluation.loc[evaluation['model'].eq('XGBoost'), 'control_test_auc'].iloc[0])}. GLMNet was similar in the treated subgroup and stronger in the control subgroup, although the control estimate is based on the smaller test sample. Neither method had uniformly strong calibration, so raw probabilities and derived benefit magnitudes should be treated cautiously.
+GLMNet has the higher mean held-out factual AUC ({number(avg_glm_auc)} versus {number(avg_xgb_auc)} for XGBoost), driven by its control-group AUC. XGBoost is slightly stronger for treated records and has the better average calibration error ({number(avg_xgb_cal)} versus {number(avg_glm_cal)}). The Oregon result is therefore mixed rather than a simple winner on every metric.
 
-{image('T-Learner/XGBoost/dashboard_calibration_plot.png', 'XGBoost calibration by treatment group')}
+### Factual Discrimination And Prediction Separation
 
-#### Prediction separation
+<!-- AUTO_TABLE: oregon_prediction_separation -->
+{table(['Model', 'Group', 'AUC', 'Mean prediction: event', 'Mean prediction: no event', 'Difference'], separation_rows)}
 
-{markdown_table(['Model', 'Group', 'AUC', 'Mean prediction: event', 'Mean prediction: no event', 'Mean separation'], separation_rows)}
+{side_by_side('T-Learner/XGBoost/dashboard_predicted_treated_vs_control.png', 'XGBoost factual prediction distributions', 'T-Learner/GLMNet/dashboard_predicted_treated_vs_control.png', 'GLMNet factual prediction distributions')}
 
-#### Prediction ranges
+### Brier Score And Calibration
 
-{markdown_table(['Model', 'Group', 'Minimum', '10th percentile', 'Median', 'Mean', '90th percentile', 'Maximum'], range_rows)}
+Both model families have similar average Brier scores, while XGBoost has lower mean calibration error. Calibration matters directly here because a benefit score is the difference between two predicted probabilities; bias in either potential-outcome model can distort the estimated treatment-effect scale.
 
-### Level 1 Summary
+<!-- AUTO_CHART: oregon_calibration_comparison -->
+{side_by_side('T-Learner/XGBoost/dashboard_calibration_plot.png', 'XGBoost calibration', 'T-Learner/GLMNet/dashboard_calibration_plot.png', 'GLMNet calibration')}
 
-{markdown_table(['Model', 'Risk prediction', 'Calibration', 'Benefit-ranking diagnostic'], recommendation_rows)}
+### Factual Prediction Range And Rare-Outcome Interpretation
 
-Both model families have useful risk discrimination, but probability calibration and small subgroup sizes remain material limitations. Benefit ranking should therefore be validated with ranking-based and uncertainty-aware diagnostics rather than judged from AUC alone.
+<!-- AUTO_TABLE: oregon_prediction_ranges -->
+{table(['Model', 'Group', 'Minimum', 'P10', 'Median', 'Mean', 'P90', 'Maximum'], range_rows)}
 
-## Evaluation Level 2: Uplift Model Validation
+The event is not extremely rare overall, but subgroup sizes remain limited. Some probabilities approach the edges of the observed range, especially for GLMNet; this helps explain why GLMNet can rank records well while overstating the magnitude of its top predicted benefit.
 
-### Analytical Task 4: Treatment-Effect Estimation
+### Model Performance Takeaway
 
-The T-Learner estimates two potential-outcome risks for each test record: predicted ED risk under engagement and predicted ED risk under no engagement. Benefit is `predicted control risk − predicted treated risk`; larger positive values represent greater predicted reduction in ED-event probability.
+For direct methodological parity with the Funds report, XGBoost remains the primary Oregon uplift model and GLMNet remains the transparent sensitivity model. That choice is supported by XGBoost's stronger calibration and plausible top-decile benefit scale, not by universal AUC dominance. GLMNet's higher average factual AUC is reported explicitly and should be revisited in future cohorts.
 
-The source data do not contain observed individual counterfactuals, so true-benefit correlations, true top-decile overlap, and PEHE cannot be computed. Instead, the report uses observed treated-versus-control gaps within ranked deciles, Newcombe-Wilson confidence intervals, overlap weighting, and T-versus-X-Learner consistency as diagnostics.
+## Level 1 Summary: Outcome Model Validation
 
-### Analytical Task 5: Uplift Decile Analysis
+The factual outcome models contain useful signal: held-out AUCs range from {number(evaluation[['treated_test_auc','control_test_auc']].min().min())} to {number(evaluation[['treated_test_auc','control_test_auc']].max().max())}. However, discrimination alone does not validate uplift ranking. XGBoost offers the better probability calibration, while GLMNet has stronger average discrimination. Both therefore move forward to treatment-effect evaluation, with XGBoost as the report's primary model and GLMNet as a sensitivity check.
 
-#### XGBoost T-Learner
+# Evaluation Level 2: Uplift Model Validation
 
-{markdown_table(['Decile', 'N', 'Average predicted benefit', 'Observed control − treated gap', '95% CI for observed gap', 'Treated N', 'Control N', 'Treated share'], decile_rows(xgb_t_deciles))}
+## Analytical Task 4: Treatment Effect Analysis
 
-The top XGBoost T-Learner decile contained {int(xgb_t_top['top_decile_n'])} records and had average predicted benefit {number(xgb_t_top['top_decile_avg_predicted_benefit'])}. Its observed control-minus-treated gap was {number(xgb_t_top['top_decile_observed_control_minus_treated_gap'])}; the 95% interval was {number(xgb_t_deciles.iloc[0]['observed_gap_ci_lower_95'])} to {number(xgb_t_deciles.iloc[0]['observed_gap_ci_upper_95'])}. The interval includes zero, reflecting the limited decile sample.
+For each held-out member episode, the T-Learner produces predicted ED risk under engagement and predicted ED risk under control. The difference is the modeled benefit. X-Learner scores provide a second estimate built from imputed treatment effects and propensity-weighted combination.
 
-{image('T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'XGBoost T-Learner average predicted benefit by decile')}
+The top XGBoost T-Learner decile averages {number(t_top['top_decile_avg_predicted_benefit'])} predicted benefit—approximately {number(100*t_top['top_decile_avg_predicted_benefit'],1)} percentage points of modeled ED-risk reduction. Its observed control-minus-treated gap is {number(t_top['top_decile_observed_control_minus_treated_gap'])}, but the 95% interval ({number(xgb_eval['top_decile_observed_gap_ci_lower_95'])} to {number(xgb_eval['top_decile_observed_gap_ci_upper_95'])}) includes zero.
 
-{image('T-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'XGBoost T-Learner observed ED-rate gap by decile')}
+### Synthetic True-Benefit Validation
 
-{image('T-Learner/XGBoost/dashboard_uplift_curve_by_decile.png', 'XGBoost T-Learner uplift curve')}
+The Funds workflow includes synthetic-data checks because true individual treatment effects are known in simulation. The Oregon observational file has no observed counterfactual and therefore no true individual benefit label. PEHE, true-benefit correlation, and true top-group overlap are not identifiable here. Oregon uses the corresponding real-data diagnostics available without inventing ground truth: observed within-decile treated/control gaps with Wilson intervals, T-versus-X consistency, and sensitivity to model family.
 
-Across deciles, the Spearman correlation between predicted benefit and observed gap was {number(evaluation.loc[evaluation['model'].eq('XGBoost'), 'benefit_gap_spearman_corr_by_decile'].iloc[0])}, with mean absolute predicted-versus-observed gap {number(evaluation.loc[evaluation['model'].eq('XGBoost'), 'mean_abs_predicted_minus_observed_gap_by_decile'].iloc[0])}. This does not establish reliable causal ranking; it supports treating the current result as a candidate model for further validation.
+## Analytical Task 5: Uplift Decile Analysis
 
-#### GLMNet T-Learner
+The strongest predicted benefit should appear in decile 1 and decrease toward decile 10. Predicted ranking is clear for both XGBoost learners, but observed gaps are noisy.
 
-The GLMNet top decile had average predicted benefit {number(glm_t_top['top_decile_avg_predicted_benefit'])} and observed gap {number(glm_t_top['top_decile_observed_control_minus_treated_gap'])}. The predicted magnitude was outside the observed-gap 95% interval, indicating probable overstatement of the absolute benefit scale even though its decile rank correlation was positive.
+<!-- AUTO_TABLE: oregon_tlearner_deciles -->
+{table(['Decile', 'N', 'Average predicted benefit', 'Observed control - treated gap', '95% CI', 'Treated N', 'Control N'], gap_rows(t_gap))}
 
-{markdown_table(['Decile', 'N', 'Average predicted benefit', 'Observed control − treated gap', '95% CI for observed gap', 'Treated N', 'Control N', 'Treated share'], decile_rows(glm_t_deciles))}
+<!-- AUTO_CHART: oregon_tlearner_decile_pair -->
+{side_by_side('T-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'T-Learner predicted benefit by decile', 'T-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'T-Learner observed gap by decile')}
 
-#### XGBoost X-Learner
+The XGBoost T-Learner's decile Spearman correlation between predicted benefit and observed gap is {number(xgb_eval['benefit_gap_spearman_corr_by_decile'])}. The negative, near-zero value means the observed gap does not decline monotonically with predicted benefit. This is the central validation weakness of the current T-Learner result.
 
-{markdown_table(['Decile', 'N', 'Average predicted benefit', 'Observed control − treated gap', '95% CI for observed gap', 'Treated N', 'Control N', 'Treated share'], decile_rows(xgb_x_deciles))}
+The XGBoost X-Learner produces a wider score spread, from {number(x_decile.iloc[0]['avg_benefit_score'])} in decile 1 to {number(x_decile.iloc[-1]['avg_benefit_score'])} in decile 10. Its first-decile observed gap is {number(x_gap.iloc[0]['observed_control_minus_treated_gap'])}, with a 95% interval of {number(x_gap.iloc[0]['observed_gap_ci_lower_95'])} to {number(x_gap.iloc[0]['observed_gap_ci_upper_95'])}.
 
-{image('X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'XGBoost X-Learner average predicted benefit by decile')}
+<!-- AUTO_TABLE: oregon_xlearner_deciles -->
+{table(['Decile', 'N', 'Average predicted benefit', 'Observed control - treated gap', '95% CI', 'Treated N', 'Control N'], gap_rows(x_gap))}
 
-{image('X-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'XGBoost X-Learner observed ED-rate gap by decile')}
+<!-- AUTO_CHART: oregon_xlearner_decile_pair -->
+{side_by_side('X-Learner/XGBoost/dashboard_avg_benefit_by_decile.png', 'X-Learner predicted benefit by decile', 'X-Learner/XGBoost/dashboard_observed_gap_by_decile.png', 'X-Learner observed gap by decile')}
 
-#### T-Learner versus X-Learner consistency
+GLMNet's T-Learner has a positive decile Spearman correlation ({number(glm_eval['benefit_gap_spearman_corr_by_decile'])}), but its top predicted benefit ({number(glm_top['top_decile_avg_predicted_benefit'])}) lies above the observed-gap 95% interval ({number(glm_eval['top_decile_observed_gap_ci_lower_95'])} to {number(glm_eval['top_decile_observed_gap_ci_upper_95'])}). It may rank more consistently while overstating absolute benefit.
 
-{markdown_table(['Model family', 'Pearson correlation', 'Spearman correlation', 'Top-decile overlap', 'T-Learner mean benefit', 'X-Learner mean benefit'], consistency_rows)}
+### Risk Tier Versus Benefit Group
 
-The XGBoost implementations had moderate score correlation and {percent(consistency.loc[consistency['model'].eq('XGBoost'), 'top_decile_overlap_pct'].iloc[0])} top-decile overlap. GLMNet showed little agreement across learner frameworks. Framework sensitivity is another reason to avoid using a single fitted benefit magnitude as a causal estimate.
+Current risk and modeled benefit answer different questions. Within each source risk tier, members were divided into high-, medium-, and low-benefit thirds based on the respective model score.
 
-### Level 2 Summary
+<!-- AUTO_TABLE: oregon_tlearner_risk_benefit_mix -->
+{table(['Risk tier', 'High benefit', 'Medium benefit', 'Low benefit'], risk_mix_rows(t_risk))}
 
-The Oregon models produce differentiated benefit rankings, but the observed-gap pattern is noisy and sensitive to the learner framework. The XGBoost T-Learner is the closest direct reproduction of the original primary workflow; the X-Learner is best treated as a sensitivity analysis. A prospective or quasi-experimental validation design is needed before deployment.
+For comparison, the X-Learner risk-tier mix is:
 
-## Evaluation Level 3: Operational Interpretation
+<!-- AUTO_TABLE: oregon_xlearner_risk_benefit_mix -->
+{table(['Risk tier', 'High benefit', 'Medium benefit', 'Low benefit'], risk_mix_rows(x_risk))}
 
-### Analytical Task 6: Variable Importance and Explainability
+<!-- AUTO_CHART: oregon_risk_benefit_pair -->
+{side_by_side('T-Learner/XGBoost/dashboard_tlearner_risk_tier_by_benefit_group.png', 'T-Learner risk tier and benefit group', 'X-Learner/XGBoost/dashboard_xlearner_risk_tier_by_benefit_group.png', 'X-Learner risk tier and benefit group')}
 
-#### XGBoost T-Learner benefit drivers
+High modeled benefit appears in multiple risk tiers rather than only in the highest-risk tier. For example, {percent(t_risk[(t_risk['risk_tier'].eq(1)) & (t_risk['benefit_group'].eq('High benefit'))]['pct_within_risk_tier'].iloc[0])} of valid tier-1 test records fall in the T-Learner high-benefit group. Risk-only targeting would therefore select a meaningfully different population.
 
-{markdown_table(['Rank', 'Feature', 'Mean absolute benefit SHAP', 'Mean signed benefit SHAP', 'Positive SHAP share'], driver_rows(xgb_t_shap))}
+### Framework Consistency
 
-{image('T-Learner/XGBoost/dashboard_shap_benefit_score.png', 'XGBoost T-Learner SHAP benefit drivers')}
+<!-- AUTO_TABLE: oregon_framework_consistency -->
+{table(['Model family', 'Pearson correlation', 'Spearman correlation', 'Top-decile overlap', 'T-Learner mean benefit', 'X-Learner mean benefit'], consistency_rows)}
 
-The leading benefit-score drivers were recent ED utilization, recent total cost, percolator score, recent 30-day ED utilization, and age. SHAP values explain model behavior; they do not establish that changing a feature would change treatment benefit.
+XGBoost has moderate T-versus-X score agreement (Spearman {number(consistency[consistency['model'].eq('XGBoost')]['spearman_benefit_score_corr'].iloc[0])}), while GLMNet agreement is weak. Moderate score correlation with limited top-decile overlap means framework choice materially changes which individual records are prioritized.
 
-#### XGBoost X-Learner benefit drivers
+### True-Benefit Top-Group Overlap
 
-{markdown_table(['Rank', 'Feature', 'Mean absolute benefit SHAP', 'Mean signed benefit SHAP', 'Positive SHAP share'], driver_rows(xgb_x_drivers))}
+True-benefit top-group overlap cannot be calculated for Oregon because individual counterfactual benefit is unobserved. The report instead shows T-versus-X top-decile overlap: {percent(consistency[consistency['model'].eq('XGBoost')]['top_decile_overlap_pct'].iloc[0])} for XGBoost. This is a stability diagnostic, not a truth benchmark.
 
-{image('X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png', 'XGBoost X-Learner benefit drivers')}
+## Level 2 Summary: Uplift Model Validation
 
-#### GLMNet comparison
+The Oregon analysis produces clear predicted score gradients but mixed empirical validation. The XGBoost T-Learner's top predicted magnitude is compatible with its wide observed interval, yet its observed gaps are not monotonic. The X-Learner's first decile has a positive observed-gap interval, but the two frameworks overlap on only about one-third of top-decile records. These findings support a targeted prospective pilot and do not support interpreting the scores as proven individual causal effects.
 
-The GLMNet benefit explanation remains available as a transparent linear-model comparison. Its leading absolute contribution terms were:
+# Evaluation Level 3: Operational Evaluation
 
-{markdown_table(['Rank', 'Feature', 'Mean absolute benefit contribution', 'Mean signed contribution', 'Positive contribution share'], driver_rows(glm_t_shap, 10))}
+## Analytical Task 6: Variable Importance and Explainability
 
-### Analytical Task 7: Illustrative Business Value
+### Risk Drivers
 
-The notebook retains the Funds Combined business assumptions: **$1,200 gross value per avoided ED event** and **$250 intervention cost per targeted record**. These are scenario inputs, not measured Oregon financial outcomes. ROI is `(gross savings − intervention cost) / intervention cost`.
+The treated and control factual models emphasize related but not identical risk drivers. These are predictors of 90-day ED outcome under each observed treatment condition; they are not automatically drivers of treatment benefit.
 
-#### XGBoost T-Learner targeting
+<!-- AUTO_TABLE: oregon_factual_shap_treated -->
+{table(['Rank', 'Treated-model feature', 'Mean absolute SHAP'], [[i, r['feature'], number(r['mean_abs_shap'])] for i, (_, r) in enumerate(t_model_shap['Treated Model'].iterrows(), 1)])}
 
-{markdown_table(['Decile', 'N', 'Expected ED-rate reduction', 'Expected ED events avoided', 'Gross savings', 'Intervention cost', 'Net savings', 'ROI'], roi_rows)}
+<!-- AUTO_TABLE: oregon_factual_shap_control -->
+{table(['Rank', 'Control-model feature', 'Mean absolute SHAP'], [[i, r['feature'], number(r['mean_abs_shap'])] for i, (_, r) in enumerate(t_model_shap['Control Model'].iterrows(), 1)])}
 
-For the top T-Learner decile, estimated gross savings were {dollars(xgb_t_top['top_decile_gross_savings'])}, intervention cost was {dollars(xgb_t_top['top_decile_intervention_cost'])}, and net savings were {dollars(xgb_t_top['top_decile_net_savings'])}, corresponding to {percent(xgb_t_top['top_decile_roi'])} illustrative ROI. The negative value means the predicted benefit does not clear the specified cost threshold for that complete decile.
+{side_by_side('T-Learner/XGBoost/dashboard_shap_treated_model.png', 'Treated factual model SHAP', 'T-Learner/XGBoost/dashboard_shap_control_model.png', 'Control factual model SHAP')}
 
-{image('T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png', 'XGBoost T-Learner net savings by decile')}
+### Explainability Approaches
 
-#### XGBoost X-Learner targeting
+The report uses model-specific explanation methods. XGBoost uses TreeSHAP-derived contributions; GLMNet uses exact linear contributions on the transformed model matrix. Absolute values show importance, signed values show average direction in the modeled benefit score, and the positive share shows how often the feature contribution raises predicted benefit. None of these quantities implies that intervening on the feature would change benefit.
 
-{markdown_table(['Decile', 'N', 'Expected ED-rate reduction', 'Expected ED events avoided', 'Gross savings', 'Intervention cost', 'Net savings', 'ROI'], x_roi_rows)}
+### Coefficient-Based Benefit Contributions
 
-The X-Learner produces a more favorable first-decile scenario but negative returns in later deciles. Because the T- and X-Learners disagree materially for some records, these values should be used for scenario planning rather than booked savings.
+<!-- AUTO_TABLE: oregon_glmnet_benefit_contributions -->
+{table(['Rank', 'Feature', 'Mean absolute contribution', 'Mean signed contribution', 'Positive contribution share'], shap_rows(glm_benefit, 10))}
 
-{image('X-Learner/XGBoost/dashboard_xlearner_roi_net_savings_by_decile.png', 'XGBoost X-Learner net savings by decile')}
+GLMNet provides a transparent sensitivity view, but its top-decile benefit magnitude was outside the observed interval. Coefficients and contributions should therefore be read as model mechanics rather than causal effect modifiers.
 
-At approximately the top 50% of the test population, cumulative modeled gross savings were:
+### SHAP Benefit-Score Contributions
 
-{markdown_table(['Targeting approach', 'Population fraction', 'N', 'Cumulative gross savings'], [[r['targeting_approach'], percent(r['population_fraction_targeted']), int(r['n']), dollars(r['cumulative_gross_savings'])] for _, r in xgb_x_savings.iterrows()])}
+<!-- AUTO_TABLE: oregon_tlearner_benefit_shap -->
+{table(['Rank', 'T-Learner feature', 'Mean absolute benefit SHAP', 'Mean signed SHAP', 'Positive SHAP share'], shap_rows(t_shap_benefit, 12))}
 
-{image('X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'Cumulative gross savings by targeting approach')}
+<!-- AUTO_TABLE: oregon_xlearner_benefit_shap -->
+{table(['Rank', 'X-Learner feature', 'Mean absolute benefit SHAP', 'Mean signed SHAP', 'Positive SHAP share'], shap_rows(x_benefit, 12))}
 
-{image('X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'Marginal gross-savings advantage of uplift targeting')}
+<!-- AUTO_CHART: oregon_benefit_shap_pair -->
+{side_by_side('T-Learner/XGBoost/dashboard_shap_benefit_score.png', 'T-Learner benefit-score SHAP', 'X-Learner/XGBoost/dashboard_xlearner_benefit_drivers.png', 'X-Learner benefit-score SHAP')}
 
-### Level 3 Summary
+Recent ED utilization, recent total cost, percolator score, age, and current risk score dominate the T-Learner benefit explanation. The X-Learner also emphasizes recent ED use, total cost, and age, though at a smaller contribution scale. The overlap is reassuring at the population level; the limited top-decile member overlap shows that similar global drivers do not imply identical individual rankings.
 
-The models consistently emphasize recent utilization and cost-related baseline signals. Under the retained economic assumptions, the XGBoost T-Learner's full top decile is not cost-saving, while the X-Learner's first decile is positive. That contrast reinforces the need for prospective testing, explicit intervention-capacity constraints, and sensitivity analyses over unit cost and avoided-event value.
+### Known Synthetic Driver Alignment
 
-## Recommended Next Steps
+There are no known synthetic treatment-effect drivers in the Oregon observational data. Accordingly, the report does not claim alignment to a known causal data-generating process. The closest available check is cross-framework agreement on broad driver families, which is descriptive only.
 
-1. Run a prospective pilot with randomized or defensible quasi-experimental assignment among high-ranked members.
-2. Predefine ranking metrics, minimum detectable effect, and subgroup sample sizes before evaluation.
-3. Recalibrate outcome probabilities and reassess learner-framework stability on a later Oregon cohort.
-4. Replace illustrative cost assumptions with Oregon-specific allowed amounts and intervention delivery costs.
-5. Monitor overlap, treatment propensity, and score drift; do not score members outside the baseline population without review.
-6. Review fairness and operational feasibility across age, gender, geography, dual-eligibility status, and available demographic groups before deployment.
+## Analytical Task 7: Business Value Assessment
 
-## Reproducibility and Output Audit
+As in the Funds report, the scenario assigns **$1,200 gross value per modeled ED event avoided** and **$250 intervention cost per targeted record**. These are illustrative assumptions, not measured Oregon allowed amounts or program costs. Gross savings are shown separately from intervention cost, and results inherit all uncertainty in the benefit scores.
 
-- Source data: `DataSets/Oregon_2YearDataset.csv` (read-only during analysis)
-- Executed notebook: `Code/Uplift Model Code_Oregon_2YearDataset.ipynb`
-- Notebook builder: `Code/build_oregon_uplift_notebook.py`
-- Report generator: `Code/generate_oregon_uplift_report.py`
-- Oregon outputs: `Outputs/Uplift_Oregon/`
-- Random seed: 123
-- Split: grouped by `member_id`; zero member overlap
-- Preprocessing: fit on training data only
-- Committed notebook backend: SageMaker CUDA GPU required on device 0
-- Checked-in result snapshot backend: {audit['xgboost_execution_backend']}
-- Leakage assertions: passed
-- Death handling: no death field present; no death-derived feature and no death-based exclusion
+### XGBoost T-Learner Targeting
 
-The parity manifest records {parity_counts.get(('applicable', True), 0)} generated applicable artifacts, {parity_counts.get(('applicable', False), 0)} applicable artifacts not generated, {parity_counts.get(('oregon_specific', True), parity_counts.get(('funds_specific', True), 0))} Oregon-specific generated artifacts, and {parity_counts.get(('not_applicable', False), 0)} synthetic-ground-truth artifacts marked not applicable. The six applicable-but-absent files are GLMNet T-Learner targeting outputs that were not produced by the Funds source workflow:
+<!-- AUTO_TABLE: oregon_tlearner_roi -->
+{table(['Decile', 'N', 'Expected ED-rate reduction', 'Expected ED events avoided', 'Gross savings', 'Intervention cost', 'Net savings', 'ROI'], roi_rows(t_roi))}
 
-{chr(10).join(f'- `{path}`' for path in missing_applicable)}
+The complete top decile has {integer(t_top['top_decile_n'])} records, {number(t_top['top_decile_estimated_ed_visits_avoided'],2)} modeled ED events avoided, {dollars(t_top['top_decile_gross_savings'])} gross savings, and {dollars(t_top['top_decile_net_savings'])} net savings. Its illustrative ROI is {percent(t_top['top_decile_roi'])}, so the full decile does not clear the assumed $250 per-person intervention cost.
 
-These absences are explicit in `Outputs/Uplift_Oregon/Python/output_parity_manifest.csv`; no missing artifact is silently treated as generated.
+{image('T-Learner/XGBoost/dashboard_roi_net_savings_by_decile.png', 'T-Learner net savings by decile')}
+
+The Funds-style cumulative comparison ranks the same held-out test population either by modeled T-Learner benefit or by current risk. Avoided events are always summed from the T-Learner benefit score so only the targeting order changes.
+
+<!-- AUTO_TABLE: oregon_tlearner_cumulative_targeting -->
+{table(['Targeting approach', 'Through decile', 'Population targeted', 'N', 'Modeled ED events avoided', 'Cumulative gross savings'], targeting_rows(t_cumulative))}
+
+The ROI table follows the notebook's decile assignment, whose first bin contains 39 records. The cumulative Funds-style comparison uses fixed 38-record increments (`382 // 10`) and places all remaining records in the final step. This intentional convention explains the small difference between first-decile gross savings in the two displays.
+
+<!-- AUTO_CHART: oregon_tlearner_targeting_pair -->
+{side_by_side('T-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'T-Learner cumulative targeting value', 'T-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'T-Learner marginal advantage versus risk')}
+
+At approximately 50% of the test population, T-Learner uplift ranking produces {dollars(t_cumulative[(t_cumulative['targeting_approach'].eq('Uplift score')) & (t_cumulative['through_decile'].eq(5))]['cumulative_gross_savings'].iloc[0])} in modeled gross savings, compared with {dollars(t_cumulative[(t_cumulative['targeting_approach'].eq('Current risk score')) & (t_cumulative['through_decile'].eq(5))]['cumulative_gross_savings'].iloc[0])} under current-risk ranking.
+
+### XGBoost X-Learner Targeting
+
+<!-- AUTO_TABLE: oregon_xlearner_roi -->
+{table(['Decile', 'N', 'Expected ED-rate reduction', 'Expected ED events avoided', 'Gross savings', 'Intervention cost', 'Net savings', 'ROI'], roi_rows(x_roi))}
+
+{image('X-Learner/XGBoost/dashboard_xlearner_roi_net_savings_by_decile.png', 'X-Learner net savings by decile')}
+
+<!-- AUTO_TABLE: oregon_xlearner_cumulative_targeting -->
+{table(['Targeting approach', 'Through decile', 'Population targeted', 'N', 'Modeled ED events avoided', 'Cumulative gross savings'], targeting_rows(x_cumulative))}
+
+<!-- AUTO_CHART: oregon_xlearner_targeting_pair -->
+{side_by_side('X-Learner/XGBoost/dashboard_cumulative_gross_savings_targeting.png', 'X-Learner cumulative targeting value', 'X-Learner/XGBoost/dashboard_marginal_gross_savings_advantage_vs_current_risk.png', 'X-Learner marginal advantage versus risk')}
+
+The X-Learner shows stronger modeled value in its first few deciles than the T-Learner, but later marginal value turns negative. Because the frameworks prioritize substantially different records, the apparent economic advantage is model-dependent and must be validated prospectively before it is treated as expected savings.
+
+## Level 3 Summary: Operational Evaluation
+
+Recent ED use, cost, percolator score, and age are prominent in the Oregon benefit models. Uplift-based ranking generates a different allocation from current-risk ranking and can concentrate modeled gross value earlier in the targeting curve. However, the full XGBoost T-Learner top decile has negative net value under the retained cost assumptions, while the X-Learner is more favorable. That disagreement, together with noisy observed decile gaps, makes a controlled pilot with Oregon-specific cost inputs the appropriate next decision point.
+
+---
+
+Supporting files: [executed Oregon notebook](Code/Uplift%20Model%20Code_Oregon_2YearDataset.ipynb), [preprocessing audit](Outputs/Uplift_Oregon/Python/preprocessing_audit_summary.csv), [column-level leakage audit](Outputs/Uplift_Oregon/Python/preprocessing_column_audit.csv), [model evaluation summary](Outputs/Uplift_Oregon/Python/model_evaluation_summary.csv), and [output parity manifest](Outputs/Uplift_Oregon/Python/output_parity_manifest.csv).
 """
 
-    REPORT_PATH.write_text(content, encoding="utf-8")
+    REPORT_PATH.write_text(report, encoding="utf-8")
     print(f"Wrote {REPORT_PATH}")
 
 
