@@ -365,8 +365,17 @@ def build():
     benefit panel are wider simultaneous intervals. These diagnostics do not resolve timing or
     unmeasured confounding. Red crosses mark impossible risk point estimates. Shading marks the
     physically possible risk/benefit ranges; estimates are not moved into those ranges.
+
+    A separate **shape-only zoom** below the full-range figure focuses on -25 to +25 percentage
+    points. Change `BENEFIT_ZOOM_LIMITS_PP` in the plotting cell to adjust the view. Boundary
+    triangles display the actual values of off-screen point estimates. Dotted guides join only
+    consecutive integer counts whose estimates are inside the window; they are not a fitted or
+    smoothed dose-response curve. Confidence intervals remain in the full-range figure; set
+    `SHOW_ZOOM_INTERVALS=True` to also show them in the zoom. All diagnostic flags are retained.
     ''')
     code('''
+    BENEFIT_ZOOM_LIMITS_PP = (-25.0, 25.0)  # Display range only; estimates are unchanged.
+    SHOW_ZOOM_INTERVALS = False  # Full uncertainty remains visible in the overview above.
     label = 'Adjusted' if CONFIG['timing_confirmed'] else 'Exploratory adjusted'
     fig, axes = plt.subplots(3, 1, figsize=(13, 12), sharex=True,
                              gridspec_kw={'height_ratios': [2, 2, 1]})
@@ -409,6 +418,65 @@ def build():
     for ax in axes:
         ax.grid(axis='y', alpha=.2)
     fig.tight_layout()
+    plt.show()
+
+    # Separate shape view so large residual corrections cannot compress every other point.
+    low, high = map(float, BENEFIT_ZOOM_LIMITS_PP)
+    if not np.isfinite([low, high]).all() or not low < 0 < high:
+        raise ValueError('Zoom limits must be finite and straddle zero.')
+    zoom_curve = curve.sort_values('dose').reset_index(drop=True)
+    inside = zoom_curve.benefit_pp.between(low, high)
+    zoom_fig, zoom_ax = plt.subplots(figsize=(13, 5.5))
+    zoom_ax.axhspan(0, high, color='#397d66', alpha=.06)
+    zoom_ax.axhline(0, color='#555555', lw=1)
+    for j in range(len(zoom_curve) - 1):
+        a, b = zoom_curve.iloc[j], zoom_curve.iloc[j + 1]
+        if b.dose == a.dose + 1 and inside.iloc[j] and inside.iloc[j + 1]:
+            zoom_ax.plot([a.dose, b.dose], [a.benefit_pp, b.benefit_pp],
+                         color='#8a8a8a', ls=':', lw=1, zorder=1)
+    for passed, color in [(True, '#176b91'), (False, '#b66c24')]:
+        part = zoom_curve.loc[zoom_curve.contrast_pass.eq(passed)]
+        visible = part.loc[part.benefit_pp.between(low, high)]
+        if SHOW_ZOOM_INTERVALS:
+            zoom_ax.vlines(part.dose, part.benefit_ci_low_pp, part.benefit_ci_high_pp,
+                           color=color, alpha=.3, lw=1)
+        if len(visible):
+            zoom_ax.scatter(visible.dose, visible.benefit_pp, s=55, zorder=3,
+                            facecolors=color if passed else 'none', edgecolors=color,
+                            label='Passes screens' if passed else 'Flagged estimate')
+            for row in visible.itertuples():
+                label_offset = 8 if row.benefit_pp >= 0 else -12
+                if row.benefit_pp > high - .12 * (high - low):
+                    label_offset = -14
+                elif row.benefit_pp < low + .12 * (high - low):
+                    label_offset = 10
+                zoom_ax.annotate(f'{row.benefit_pp:+.1f}', (row.dose, row.benefit_pp),
+                                 xytext=(0, label_offset),
+                                 textcoords='offset points', ha='center', fontsize=8, color=color)
+    outside = zoom_curve.loc[~inside & np.isfinite(zoom_curve.benefit_pp)]
+    padding = .025 * (high - low)
+    for j, row in enumerate(outside.itertuples()):
+        above = row.benefit_pp > high
+        boundary = high - padding if above else low + padding
+        zoom_ax.scatter(row.dose, boundary, marker='^' if above else 'v', s=65,
+                        color='#ad2525', zorder=4,
+                        label='Off-screen estimate (actual value labeled)' if j == 0 else None)
+        zoom_ax.annotate(f'{row.benefit_pp:+.1f} pp', (row.dose, boundary),
+                         xytext=(0, -15 if above else 10), textcoords='offset points',
+                         ha='center', fontsize=8, color='#ad2525')
+    zoom_ax.set_ylim(low, high)
+    zoom_ax.set_xticks(zoom_curve.dose)
+    zoom_ax.set(xlabel='Exact number of interventions', ylabel='ED risk reduction vs zero (pp)')
+    zoom_ax.set_title(f'Benefit shape: zoom from {low:g} to {high:g} pp | {screen_label}\\n'
+                      'Above zero = lower estimated ED risk; below zero = higher estimated ED risk', loc='left', fontsize=11)
+    zoom_ax.grid(axis='y', alpha=.2)
+    handles, labels = zoom_ax.get_legend_handles_labels()
+    if handles:
+        zoom_ax.legend(handles, labels, fontsize=8, loc='upper center', bbox_to_anchor=(.5, -.16), ncol=3)
+    interval_note = ('Pointwise intervals shown; intervals may extend beyond this view.' if SHOW_ZOOM_INTERVALS
+                     else 'Shape-only view: confidence intervals are in the full-range figure above.')
+    zoom_fig.text(.08, .015, f'{interval_note} Triangles mark off-screen values; no estimates were clipped.', fontsize=9)
+    zoom_fig.tight_layout(rect=[0, .08, 1, 1])
     plt.show()
 
     display(adjacent)
@@ -455,6 +523,7 @@ def build():
         for name, table in exports.items():
             table.to_csv(OUTPUT_DIR / name, index=False)
         fig.savefig(OUTPUT_DIR / 'discrete_interventions_vs_ed_benefit.png', dpi=160, bbox_inches='tight')
+        zoom_fig.savefig(OUTPUT_DIR / 'discrete_interventions_vs_ed_benefit_zoom.png', dpi=160, bbox_inches='tight')
         metadata = {
             'config': CONFIG, 'input_sha256': {str(p.relative_to(ROOT)): file_sha256(p) for p in (RAW_PATH, FULL_PATH, TEST_PATH)},
             'versions': {p: importlib.metadata.version(p) for p in ['numpy', 'pandas', 'scipy', 'scikit-learn', 'matplotlib', 'nbformat']},
@@ -492,8 +561,39 @@ def build():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--execute', action='store_true')
+    parser.add_argument('--refresh-plots', action='store_true', help='Refresh saved plots using existing aggregate estimates, without refitting.')
     args = parser.parse_args()
     notebook = build()
+    if args.refresh_plots:
+        if args.execute:
+            parser.error('Choose --execute or --refresh-plots, not both.')
+        from nbclient import NotebookClient
+        previous = nbf.read(DESTINATION, as_version=4)
+        if len(previous.cells) != len(notebook.cells):
+            raise ValueError('Notebook structure changed; use a full execution.')
+        # Only the plotting discussion, plotting cell, and export cell may differ.
+        plot_index = next(i for i, c in enumerate(notebook.cells)
+                          if c.cell_type == 'code' and c.source.startswith('BENEFIT_ZOOM_LIMITS_PP'))
+        for i, (old, new) in enumerate(zip(previous.cells, notebook.cells)):
+            if old.source != new.source and i not in {plot_index - 1, plot_index, len(notebook.cells) - 1}:
+                raise ValueError(f'Non-plot cell {i} changed; use full execution.')
+        setup = next(c for c in notebook.cells if c.cell_type == 'code' and c.source.startswith('from pathlib import Path'))
+        cohort = next(c for c in notebook.cells if c.cell_type == 'code' and c.source.startswith('raw = pd.read_csv'))
+        replay = nbf.v4.new_notebook(cells=[
+            nbf.v4.new_code_cell(setup.source), nbf.v4.new_code_cell(cohort.source),
+            nbf.v4.new_code_cell("curve = pd.read_csv(OUTPUT_DIR / 'discrete_adrf_curve.csv')\nadjacent = pd.read_csv(OUTPUT_DIR / 'adjacent_count_benefit.csv')"),
+            nbf.v4.new_code_cell(notebook.cells[plot_index].source),
+            nbf.v4.new_code_cell("fig.savefig(OUTPUT_DIR / 'discrete_interventions_vs_ed_benefit.png', dpi=160, bbox_inches='tight')\nzoom_fig.savefig(OUTPUT_DIR / 'discrete_interventions_vs_ed_benefit_zoom.png', dpi=160, bbox_inches='tight')"),
+        ])
+        NotebookClient(replay, timeout=180, kernel_name='python3', resources={'metadata': {'path': str(HERE)}}).execute()
+        previous.cells[plot_index - 1].source = notebook.cells[plot_index - 1].source
+        previous.cells[plot_index] = replay.cells[3]
+        previous.cells[-1].source = notebook.cells[-1].source
+        previous.cells[plot_index].metadata['plot_refresh'] = 'Rendered from saved aggregate estimates; no model refit.'
+        nbf.validate(previous)
+        nbf.write(previous, DESTINATION)
+        print('Refreshed plots without refitting:', DESTINATION, flush=True)
+        raise SystemExit(0)
     nbf.write(notebook, DESTINATION)
     print('Built:', DESTINATION, flush=True)
     if args.execute:
