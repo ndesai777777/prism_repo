@@ -1,0 +1,3 @@
+analysis,target_rows,positive_groups,positive_contrasts_passing,minimum_positive_member_ess,median_positive_member_ess,maximum_absolute_residual_correction,risk_estimates_outside_01
+Exact counts,3074,19,0,1.4459909650290474,12.299568164817382,2.4510466590030484,8
+Six fixed bins,3074,5,0,1.4882350149410775,76.31287864550427,0.6991548053089318,1

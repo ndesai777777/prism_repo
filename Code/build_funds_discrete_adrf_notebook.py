@@ -550,6 +550,249 @@ def build():
     display(run_summary)
     print('Complete. Review support flags and sensitivity results before interpreting the curve.')
     ''')
+    md(r'''
+    ## 9. Binned intervention analysis: 0, 1–5, 6–10, 11–15, 16–20, 21+
+
+    This additional analysis uses the **same known-count population, binary 90-day ED outcome,
+    baseline covariates, and missing-outcome rules** as the exact-count analysis above. Zero remains
+    its own reference group. Missing counts remain excluded; they are never assigned to zero.
+    Every known count is assigned to one of the six fixed groups, including the previously sparse
+    high counts. Boundaries are fixed in advance and are not selected using benefit estimates.
+
+    We **refit** the multinomial exposure model and each group's outcome model using these groups.
+    We do not average exact-count effects or reuse exact-count propensity scores. In the same
+    residual-correction equation, $I(T=t)$ becomes $I(G=g)$ and the denominator becomes
+    $P(G=g\mid X)$. Codes 0–5 are category labels used internally, not numeric intervention counts.
+    Exact count, group label, and treatment flags are not included among baseline confounders.
+
+    Each point is the standardized mean for a **range of counts**, relative to zero. It cannot
+    identify the effect of an exact count within that range. Its causal interpretation depends on
+    specifying the mix of counts/interventions within a group (or assuming that those versions
+    have equivalent effects). The open-ended 21+ group is particularly heterogeneous. See
+    [treatment-version considerations](https://pmc.ncbi.nlm.nih.gov/articles/PMC3805254/).
+    Binning does not resolve missingness, temporal ordering, or unmeasured confounding.
+    ''')
+    code('''
+    BIN_CONFIG = CONFIG.copy()  # Same estimator settings and diagnostic thresholds.
+    BIN_LABELS = dict(enumerate(INTERVENTION_BIN_LABELS))
+    BIN_LEVELS = np.arange(6, dtype=int)
+    BIN_OUTPUT_DIR = OUTPUT_DIR / 'binned'
+    binned_analysis = analysis.copy()
+    binned_analysis['exact_intervention_count'] = binned_analysis['dose']
+    binned_analysis['dose'] = bin_intervention_counts(binned_analysis['exact_intervention_count']).astype(int)
+    binned_analysis['intervention_bin'] = binned_analysis.dose.map(BIN_LABELS)
+    if not binned_analysis.analysis_row_id.equals(analysis.analysis_row_id):
+        raise AssertionError('Binning changed the target row order.')
+    if not binned_analysis.ed_event_90d.equals(analysis.ed_event_90d):
+        raise AssertionError('Binning changed the outcome.')
+    if set(binned_analysis.dose) != set(BIN_LEVELS):
+        raise ValueError('One or more requested bins are empty; cannot estimate all six groups.')
+    bin_inventory = binned_analysis.groupby('dose').agg(
+        rows=('dose', 'size'), unique_members=('member_id', 'nunique'),
+        min_observed_count=('exact_intervention_count', 'min'),
+        max_observed_count=('exact_intervention_count', 'max'),
+        observed_events=('ed_event_90d', 'sum'), observed_risk=('ed_event_90d', 'mean'),
+        missing_outcomes=('outcome_missing_filled_zero', 'sum'),
+        flag_disagreements=('flag_count_inconsistent', 'sum'),
+    ).reset_index().rename(columns={'dose': 'bin_code'})
+    bin_inventory.insert(1, 'intervention_bin', bin_inventory.bin_code.map(BIN_LABELS))
+    bin_inventory['below_member_threshold'] = bin_inventory.unique_members.lt(BIN_CONFIG['minimum_dose_members'])
+    display(bin_inventory)
+    print('All six bins retained; groups with weak support will be flagged, never silently merged.')
+    print('Target rows:', len(binned_analysis), '| target members:', binned_analysis.member_id.nunique())
+    print('Member counts across bins are not additive: repeated members can occur in multiple bins.')
+    ''')
+    md('''
+    ### Refit and evaluate the binned model
+
+    Group-aware folds are reconstructed for the six-category treatment; a member never occurs in
+    both the fitting and prediction portion of a fold. All treatment probabilities are probabilities
+    of a **bin**, and the six probabilities sum to one. Diagnostics retain the same thresholds as
+    the exact-count analysis. Neighboring-bin contrasts compare ranges, **not one extra intervention**.
+    Confidence intervals use the same member-clustered score approximation and simultaneous bands.
+    ''')
+    code('''
+    with threadpool_limits(limits=2):
+        binned_main = fit_discrete_adrf(binned_analysis, BIN_LEVELS, BIN_CONFIG)
+        binned_curve, binned_adjacent, binned_balance = summarize_result(binned_main, BIN_CONFIG)
+    if not np.allclose(binned_main['p'].sum(axis=1), 1, atol=1e-8):
+        raise AssertionError('Bin probabilities do not sum to one.')
+    bin_folds = pd.DataFrame({'member': binned_analysis.member_id, 'fold': binned_main['fold']})
+    if bin_folds.groupby('member').fold.nunique().gt(1).any():
+        raise AssertionError('Repeated member crosses bin-model prediction folds.')
+    # Public tables carry range labels, so internal category codes cannot be mistaken for counts.
+    binned_curve = binned_curve.rename(columns={'dose': 'bin_code'})
+    binned_curve.insert(1, 'intervention_bin', binned_curve.bin_code.map(BIN_LABELS))
+    binned_balance = binned_balance.rename(columns={'dose': 'bin_code'})
+    binned_balance.insert(1, 'intervention_bin', binned_balance.bin_code.map(BIN_LABELS))
+    binned_fold_audit = binned_main['audit'].rename(columns={'dose': 'bin_code'})
+    binned_fold_audit.insert(1, 'intervention_bin', binned_fold_audit.bin_code.map(BIN_LABELS))
+    binned_adjacent = binned_adjacent.rename(columns={
+        'from_dose': 'from_bin_code', 'to_dose': 'to_bin_code',
+        'additional_reduction_pp': 'between_bin_reduction_pp',
+        'small_increment_compatible': 'small_between_bin_difference_compatible',
+    })
+    binned_adjacent.insert(1, 'from_bin', binned_adjacent.from_bin_code.map(BIN_LABELS))
+    binned_adjacent.insert(3, 'to_bin', binned_adjacent.to_bin_code.map(BIN_LABELS))
+    display(binned_curve[['intervention_bin', 'observed_rows', 'observed_members',
+                          'propensity_min', 'member_ess', 'outcome_only_risk', 'residual_correction',
+                          'ed_risk', 'benefit_pp', 'benefit_ci_low_pp', 'benefit_ci_high_pp',
+                          'max_abs_smd', 'support_flags', 'contrast_pass']])
+    display(binned_adjacent)
+    bin_comparison = pd.DataFrame([
+        {'analysis': name, 'target_rows': len(analysis), 'positive_groups': int((table[code] > 0).sum()),
+         'positive_contrasts_passing': int(table.loc[table[code] > 0, 'contrast_pass'].sum()),
+         'minimum_positive_member_ess': table.loc[table[code] > 0, 'member_ess'].min(),
+         'median_positive_member_ess': table.loc[table[code] > 0, 'member_ess'].median(),
+         'maximum_absolute_residual_correction': table.residual_correction.abs().max(),
+         'risk_estimates_outside_01': int((~table.risk_in_bounds).sum())}
+        for name, table, code in [('Exact counts', curve, 'dose'), ('Six fixed bins', binned_curve, 'bin_code')]
+    ])
+    display(bin_comparison)
+    print('Binning changes the estimand; this table compares stability, not equivalent treatment effects.')
+    ''')
+    md('''
+    ### Binned sensitivity analyses
+
+    These checks repeat the original sensitivity designs using freshly estimated **bin-level**
+    nuisance models. The observed-outcome-only and consistent-flag-only analyses change the target
+    population; their differences must not be interpreted purely as changes in estimation bias.
+    Probability floors are labeled sensitivity estimates and never replace the unfloored main result.
+    ''')
+    code('''
+    binned_sensitivity_tables, binned_sensitivity_audits = [], []
+    for floor in [None, 0.005, 0.01, 0.02]:
+        scores = discrete_scores(binned_analysis.ed_event_90d.to_numpy(), binned_analysis.dose.to_numpy(),
+                                 BIN_LEVELS, binned_main['m'], binned_main['p'], floor=floor)
+        risks = scores.mean(axis=0)
+        binned_sensitivity_tables.append(pd.DataFrame({
+            'scenario': 'main_unfloored' if floor is None else f'propensity_floor_{floor}',
+            'bin_code': BIN_LEVELS, 'ed_risk': risks, 'benefit_pp': 100 * (risks[0] - risks),
+            'target_rows': len(binned_analysis), 'status': 'completed',
+        }))
+    if BIN_CONFIG['run_sensitivities']:
+        bin_scenarios = [
+            ('linear_probability_ridge', binned_analysis, BIN_CONFIG, 'ridge'),
+            ('stronger_regularization', binned_analysis,
+             {**BIN_CONFIG, 'propensity_C': 0.05, 'outcome_C': 0.05}, 'logistic'),
+            ('observed_outcomes_only_changed_target',
+             binned_analysis.loc[~binned_analysis.outcome_missing_filled_zero], BIN_CONFIG, 'logistic'),
+            ('consistent_flags_only_changed_target',
+             binned_analysis.loc[~binned_analysis.flag_count_inconsistent], BIN_CONFIG, 'logistic'),
+        ]
+        for name, subset, cfg, model in bin_scenarios:
+            print('Binned sensitivity:', name, flush=True)
+            try:
+                with threadpool_limits(limits=2):
+                    bin_fit = fit_discrete_adrf(subset, BIN_LEVELS, cfg, outcome_model=model, verbose=False)
+                    bin_summary, _, _ = summarize_result(bin_fit, cfg)
+                bin_summary = bin_summary.rename(columns={'dose': 'bin_code'})
+                bin_summary['scenario'], bin_summary['target_rows'], bin_summary['status'] = name, len(subset), 'completed'
+                binned_sensitivity_tables.append(bin_summary)
+                binned_sensitivity_audits.append(bin_fit['audit'].rename(columns={'dose': 'bin_code'}).assign(scenario=name))
+            except (ValueError, np.linalg.LinAlgError, ConvergenceWarning) as exc:
+                binned_sensitivity_tables.append(pd.DataFrame({'scenario': [name], 'status': [f'FAILED: {exc}'],
+                                                               'target_rows': [len(subset)]}))
+                print('Binned sensitivity could not be estimated:', exc)
+    binned_sensitivity = pd.concat(binned_sensitivity_tables, ignore_index=True)
+    binned_sensitivity.insert(1, 'intervention_bin', binned_sensitivity.bin_code.map(BIN_LABELS))
+    display(binned_sensitivity.pivot_table(index='bin_code', columns='scenario', values='benefit_pp')
+            .rename(index=BIN_LABELS).rename_axis('intervention_bin'))
+    display(binned_sensitivity[['scenario', 'status', 'target_rows']].drop_duplicates())
+    ''')
+    md('''
+    ### Binned ED risk and benefit curves
+
+    The x-axis contains category labels, with equal spacing for readability; the last category
+    means **21 or more** and has no assigned midpoint. Points show population-average estimates.
+    Error bars show pointwise 95% intervals; thick translucent lines show simultaneous benefit
+    intervals. Dotted connections are visual guides between category estimates, not interpolation
+    between exact counts. Positive benefit means lower ED risk than the zero-intervention group.
+    The same diagnostic flags remain visible, including any problem with the zero reference.
+    ''')
+    code('''
+    bin_screen_label = ('NO SUPPORTED BIN CONTRASTS' if not binned_curve.loc[binned_curve.bin_code > 0, 'contrast_pass'].any()
+                        else 'Inspect bin-specific support flags')
+    binned_fig, bin_axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True,
+                                        gridspec_kw={'height_ratios': [2, 2, 1]})
+    bin_axes[0].plot(binned_curve.bin_code, 100 * binned_curve.ed_risk, ':', color='#999999', lw=1)
+    bin_axes[1].plot(binned_curve.bin_code, binned_curve.benefit_pp, ':', color='#999999', lw=1)
+    for passed, color in [(True, '#176b91'), (False, '#b66c24')]:
+        part = binned_curve.loc[binned_curve.contrast_pass.eq(passed)]
+        if part.empty:
+            continue
+        name = 'Passes configured screens' if passed else 'Flagged: inspect diagnostics'
+        face = color if passed else 'none'
+        bin_axes[0].errorbar(part.bin_code, 100 * part.ed_risk,
+                             yerr=100 * np.vstack([part.ed_risk-part.risk_ci_low, part.risk_ci_high-part.ed_risk]),
+                             fmt='none', ecolor=color, capsize=4)
+        bin_axes[0].scatter(part.bin_code, 100 * part.ed_risk, facecolors=face, edgecolors=color, s=55, label=name)
+        bin_axes[1].vlines(part.bin_code, part.benefit_sim_low_pp, part.benefit_sim_high_pp, color=color, alpha=.2, lw=6)
+        bin_axes[1].errorbar(part.bin_code, part.benefit_pp,
+                             yerr=np.vstack([part.benefit_pp-part.benefit_ci_low_pp, part.benefit_ci_high_pp-part.benefit_pp]),
+                             fmt='none', ecolor=color, capsize=4)
+        bin_axes[1].scatter(part.bin_code, part.benefit_pp, facecolors=face, edgecolors=color, s=55, label=name)
+    bin_axes[0].scatter(binned_curve.bin_code, 100 * binned_curve.outcome_only_risk,
+                        marker='x', color='#777777', label='Outcome model only')
+    bin_invalid = binned_curve.loc[~binned_curve.risk_in_bounds]
+    if len(bin_invalid):
+        bin_axes[0].scatter(bin_invalid.bin_code, 100 * bin_invalid.ed_risk, marker='x', color='#ad2525',
+                            s=80, zorder=5, label='Impossible risk estimate')
+    for row in binned_curve.itertuples():
+        bin_axes[1].annotate(f'{row.benefit_pp:+.1f} pp', (row.bin_code, row.benefit_pp),
+                             xytext=(9, 6), textcoords='offset points', fontsize=9)
+    bin_axes[0].set_ylabel('Estimated ED-event risk (%)')
+    bin_axes[0].set_title(f'{label} binned intervention dose-response: Funds {CONFIG["population"]}\\n'
+                          f'{len(binned_analysis):,} rows | {binned_analysis.member_id.nunique():,} member clusters | {bin_screen_label}',
+                          loc='left', fontsize=11)
+    bin_axes[0].legend(fontsize=8)
+    bin_axes[1].axhline(0, color='#555555', lw=1)
+    bin_axes[1].set_ylabel('ED risk reduction vs zero (pp)')
+    bin_axes[1].legend(fontsize=8)
+    bin_axes[2].bar(binned_curve.bin_code, binned_curve.member_ess, width=.6, color='#8daebd')
+    bin_axes[2].axhline(BIN_CONFIG['minimum_member_ess'], ls='--', color='#b66c24')
+    bin_axes[2].set_xticks(BIN_LEVELS, [BIN_LABELS[i] for i in BIN_LEVELS])
+    bin_axes[2].set(xlabel='Number of interventions (fixed ranges)', ylabel='Donor member ESS')
+    for ax in bin_axes:
+        ax.grid(axis='y', alpha=.2)
+        ax.margins(x=.12)
+    binned_fig.tight_layout()
+    plt.show()
+    print('Positive bin-versus-zero contrasts passing all screens:',
+          int(binned_curve.loc[binned_curve.bin_code > 0, 'contrast_pass'].sum()), 'of 5')
+    print('A more stable curve is not proof of causal identification or an optimal intervention count.')
+    ''')
+    code('''
+    if CONFIG['write_outputs']:
+        BIN_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        bin_exports = {
+            'bin_inventory.csv': bin_inventory, 'binned_adrf_curve.csv': binned_curve,
+            'neighboring_bin_benefit.csv': binned_adjacent, 'binned_covariate_balance.csv': binned_balance,
+            'binned_crossfit_diagnostics.csv': binned_fold_audit,
+            'binned_sensitivity_analysis.csv': binned_sensitivity,
+            'exact_vs_binned_stability.csv': bin_comparison,
+        }
+        if binned_sensitivity_audits:
+            bin_audits = pd.concat(binned_sensitivity_audits, ignore_index=True)
+            bin_audits.insert(1, 'intervention_bin', bin_audits.bin_code.map(BIN_LABELS))
+            bin_exports['binned_sensitivity_crossfit_diagnostics.csv'] = bin_audits
+        for filename, table in bin_exports.items():
+            table.to_csv(BIN_OUTPUT_DIR / filename, index=False)
+        binned_fig.savefig(BIN_OUTPUT_DIR / 'binned_interventions_vs_ed_benefit.png', dpi=160, bbox_inches='tight')
+        bin_metadata = {
+            **metadata, 'config': BIN_CONFIG, 'levels': BIN_LEVELS.tolist(),
+            'bin_labels': BIN_LABELS, 'bin_upper_boundaries': [0, 5, 10, 15, 20, None],
+            'bin_rule': '0; 1-5; 6-10; 11-15; 16-20; 21 and above. Nonnegative integers only.',
+            'estimand': 'Row-average binary ED-event risk by intervention-count range; benefit versus the zero bin',
+            'estimator': 'Cross-fitted six-category AIPW, both nuisance models refitted for bins',
+            'same_target_as_exact_counts': True,
+            'supported_contrasts': int(binned_curve.loc[binned_curve.bin_code > 0, 'contrast_pass'].sum()),
+            'contrast_count_excludes_reference': True,
+            'within_bin_interpretation': 'Requires a defined mixture of intervention versions or version-irrelevance assumptions',
+        }
+        (BIN_OUTPUT_DIR / 'binned_run_metadata.json').write_text(json.dumps(bin_metadata, indent=2), encoding='utf-8')
+        print('Saved binned aggregate results to', BIN_OUTPUT_DIR)
+    ''')
     notebook = nbf.v4.new_notebook(cells=cells)
     notebook.metadata = {'kernelspec': {'display_name': 'Python 3', 'language': 'python', 'name': 'python3'},
                          'language_info': {'name': 'python'},
@@ -571,11 +814,13 @@ if __name__ == '__main__':
         previous = nbf.read(DESTINATION, as_version=4)
         if len(previous.cells) != len(notebook.cells):
             raise ValueError('Notebook structure changed; use a full execution.')
-        # Only the plotting discussion, plotting cell, and export cell may differ.
+        # Refresh only exact-count plots; leave the appended binned analysis intact.
         plot_index = next(i for i, c in enumerate(notebook.cells)
                           if c.cell_type == 'code' and c.source.startswith('BENEFIT_ZOOM_LIMITS_PP'))
+        export_index = next(i for i, c in enumerate(notebook.cells)
+                            if c.cell_type == 'code' and c.source.startswith('def file_sha256'))
         for i, (old, new) in enumerate(zip(previous.cells, notebook.cells)):
-            if old.source != new.source and i not in {plot_index - 1, plot_index, len(notebook.cells) - 1}:
+            if old.source != new.source and i not in {plot_index - 1, plot_index, export_index}:
                 raise ValueError(f'Non-plot cell {i} changed; use full execution.')
         setup = next(c for c in notebook.cells if c.cell_type == 'code' and c.source.startswith('from pathlib import Path'))
         cohort = next(c for c in notebook.cells if c.cell_type == 'code' and c.source.startswith('raw = pd.read_csv'))
@@ -588,7 +833,7 @@ if __name__ == '__main__':
         NotebookClient(replay, timeout=180, kernel_name='python3', resources={'metadata': {'path': str(HERE)}}).execute()
         previous.cells[plot_index - 1].source = notebook.cells[plot_index - 1].source
         previous.cells[plot_index] = replay.cells[3]
-        previous.cells[-1].source = notebook.cells[-1].source
+        previous.cells[export_index].source = notebook.cells[export_index].source
         previous.cells[plot_index].metadata['plot_refresh'] = 'Rendered from saved aggregate estimates; no model refit.'
         nbf.validate(previous)
         nbf.write(previous, DESTINATION)

@@ -1,0 +1,7 @@
+bin_code,intervention_bin,rows,unique_members,min_observed_count,max_observed_count,observed_events,observed_risk,missing_outcomes,flag_disagreements,below_member_threshold
+0,0,762,761,0,0,145,0.19028871391076116,70,1,False
+1,1-5,298,225,1,5,57,0.1912751677852349,9,63,False
+2,6-10,730,562,6,10,152,0.20821917808219179,14,67,False
+3,11-15,595,428,11,15,139,0.23361344537815126,16,34,False
+4,16-20,305,211,16,20,76,0.24918032786885247,9,15,False
+5,21+,384,216,21,71,125,0.3255208333333333,36,16,False

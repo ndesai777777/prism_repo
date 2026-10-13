@@ -16,10 +16,27 @@ from _funds_discrete_adrf import (
     NUMERIC_BASELINE, CATEGORICAL_BASELINE, baseline_frame, make_preprocessor,
     discrete_scores, basis_residual_correction, cluster_inference,
     grouped_folds, fit_discrete_adrf, summarize_result,
+    bin_intervention_counts, INTERVENTION_BIN_LABELS,
 )
 
 
 class DiscreteCorrectionTests(unittest.TestCase):
+    def test_fixed_bin_boundaries_preserve_missing_and_index(self):
+        counts = pd.Series([0, 1, 5, 6, 10, 11, 15, 16, 20, 21, 500, np.nan],
+                           index=np.arange(100, 112))
+        original = counts.copy()
+        actual = bin_intervention_counts(counts)
+        expected = pd.Series([0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, pd.NA],
+                             index=counts.index, dtype='Int64', name='bin_code')
+        pd.testing.assert_series_equal(actual, expected)
+        pd.testing.assert_series_equal(counts, original)
+        self.assertEqual(INTERVENTION_BIN_LABELS, ('0', '1-5', '6-10', '11-15', '16-20', '21+'))
+
+    def test_binning_rejects_invalid_counts(self):
+        for invalid in [-1, .5, np.inf, -np.inf, 'not a count']:
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                bin_intervention_counts([0, invalid])
+
     def test_discrete_formula_equals_general_matrix_equation_with_other_category(self):
         rng = np.random.default_rng(132)
         p = rng.dirichlet([2, 3, 4, 5], size=80)
@@ -146,6 +163,25 @@ class DiscreteCorrectionTests(unittest.TestCase):
         self.assertEqual(len(fitted['frame']), n)
         self.assertGreater(len(balance), 0)
         self.assertLessEqual(pd.DataFrame({'g': frame.member_id, 'f': fitted['fold']}).groupby('g').f.nunique().max(), 1)
+
+        # Refit six nominal bins, including the open-ended group, on the same rows.
+        binned = frame.copy()
+        binned['exact_intervention_count'] = rng.choice([0, 1, 5, 6, 10, 11, 15, 16, 20, 21, 50], n)
+        binned['dose'] = bin_intervention_counts(binned.exact_intervention_count).astype(int)
+        binned['intervention_bin'] = binned.dose.map(dict(enumerate(INTERVENTION_BIN_LABELS)))
+        pd.testing.assert_frame_equal(baseline_frame(frame), baseline_frame(binned))
+        with threadpool_limits(limits=2):
+            bin_fit = fit_discrete_adrf(binned, np.arange(6), cfg, verbose=False)
+            bin_curve, bin_adjacent, _ = summarize_result(bin_fit, cfg)
+        self.assertEqual(bin_fit['psi'].shape, (n, 6))
+        np.testing.assert_allclose(bin_fit['p'].sum(axis=1), 1)
+        np.testing.assert_array_equal(bin_fit['frame'].ed_event_90d, frame.ed_event_90d)
+        self.assertEqual(list(bin_curve.dose), list(range(6)))
+        self.assertEqual(list(zip(bin_adjacent.from_dose, bin_adjacent.to_dose)),
+                         [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)])
+        self.assertEqual(bin_curve.loc[bin_curve.dose.eq(0), 'benefit_pp'].iloc[0], 0)
+        self.assertEqual(pd.DataFrame({'g': binned.member_id, 'f': bin_fit['fold']})
+                         .groupby('g').f.nunique().max(), 1)
 
     def test_notebook_valid_and_embedded_functions_match_module(self):
         here = Path(__file__).resolve().parent

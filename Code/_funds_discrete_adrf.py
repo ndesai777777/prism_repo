@@ -27,6 +27,23 @@ NUMERIC_BASELINE = [
     'current_risk_score', 'percolator_score',
 ]
 CATEGORICAL_BASELINE = ['client_contract', 'gender', 'county', 'state', 'plan_type', 'risk_tier']
+INTERVENTION_BIN_LABELS = ('0', '1-5', '6-10', '11-15', '16-20', '21+')
+
+
+def bin_intervention_counts(counts):
+    """Fixed requested ranges encoded 0..5; preserve missingness and row order.
+
+    Codes are nominal treatment categories, not numeric doses or midpoints.
+    Nonfinite, negative, fractional, or unparseable nonmissing counts are errors.
+    """
+    values = pd.to_numeric(pd.Series(counts, copy=True), errors='raise')
+    known = values.notna()
+    observed = values.loc[known].to_numpy(dtype=float)
+    if not np.isfinite(observed).all() or np.any(observed < 0) or np.any(observed % 1 != 0):
+        raise ValueError('Binning requires finite nonnegative integer intervention counts.')
+    codes = pd.Series(pd.NA, index=values.index, dtype='Int64', name='bin_code')
+    codes.loc[known] = np.searchsorted([0, 5, 10, 15, 20], observed, side='left')
+    return codes
 
 
 def baseline_frame(frame):
