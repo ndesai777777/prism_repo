@@ -1,0 +1,7 @@
+received_treatment,count_status,rows,unique_members,missing_outcomes
+0,missing_or_unparseable,1375,1351,1
+0,observed_positive,195,129,9
+0,observed_zero,761,760,70
+1,missing_or_unparseable,3,3,0
+1,observed_positive,2117,1520,75
+1,observed_zero,1,1,0

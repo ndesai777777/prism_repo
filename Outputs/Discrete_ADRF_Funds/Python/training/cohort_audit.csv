@@ -1,0 +1,12 @@
+stage,rows_or_members
+source rows,6360
+eligible source rows,6360
+verified training rows,4452
+verified test rows,1908
+chosen target before count exclusions,4452
+missing count excluded,1378
+analysis rows,3074
+analysis unique members,2369
+analysis missing outcomes filled zero,154
+analysis flag/count disagreements,196
+members shared by original train/test,983
